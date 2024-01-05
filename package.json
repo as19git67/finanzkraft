@@ -4,8 +4,12 @@
   "description": "Finanzkraft Docker image project",
   "main": "index.js",
   "scripts": {
+    "build": "./buildui.sh",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Anton Schegg",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "finanzkraftui": "git@github.com:as19git67/finanzkraftui.git"
+  }
 }
