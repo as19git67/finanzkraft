@@ -23,5 +23,5 @@ then
   fi
 fi
 
-npm install && npm rebuild node-sass && npm rebuild sqlite3 && npm run build
+npm rebuild node-sass && npm rebuild sqlite3
 node ./server.js
