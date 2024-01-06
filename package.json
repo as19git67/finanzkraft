@@ -1,15 +1,23 @@
 {
   "name": "finanzkraft",
   "version": "1.0.0",
-  "description": "Finanzkraft Docker image project",
-  "main": "index.js",
+  "description": "Finanzkraft server and Docker image",
+  "type": "module",
   "scripts": {
-    "build": "./buildui.sh",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node ./bin/server.js",
+    "build": "./buildui.sh"
   },
   "author": "Anton Schegg",
   "license": "ISC",
   "dependencies": {
-    "finanzkraftui": "git@github.com:as19git67/finanzkraftui.git"
+    "as-express": "github:as19git67/as-express",
+    "debug": "^4.3.4",
+    "express": "^4.18.2",
+    "finanzkraftui": "github:as19git67/finanzkraftui.git",
+    "hbs": "^4.2.0",
+    "http-errors": "^2.0.0",
+    "morgan": "^1.10.0",
+    "node-sass-middleware": "^1.1.0",
+    "sqlite3": "^5.1.7"
   }
 }
