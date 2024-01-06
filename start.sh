@@ -3,11 +3,17 @@
 ln -snf /usr/share/zoneinfo/"$TZ" /etc/localtime && echo "$TZ" > /etc/timezone
 
 {
-  echo "\"timezone\": \"$TZ\""
-  echo "\"dataDirectory\": \"/data\""
-  echo "\"authConfigDirectory\": \"/data\""
-  echo "\"httpPort\": \"$PORT_HTTP\""
-  echo "\"httpsPort\": \"$PORT_HTTPS\""
+  echo "timezone: \"$TZ\""
+  echo "dataDirectory: \"/data\""
+  echo "authConfigDirectory: \"/data\""
+  echo "httpPort: \"$PORT_HTTP\""
+  echo "httpsPort: \"$PORT_HTTPS\""
+  echo "dbClient: \"$DBCLIENT\""
+  echo "dbHost: \"$DBHOST\""
+  echo "dbPort: \"$DBPORT\""
+  echo "dbName: \"$DBNAME\""
+  echo "dbUsername: \"$DBUSERNAME\""
+  echo "dbPassword: \"$DBPASSWORD\""
 } >  /app/settings.yaml
 
 if [ ! -f /data/key.pem ]
@@ -16,4 +22,6 @@ then
     openssl req -newkey rsa:2048 -new -nodes -x509 -days 3650 -keyout /data/key.pem -out /data/cert.pem -subj "$SSL_CERT_SUBJ";
   fi
 fi
+
+npm install && npm rebuild node-sass && npm rebuild sqlite3 && npm run build
 node ./server.js

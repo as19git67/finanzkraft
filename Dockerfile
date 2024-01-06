@@ -7,7 +7,7 @@ FROM node:18-alpine
 RUN apk update && apk add --no-cache openssl tzdata g++ make py3-pip sqlite
 WORKDIR /app
 COPY . .
-RUN npm install && npm rebuild node-sass && npm run build
+RUN npm install && npm rebuild node-sass && npm rebuild sqlite3 && npm run build
 
 VOLUME ["/data"]
 
@@ -20,6 +20,19 @@ ENV SSL_CERT_SUBJ=${ARG_SSL_CERT_SUBJ}
 
 ARG ARG_TZ="Europe/Berlin"
 ENV TZ=${ARG_TZ}
+
+ARG ARG_DBCLIENT="sqlite3"
+ENV DBCLIENT=${ARG_DBCLIENT}
+ARG ARG_DBHOST=""
+ENV DBHOST=${ARG_DBHOST}
+ARG ARG_DBPORT=""
+ENV DBPORT=${ARG_DBPORT}
+ARG ARG_DBNAME="finanzkraft"
+ENV DBNAME=${ARG_DBNAME}
+ARG ARG_DBUSERNAME=""
+ENV DBUSERNAME=${ARG_DBUSERNAME}
+ARG ARG_DBPASSWORD=""
+ENV DBPASSWORD=${ARG_DBPASSWORD}
 
 CMD ["/bin/sh", "./start.sh"]
 
