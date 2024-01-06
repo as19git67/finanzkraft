@@ -4,7 +4,7 @@
   "description": "Finanzkraft server and Docker image",
   "type": "module",
   "scripts": {
-    "start": "node ./bin/server.js",
+    "start": "node server.js",
     "build": "./buildui.sh"
   },
   "author": "Anton Schegg",
@@ -15,6 +15,7 @@
     "express": "^4.18.2",
     "finanzkraftui": "github:as19git67/finanzkraftui.git",
     "hbs": "^4.2.0",
+    "helmet": "^7.1.0",
     "http-errors": "^2.0.0",
     "morgan": "^1.10.0",
     "node-sass-middleware": "^1.1.0",
