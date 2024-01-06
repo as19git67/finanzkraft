@@ -18,7 +18,6 @@ ARG ARG_SSL_CERT_SUBJ=""
 ENV SSL_CERT_SUBJ=${ARG_SSL_CERT_SUBJ}
 
 
-RUN yarn install --production
 RUN apk update && apk add --no-cache openssl tzdata
 
 ARG ARG_TZ="Europe/Berlin"
