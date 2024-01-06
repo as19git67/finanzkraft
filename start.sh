@@ -3,12 +3,12 @@
 ln -snf /usr/share/zoneinfo/"$TZ" /etc/localtime && echo "$TZ" > /etc/timezone
 
 {
-  echo "{"
-  echo "  \"timezone\": \"$TZ\","
-  echo "  \"httpPort\": \"$PORT_HTTP\","
-  echo "  \"httpsPort\": \"$PORT_HTTPS\""
-  echo "}"
-} >  /app/settings.json
+  echo "\"timezone\": \"$TZ\""
+  echo "\"dataDirectory\": \"/data\""
+  echo "\"authConfigDirectory\": \"/data\""
+  echo "\"httpPort\": \"$PORT_HTTP\""
+  echo "\"httpsPort\": \"$PORT_HTTPS\""
+} >  /app/settings.yaml
 
 if [ ! -f /data/key.pem ]
 then
