@@ -5,13 +5,14 @@ import path from 'path';
 import logger from 'morgan';
 import sassMiddleware from 'node-sass-middleware';
 
-import tiereRouter from './routes/tiere.js';
-
 // AS specific modules
 //import DB from './node_modules/as-express/lib/database.js';
 //import AsExpress from './node_modules/as-express/lib/as-express.js';
 import {AsExpress} from 'as-express';
 import dbSchema from './dbSchema.js';
+import dbMixinAccounts from "./dbMixinAccounts.js";
+import accountsRouter from './routes/accounts.js';
+
 import permissions from './permissions.js';
 
 // workaround for missing __dirname in ES6 modules
@@ -45,59 +46,66 @@ app.use(sassMiddleware({
   sourceMap: true
 }));
 
-app.use(function (req, res, next) {
-  // disallow all php requests
-  if (req.url.endsWith('.php')) {
-    res.status(403).end();
-    return;
-  }
-  // some other request no abort
-  if (!req.headers || !req.headers.host) {
-    res.status(403).end();
-    return;
-  }
-
-  if (req.url.endsWith('manager/html')) {
-    res.status(403).end();
-    return;
-  }
-
-  let proxyForwardedFor = req.headers['x-forwarded-for'];
-
-  let realIP = req.headers['x-real-ip'];
-  if (realIP) {
-    console.log(`x-real-ip: ${realIP}`);
-  }
-  let host = req.headers['host'];
-  if (host) {
-    console.log(`host: ${host}`);
-  }
-
-  if (proxyForwardedFor || req.secure || process.env.NODE_ENV === 'development') {
-    // request was via https or server runs in a dev environment ->no special handling
-    // if (req.secure) {
-    //   console.log("Request is already https - next()");
-    // }
-    // console.log("Running in " + process.env.NODE_ENV + " mode. Allow " + req.protocol + '://' + req.get('host') + req.url);
-    next();
-  } else {
-    // request was via http, so redirect to https
-    const secUrl = 'https://' + req.headers.host + req.url;
-    console.log("Redirecting " + req.protocol + '://' + req.get('host') + req.url + " to https: " + secUrl);
-    res.redirect(secUrl);
-  }
-});
-
 app.use(express.static(path.join(__dirname, 'dist')));  // serve vue client app
 app.use(express.static(path.join(__dirname, 'public')));
 
 const asExpress = new AsExpress('finanzkraft', app);
 asExpress.init({
   dbSchema: dbSchema,
+  dbMixins: [dbMixinAccounts],
   permissions: permissions,
 })
 .then(() => {
-  asExpress.addRouter("/api/tiere", tiereRouter);
+
+  app.use(function (req, res, next) {
+    // disallow all php requests
+    if (req.url.endsWith('.php')) {
+      res.status(403).end();
+      return;
+    }
+    // some other request no abort
+    if (!req.headers || !req.headers.host) {
+      res.status(403).end();
+      return;
+    }
+
+    if (req.url.endsWith('manager/html')) {
+      res.status(403).end();
+      return;
+    }
+
+    let proxyForwardedFor = req.headers['x-forwarded-for'];
+
+    let realIP = req.headers['x-real-ip'];
+    if (realIP) {
+      console.log(`x-real-ip: ${realIP}`);
+    }
+    let host = req.headers['host'];
+    if (host) {
+      console.log(`host: ${host}`);
+    }
+
+    // redirect to https if
+    // * https port configured in as-express
+    // * not forwarded by proxy
+    // * request not already via https
+    // * not in development mode
+    if (!asExpress.secure || proxyForwardedFor || req.secure || process.env.NODE_ENV === 'development') {
+      // request was via https or server runs in a dev environment ->no special handling
+      // if (req.secure) {
+      //   console.log("Request is already https - next()");
+      // }
+      // console.log("Running in " + process.env.NODE_ENV + " mode. Allow " + req.protocol + '://' + req.get('host') + req.url);
+      next();
+    } else {
+      // request was via http, so redirect to https
+      const secUrl = 'https://' + req.headers.host + req.url;
+      console.log("Redirecting " + req.protocol + '://' + req.get('host') + req.url + " to https: " + secUrl);
+      res.redirect(secUrl);
+    }
+  });
+
+  asExpress.addRouter("/api/accounts", accountsRouter);
   // const router = express.Router();
   // const corsOptions = {
   //   origin: ['http://localhost:5173', 'https://localhost:5173'],
@@ -110,10 +118,6 @@ asExpress.init({
   // router.options('/', function(req, res, next) {
   //   CORS(corsOptions)(req, res, next); // enable pre-flight
   // });
-  // router.get('/', function (req, res, next) {
-  //   res.json({gattungen: ['Schneeleopard', 'Pantherkatze', 'Jaguar', 'Leopard', 'Löwe', 'Tiger', 'Altkatze', 'Marmorkatze', 'Goldkatze', 'Luchs', 'Schlankkatze', 'Wieselkatze']});
-  // });
-  // app.use("/api/tiere", router);
 
   // catch 404 and forward to error handler
   app.use(function (req, res, next) {

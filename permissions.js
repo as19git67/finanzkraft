@@ -1,63 +1,63 @@
 const permissions = {
-  gattungen_list_read: {
-    description: "Gattungen anzeigen",
-    resources: ["/api/tiere/gattung"],
+  accounts_list_read: {
+    description: "Konten anzeigen",
+    resources: ["/api/accounts"],
     permissions: ["get"],
-    menus: ["admin.gattungen"]
+    menus: ["admin.accounts"]
   },
-  gattungen_create: {
-    description: "Neuen Gattung anlegen",
-    resources: ["/api/tiere/gattung"],
+  account_create: {
+    description: "Neues Konto anlegen",
+    resources: ["/api/accounts"],
     permissions: ["put"],
-    menus: ["admin.gattung"]
+    menus: ["admin.accounts", "admin.account"]
   },
-  gattungen_read: {
-    description: "Gattung anzeigen",
-    resources: ["/api/tiere/gattung/:id"],
+  account_read: {
+    description: "Konto anzeigen",
+    resources: ["/api/accounts/:id"],
     permissions: ["get"],
-    menus: ["admin.gattung"]
+    menus: ["admin.account"]
   },
-  gattungen_update: {
-    description: "Gattung ändern",
-    resources: ["/api/tiere/gattung/:id"],
+  account_update: {
+    description: "Konto ändern",
+    resources: ["/api/accounts/:id"],
     permissions: ["get", "post"],
-    menus: ["admin.gattung"]
+    menus: ["admin.account"]
   },
-  gattungen_delete: {
-    description: "Gattung löschen",
-    resources: ["/api/tiere/gattung/:id"],
+  account_delete: {
+    description: "Konto löschen",
+    resources: ["/api/accounts/:id"],
     permissions: ["delete"],
-    menus: ["admin.gattung"]
+    menus: ["admin.account"]
   },
-  tiere_list_read: {
-    description: "Liste Tiere anzeigen",
-    resources: ["/api/tiere/tier"],
+  transaction_list_read: {
+    description: "Transaktionsliste anzeigen",
+    resources: ["/api/transactions"],
     permissions: ["get"],
-    menus: ["admin.tiere"]
+    menus: ["admin.transactions"]
   },
-  tiere_create: {
-    description: "Neues Tier anlegen",
-    resources: ["/api/tiere/tier"],
+  transaction_create: {
+    description: "Neue Transaktion anlegen",
+    resources: ["/api/transactions"],
     permissions: ["put"],
-    menus: ["admin.tier", "admin.tiere"]
+    menus: ["admin.transactions", "admin.transaction"]
   },
-  tiere_read: {
-    description: "Tier anzeigen",
-    resources: ["/api/tiere/tier/:id"],
+  transaction_read: {
+    description: "Transaktion anzeigen",
+    resources: ["/api/transactions/:id"],
     permissions: ["get"],
-    menus: ["admin.tier"]
+    menus: ["admin.transaction"]
   },
-  tiere_update: {
-    description: "Tier ändern",
-    resources: ["/api/tiere/tier/:id"],
+  transaction_update: {
+    description: "Transaktion ändern",
+    resources: ["/api/transaction/:id"],
     permissions: ["get", "post"],
-    menus: ["admin.tier", "admin.tiere"]
+    menus: ["admin.transaction"]
   },
-  tiere_delete: {
-    description: "Tier löschen",
-    resources: ["/api/tiere/tier/:id"],
+  transaction_delete: {
+    description: "Transaktion löschen",
+    resources: ["/api/transaction/:id"],
     permissions: ["delete"],
-    menus: ["admin.role", "admin.roles"]
+    menus: ["admin.transaction"]
   },
 }
 
