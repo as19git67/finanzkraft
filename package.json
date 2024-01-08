@@ -13,7 +13,7 @@
     "as-express": "github:as19git67/as-express",
     "debug": "^4.3.4",
     "express": "^4.18.2",
-    "finanzkraftui": "github:as19git67/finanzkraftui.git",
+    "finanzkraftui": "github:as19git67/finanzkraftui",
     "hbs": "^4.2.0",
     "helmet": "^7.1.0",
     "http-errors": "^2.0.0",
