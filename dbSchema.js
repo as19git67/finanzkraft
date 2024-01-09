@@ -31,6 +31,10 @@ const schema = [
         "nullable": false,
       },
     ],
+    "values":[
+      {name: "Konto 1", iban: "DE80544604000544600"},
+      {name: "Konto 2", iban: "DE21865867344082790"},
+    ]
   },
   {
     "tableName": "Fk_Category",
