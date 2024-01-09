@@ -46,6 +46,7 @@ const schema = [
       {
         "name": "idCurrency",
         "type": "string",
+        length: 3,
         "nullable": false,
       },
     ],
