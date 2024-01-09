@@ -4,7 +4,12 @@ const DbMixinAccounts = {
   getMixinName(){ return 'DbMixinAccounts'; },
 
   async getAccounts() {
-    return this.knex.select().table('Fk_Account');
+    return this.knex.select().table('Fk_Account')
+        .join('Fk_Currency', function () {
+          this.on('Fk_Account.idCurrency', '=', 'Fk_Currency.id');
+        })
+        .select(['Fk_Account.id as id', 'Fk_Account.name as name', 'Fk_Account.iban as iban', 'Fk_Currency.id as currency_id', 'Fk_Currency.name as' +
+                                                                 ' currency_name', 'Fk_Currency.short as currency_short']);
   },
 
   async getAccount(idAccount) {

@@ -3,12 +3,25 @@ const schema = [
     "tableName": "Fk_Currency",
     "columns": [
       {
-        "name": "name",
+        "name": "id",
         "type": "string",
         length: 3,
         "primary_key": true,
       },
+      {
+        "name": "name",
+        "type": "string",
+      },
+      {
+        "name": "short",
+        "type": "string",
+        length: 1,
+      },
     ],
+    "values": [
+      {id: "EUR", name: "Euro", short: "€"},
+      {id: "USD", name: "Dollar", short: "$"},
+    ]
   },
   {
     "tableName": "Fk_Account",
@@ -30,10 +43,23 @@ const schema = [
         "unique": true,
         "nullable": false,
       },
+      {
+        "name": "idCurrency",
+        "type": "integer",
+        "nullable": false,
+      },
+    ],
+    "foreign_keys": [
+      {
+        "name": "FK_idCurrency__Fk_Currency_id",
+        "columns": ["idCurrency"],
+        "foreign_table": "Fk_Currency",
+        "foreign_columns": ["id"],
+      }
     ],
     "values":[
-      {name: "Konto 1", iban: "DE80544604000544600"},
-      {name: "Konto 2", iban: "DE21865867344082790"},
+      {name: "Konto 1", iban: "DE80544604000544600", idCurrency: "EUR"},
+      {name: "Konto 2", iban: "DE21865867344082790", idCurrency: "USD"},
     ]
   },
   {
@@ -137,10 +163,10 @@ const schema = [
         "foreign_columns": ["id"],
       },
       {
-        "name": "FK_amountCurrency__Fk_Currency_name",
+        "name": "FK_amountCurrency__Fk_Currency_id",
         "columns": ["amountCurrency"],
         "foreign_table": "Fk_Currency",
-        "foreign_columns": ["name"],
+        "foreign_columns": ["id"],
       }
     ],
   },
