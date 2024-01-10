@@ -12,6 +12,10 @@ const DbMixinAccounts = {
                                                                  ' currency_name', 'Fk_Currency.short as currency_short']);
   },
 
+  async addAccount(accountData){
+    return this.knex('Fk_Account').insert(accountData).returning('id');
+  },
+
   async getAccount(idAccount) {
     if (!idAccount) {
       throw new Error('Undefined idAccount');

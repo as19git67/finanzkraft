@@ -41,13 +41,31 @@ const schema = [
         "name": "iban",
         "type": "string",
         "unique": true,
-        "nullable": false,
+        "nullable": true,
+      },
+      {
+        "name": "number",
+        "type": "string",
+        "nullable": true,
       },
       {
         "name": "idCurrency",
         "type": "string",
         length: 3,
         "nullable": false,
+      },
+      {
+        "name": "startBalance",
+        "type": "decimal",
+        precision: 12,
+        scale: 2,
+        "nullable": false,
+        "default": 0,
+      },
+      {
+        "name": "closedAt",
+        "type": "dateTime",
+        "nullable": true,
       },
     ],
     "foreign_keys": [
@@ -141,7 +159,7 @@ const schema = [
       },
       {
         "name": "notes",
-        "type": "string",
+        "type": "text",
         "nullable": true,
       },
       {

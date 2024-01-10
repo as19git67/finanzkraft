@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "start": "node server.js",
-    "build": "./buildui.sh"
+    "build": "./buildui.sh",
+    "import": "node dataImport.js"
   },
   "author": "Anton Schegg",
   "license": "ISC",
@@ -20,5 +21,11 @@
     "morgan": "^1.10.0",
     "node-sass-middleware": "^1.1.0",
     "sqlite3": "^5.1.7"
+  },
+  "devDependencies": {
+    "js-yaml": "^4.1.0",
+    "knex": "^3.1.0",
+    "luxon": "^3.4.4",
+    "mssql": "^10.0.1"
   }
 }
