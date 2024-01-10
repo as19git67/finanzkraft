@@ -136,7 +136,7 @@ const schema = [
       },
       {
         "name": "text",
-        "type": "string",
+        "type": "text",
         "nullable": true,
       },
       {
@@ -149,6 +149,9 @@ const schema = [
         "type": "integer",
         "nullable": true,
       },
+    ],
+    "values": [
+      {idAccount: 1, bookingDate: "2024-01-09 14:13", valueDate: "2024-01-09 14:13", amount: 12.34, amountCurrency: 'EUR', text: "Lebensmittel", notes: "Birnen"}
     ],
     "foreign_keys": [
       {

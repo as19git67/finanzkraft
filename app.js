@@ -12,6 +12,7 @@ import {AsExpress} from 'as-express';
 import dbSchema from './dbSchema.js';
 import dbMixinAccounts from "./dbMixinAccounts.js";
 import accountsRouter from './routes/accounts.js';
+import transactionsRouter from './routes/transactions.js';
 
 import permissions from './permissions.js';
 
@@ -106,6 +107,8 @@ asExpress.init({
   });
 
   asExpress.addRouter("/api/accounts", accountsRouter);
+  asExpress.addRouter("/api/transactions", transactionsRouter);
+
   // const router = express.Router();
   // const corsOptions = {
   //   origin: ['http://localhost:5173', 'https://localhost:5173'],
