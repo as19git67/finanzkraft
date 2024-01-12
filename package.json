@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node server.js",
     "build": "./buildui.sh",
-    "import": "node dataImport.js"
+    "export": "node dataExportAsMoney.js"
   },
   "author": "Anton Schegg",
   "license": "ISC",
