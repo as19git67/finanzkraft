@@ -107,6 +107,15 @@ async function exportData() {
     'transaction.Datum as t_valueDate',
     'transaction.Betrag as t_amount',
     'transaction.Verwendungszweck as t_text',
+    'transaction.primaNotaNo as t_prima_nota_no',
+    'transaction.zkaTranCode as t_zka_tr_code',
+    'transaction.buchungstext as t_type',
+    's_kategorien.id_category as cat_id',
+    's_kategorien.id_parent_category as cat_parent_id',
+    's_kategorien.Name as cat_name',
+    'zahlungsempfaenger.Name as payee',
+    'accountbalance.Betrag as bal_saldo',
+
     )
   .rightJoin('transaction', function () {
     this.on('transaction.id_transaction', '=', 'transaction_split.id_transaction');
@@ -117,11 +126,26 @@ async function exportData() {
   .leftJoin('s_kategorien', function() {
     this.on('transaction.id_category', '=', 's_kategorien.id_category');
   })
-  .leftJoin('s_konten', function() {
-    this.on('transaction.id_konto', '=', 's_konten.id_konto');
-  })
+    .leftJoin('s_konten', function() {
+      this.on('transaction.id_konto', '=', 's_konten.id_konto');
+    })
+    .leftJoin('zahlungsempfaenger', function() {
+      this.on('transaction.id_zahlungsempfaenger', '=', 'zahlungsempfaenger.id_zahlungsempfaenger');
+    })
 
   for (const resultElement of result) {
+    let category = resultElement.cat_name.trim();
+    const cp = categories[resultElement.cat_parent_id];
+    if (cp && cp.Name) {
+      category = `${cp.Name.trim()}:${category}`;
+    }
+    if (category === 'EINNAHMEN:Keine' || category === '-') {
+      category = null;
+    }
+    let payee = resultElement.payee?.trim() ? resultElement.payee?.trim() : null;
+    if (payee === 'Unbekannt') {
+      payee = null;
+    }
     data.transactions.push({
       ts_sequence: resultElement.ts_sequence,
       ts_id_tr_original: resultElement.ts_id_tr_original,
@@ -129,8 +153,13 @@ async function exportData() {
       t_id: resultElement.t_id,
       t_valueDate: resultElement.t_valueDate,
       t_amount: resultElement.t_amount,
-      t_text: resultElement.t_text,
-
+      t_text: resultElement.t_text?.trim(),
+      t_type: resultElement.t_type?.trim(),
+      t_prima_nota_no: resultElement.t_prima_nota_no,
+      t_zka_tr_code: resultElement?.t_zka_tr_code?.trim(),
+      category: category,
+      payee: payee,
+      bal_saldo: resultElement.bal_saldo,
     });
   }
 
