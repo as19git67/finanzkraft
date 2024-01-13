@@ -76,10 +76,6 @@ const schema = [
         "foreign_columns": ["id"],
       }
     ],
-    "values":[
-      {name: "Konto 1", iban: "DE80544604000544600", idCurrency: "EUR"},
-      {name: "Konto 2", iban: "DE21865867344082790", idCurrency: "USD"},
-    ]
   },
   {
     "tableName": "Fk_Category",
@@ -163,13 +159,15 @@ const schema = [
         "nullable": true,
       },
       {
+        "name": "payee",
+        "type": "string",
+        "nullable": true,
+      },
+      {
         "name": "idCategory",
         "type": "integer",
         "nullable": true,
       },
-    ],
-    "values": [
-      {idAccount: 1, bookingDate: "2024-01-09 14:13", valueDate: "2024-01-09 14:13", amount: 12.34, amountCurrency: 'EUR', text: "Lebensmittel", notes: "Birnen"}
     ],
     "foreign_keys": [
       {
