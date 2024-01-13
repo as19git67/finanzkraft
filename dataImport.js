@@ -115,8 +115,9 @@ async function importData(database) {
     });
     console.log(`Account with id ${id[0].id} inserted`);
   }
-//  await Promise.all(promises);
   console.log('Imported Accounts');
+
+
 }
 
 export default importData;

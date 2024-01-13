@@ -74,7 +74,7 @@ async function exportData() {
   let result = await k.table('s_konten').select();
   data.accounts = [];
   const closedDate = DateTime.fromISO('2100-12-01');
-  console.log('Importing Accounts...');
+  console.log('Exporting accounts...');
   for (const resultElement of result) {
     const iban = (resultElement.IBAN === undefined || resultElement.IBAN === null || resultElement.IBAN?.trim() ===
                   '') ? null : resultElement.IBAN.trim();
@@ -92,6 +92,50 @@ async function exportData() {
     });
   }
   console.log(`${data.accounts.length} accounts exported`);
+
+  const catResults = await k.table('s_kategorien');
+  const categories = {};
+  for (const cat of catResults) {
+    categories[cat.id_category] = cat;
+  }
+
+  data.transactions = [];
+  result = await k.table('transaction_split').select('transaction_split.sequence as ts_sequence',
+    'transaction_split.id_transaction_original as ts_id_tr_original',
+    'transaction.id_originaltransaction as t_id_tr_original',
+    'transaction.id_transaction as t_id',
+    'transaction.Datum as t_valueDate',
+    'transaction.Betrag as t_amount',
+    'transaction.Verwendungszweck as t_text',
+    )
+  .rightJoin('transaction', function () {
+    this.on('transaction.id_transaction', '=', 'transaction_split.id_transaction');
+  })
+  .leftJoin('accountbalance', function() {
+    this.on('transaction.id_accountbalance', '=', 'accountbalance.id_balance');
+  })
+  .leftJoin('s_kategorien', function() {
+    this.on('transaction.id_category', '=', 's_kategorien.id_category');
+  })
+  .leftJoin('s_konten', function() {
+    this.on('transaction.id_konto', '=', 's_konten.id_konto');
+  })
+
+  for (const resultElement of result) {
+    data.transactions.push({
+      ts_sequence: resultElement.ts_sequence,
+      ts_id_tr_original: resultElement.ts_id_tr_original,
+      t_id_tr_original: resultElement.t_id_tr_original,
+      t_id: resultElement.t_id,
+      t_valueDate: resultElement.t_valueDate,
+      t_amount: resultElement.t_amount,
+      t_text: resultElement.t_text,
+
+    });
+  }
+
+
+  console.log(`Exporting ${result.length} transactions...`)
 
   const json = JSON.stringify(data);
   const dataBuffer = new Uint8Array(Buffer.from(json));
