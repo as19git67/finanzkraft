@@ -93,11 +93,14 @@ async function exportData() {
   }
   console.log(`${data.accounts.length} accounts exported`);
 
+  console.log(`Exporting categories...`);
   const catResults = await k.table('s_kategorien');
   const categories = {};
   for (const cat of catResults) {
     categories[cat.id_category] = cat;
   }
+  console.log(`${Object.keys(categories).length} categories exported`);
+  console.log(`Exporting transactions...`);
 
   data.transactions = [];
   result = await k.table('transaction_split').select('transaction_split.sequence as ts_sequence',
@@ -110,6 +113,8 @@ async function exportData() {
     'transaction.primaNotaNo as t_prima_nota_no',
     'transaction.zkaTranCode as t_zka_tr_code',
     'transaction.buchungstext as t_type',
+    's_konten.Bezeichnung as account_name',
+    's_konten.id_konto as account_id',
     's_kategorien.id_category as cat_id',
     's_kategorien.id_parent_category as cat_parent_id',
     's_kategorien.Name as cat_name',
@@ -151,6 +156,8 @@ async function exportData() {
       ts_id_tr_original: resultElement.ts_id_tr_original,
       t_id_tr_original: resultElement.t_id_tr_original,
       t_id: resultElement.t_id,
+      account_id: resultElement.account_id,
+      account_name: resultElement.account_name.trim(),
       t_valueDate: resultElement.t_valueDate,
       t_amount: resultElement.t_amount,
       t_text: resultElement.t_text?.trim(),

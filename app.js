@@ -56,11 +56,9 @@ new Promise(async (resolve, reject) => {
   await asExpress.init({
     dbSchema: dbSchema,
     dbMixins: [dbMixinAccounts, dbMixinTransactions],
+    dbImporter: [di],
     permissions: permissions,
   });
-  if (config.importFilename) {
-    await di(app.get('database'));
-  }
 
   app.use(function (req, res, next) {
     // disallow all php requests
