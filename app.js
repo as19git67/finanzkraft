@@ -14,6 +14,7 @@ import accountsRouter from './routes/accounts.js';
 import transactionsRouter from './routes/transactions.js';
 import dbMixinAccounts from "./dbMixinAccounts.js";
 import dbMixinTransactions from "./dbMixinTransactions.js";
+import dbMixinCategories from "./dbMixinCategories.js";
 import di from './dataImport.js'
 
 // workaround for missing __dirname in ES6 modules
@@ -55,7 +56,7 @@ const asExpress = new AsExpress('finanzkraft', app);
 new Promise(async (resolve, reject) => {
   await asExpress.init({
     dbSchema: dbSchema,
-    dbMixins: [dbMixinAccounts, dbMixinTransactions],
+    dbMixins: [dbMixinAccounts, dbMixinTransactions, dbMixinCategories],
     dbImporter: [di],
     permissions: permissions,
   });

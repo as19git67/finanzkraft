@@ -1,5 +1,6 @@
 import yaml from 'js-yaml';
 import fs from 'fs';
+import path from 'path';
 import _ from 'lodash';
 import knex from 'knex';
 import {DateTime} from 'luxon';
@@ -26,12 +27,13 @@ _.defaults(config, settings, {
   dbUsername: 'somebody',
   dbPassword: 'secret',
   outputFile: 'export.json',
+  dataDirectory: '/tmp/finanzkraft_data'
 });
 
 async function exportData() {
 
   const {
-    dbHost, dbName, dbUsername, dbPassword, dbDebug, outputFile,
+    dbHost, dbName, dbUsername, dbPassword, dbDebug, outputFile, dataDirectory,
   } = config;
   let {
     dbPort,
@@ -73,22 +75,28 @@ async function exportData() {
 
   let result = await k.table('s_konten').select();
   data.accounts = [];
-  const closedDate = DateTime.fromISO('2100-12-01');
+  const closedDate = DateTime.fromISO('1970-01-01');
+  const notClosedDate = DateTime.fromISO('2100-12-01');
   console.log('Exporting accounts...');
   for (const resultElement of result) {
     const iban = (resultElement.IBAN === undefined || resultElement.IBAN === null || resultElement.IBAN?.trim() ===
                   '') ? null : resultElement.IBAN.trim();
     const number = (resultElement.Nummer === undefined || resultElement.Nummer === null ||
                     resultElement.Nummer?.trim() === '') ? null : resultElement.Nummer.trim();
-    const closedAt = DateTime.fromISO(resultElement.geschlossen.toISOString());
-    const notClosed = !resultElement.geschlossen || closedAt > closedDate;
+    let closedAt = DateTime.fromISO(resultElement.geschlossen.toISOString());
+    if (resultElement.deleted && resultElement.geschlossen && closedAt > notClosedDate ) {
+      closedAt = closedDate;
+    }
+    if (closedAt > notClosedDate) {
+      closedAt = null;
+    }
     data.accounts.push({
       name: resultElement.Bezeichnung.trim(),
       iban: iban,
       number: number,
       idCurrency: resultElement.Waehrung,
       startBalance: resultElement.Anfangsbestand,
-      closedAt: notClosed ? null : resultElement.geschlossen,
+      closedAt: closedAt,
     });
   }
   console.log(`${data.accounts.length} accounts exported`);
@@ -173,9 +181,11 @@ async function exportData() {
 
   console.log(`Exporting ${result.length} transactions...`)
 
-  const json = JSON.stringify(data);
+  const json = JSON.stringify(data, undefined, 2);
   const dataBuffer = new Uint8Array(Buffer.from(json));
-  await writeFile(outputFile, dataBuffer, 'utf8');
+  const filename = path.resolve(dataDirectory, outputFile);
+  await writeFile(filename, dataBuffer, 'utf8');
+  console.log(`DB export written to ${filename}`);
 }
 
 exportData().then(() => {

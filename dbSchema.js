@@ -91,6 +91,11 @@ const schema = [
         "nullable": false,
       },
       {
+        "name": "fullName",
+        "type": "string",
+        "nullable": false,
+      },
+      {
         "name": "idCategoryParent",
         "type": "integer",
         "nullable": true,
@@ -128,7 +133,7 @@ const schema = [
       {
         "name": "bookingDate",
         "type": "dateTime",
-        "nullable": false,
+        "nullable": true,
       },
       {
         "name": "valueDate",
@@ -141,12 +146,6 @@ const schema = [
         precision: 12,
         scale: 2,
         "nullable": false,
-      },
-      {
-        "name": "amountCurrency",
-        "type": "string",
-        "nullable": false,
-        length: 3,
       },
       {
         "name": "text",
@@ -182,12 +181,6 @@ const schema = [
         "foreign_table": "Fk_Category",
         "foreign_columns": ["id"],
       },
-      {
-        "name": "FK_amountCurrency__Fk_Currency_id",
-        "columns": ["amountCurrency"],
-        "foreign_table": "Fk_Currency",
-        "foreign_columns": ["id"],
-      }
     ],
   },
 ];

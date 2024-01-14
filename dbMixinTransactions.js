@@ -42,6 +42,10 @@ const DbMixinTransactions = {
     return this._selectTransactions(idTransaction);
   },
 
+  async addTransaction(transactionData) {
+    return this.knex('Fk_Transaction').insert(transactionData).returning('id');
+  },
+
   async updateTransaction(idTransaction, data) {
     const result = await this.knex.select().table('Fk_Transaction').where({id: idTransaction});
     if (result.length !== 1) {
