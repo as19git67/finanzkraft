@@ -22,7 +22,10 @@ export default async function importData(db, importFilename) {
   console.log(`Imported ${Object.keys(data.accounts).length} accounts`);
 
   console.log(`Importing ${Object.keys(data.transactions).length} transactions...`);
+  const maxTr = 5000;
+  let cnt = 0;
   for (const tr of data.transactions) {
+    if (cnt > maxTr) break;
     const idAccount = accountIdByName[tr.account_name];
     const idCategory = tr.category === null ? undefined : await db.getOrCreateCategory(tr.category);
     const id = await db.addTransaction({
@@ -33,6 +36,7 @@ export default async function importData(db, importFilename) {
       payee: tr.payee,
       idCategory: idCategory,
     });
+    cnt++;
   }
   console.log(`Imported ${Object.keys(data.transactions).length} transactions`);
 
