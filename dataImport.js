@@ -3,7 +3,6 @@ import fs from 'fs';
 import { DateTime } from 'luxon';
 
 export default async function importData(db, importFilename) {
-  const closedDate = DateTime.fromISO('2100-12-01');
   const data = yaml.load(fs.readFileSync(importFilename, 'utf8'));
 
   console.log('Importing accounts...');
