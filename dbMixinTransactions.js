@@ -5,8 +5,8 @@ const DbMixinTransactions = {
     return 'DbMixinTransactions';
   },
 
-  _selectTransactions: function (idTransaction) {
-    return this.knex.table('Fk_Transaction')
+  _selectTransactions: function (idTransaction, maxItems, searchTerm) {
+    const builder = this.knex.table('Fk_Transaction')
     .join('Fk_Account', function () {
       this.on('Fk_Transaction.idAccount', '=', 'Fk_Account.id');
     })
@@ -17,11 +17,16 @@ const DbMixinTransactions = {
       this.on('Fk_Transaction.idCategory', '=', 'Fk_Category.id');
     })
     .where((builder) => {
-        if (idTransaction !== undefined) {
-          builder.where({id: idTransaction});
-        }
+      if (idTransaction !== undefined) {
+        builder.where({id: idTransaction});
       }
-    )
+      if (idTransaction === undefined && searchTerm) {
+        builder.whereLike('Fk_Transaction.text', `%${searchTerm}%`);
+      }
+      if (idTransaction !== undefined && searchTerm) {
+        builder.andWhereLike('Fk_Transaction.text', `%${searchTerm}%`);
+      }
+    })
     .orderBy('Fk_Transaction.valueDate', 'desc')
     .select([
       'Fk_Account.id as account_id', 'Fk_Account.name as account_name', 'Fk_Transaction.id as t_id',
@@ -29,10 +34,14 @@ const DbMixinTransactions = {
       'Fk_Transaction.text as t_text', 'Fk_Transaction.amount as t_amount', 'Fk_Transaction.notes as t_notes',
       'Fk_Category.id as category_id', 'Fk_Category.fullName as category_name', 'Fk_Currency.name as' +
       ' currency_name', 'Fk_Currency.short as currency_short']);
+    if (maxItems) {
+      builder.limit(maxItems);
+    }
+    return builder;
   },
 
-  async getTransactions() {
-    return this._selectTransactions();
+  async getTransactions(maxItems, searchTerm) {
+    return this._selectTransactions(undefined, maxItems, searchTerm);
   },
 
   async getTransaction(idTransaction) {

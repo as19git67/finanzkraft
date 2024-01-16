@@ -60,7 +60,6 @@ const schema = [
         precision: 12,
         scale: 2,
         "nullable": false,
-        "default": 0,
       },
       {
         "name": "closedAt",
