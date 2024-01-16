@@ -20,11 +20,17 @@ const DbMixinTransactions = {
       if (idTransaction !== undefined) {
         builder.where({id: idTransaction});
       }
-      if (idTransaction === undefined && searchTerm) {
+    })
+    .andWhere((builder) => {
+      if (searchTerm) {
         builder.whereLike('Fk_Transaction.text', `%${searchTerm}%`);
-      }
-      if (idTransaction !== undefined && searchTerm) {
-        builder.andWhereLike('Fk_Transaction.text', `%${searchTerm}%`);
+        builder.orWhereLike('Fk_Transaction.notes', `%${searchTerm}%`);
+        builder.orWhereLike('Fk_Category.fullName', `%${searchTerm}%`);
+        const amount = parseFloat(searchTerm);
+        if (amount) {
+          builder.orWhere('Fk_Transaction.amount', amount);
+          builder.orWhere('Fk_Transaction.amount', amount * -1);
+        }
       }
     })
     .orderBy('Fk_Transaction.valueDate', 'desc')
