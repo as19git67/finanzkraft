@@ -5,10 +5,13 @@ const DbMixinTransactions = {
     return 'DbMixinTransactions';
   },
 
-  _selectTransactions: function (idTransaction, maxItems, searchTerm) {
+  _selectTransactions: function (idTransaction, maxItems, searchTerm, accountsWhereIn) {
     const builder = this.knex.table('Fk_Transaction')
     .join('Fk_Account', function () {
       this.on('Fk_Transaction.idAccount', '=', 'Fk_Account.id');
+      if (accountsWhereIn && _.isArray(accountsWhereIn) && accountsWhereIn.length > 0) {
+        this.andOnIn('Fk_Account.id', accountsWhereIn);
+      }
     })
     .join('Fk_Currency', function () {
       this.on('Fk_Account.idCurrency', '=', 'Fk_Currency.id');
@@ -46,8 +49,8 @@ const DbMixinTransactions = {
     return builder;
   },
 
-  async getTransactions(maxItems, searchTerm) {
-    return this._selectTransactions(undefined, maxItems, searchTerm);
+  async getTransactions(maxItems, searchTerm, accountsWhereIn) {
+    return this._selectTransactions(undefined, maxItems, searchTerm, accountsWhereIn);
   },
 
   async getTransaction(idTransaction) {

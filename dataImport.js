@@ -21,7 +21,7 @@ export default async function importData(db, importFilename) {
   console.log(`Imported ${Object.keys(data.accounts).length} accounts`);
 
   console.log(`Importing ${Object.keys(data.transactions).length} transactions...`);
-  const maxTr = 5000;
+  const maxTr = 15000;
   let cnt = 0;
   for (const tr of data.transactions) {
     if (cnt > maxTr) break;
