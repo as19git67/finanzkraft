@@ -55,7 +55,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 const asExpress = new AsExpress('finanzkraft', app);
 new Promise(async (resolve, reject) => {
   await asExpress.init({
-    dbSchema: dbSchema,
+    dbSchemas: [dbSchema],
     dbMixins: [dbMixinAccounts, dbMixinTransactions, dbMixinCategories],
     dbImporter: [di],
     permissions: permissions,

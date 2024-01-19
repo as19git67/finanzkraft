@@ -26,9 +26,13 @@ const DbMixinTransactions = {
     })
     .andWhere((builder) => {
       if (searchTerm) {
-        builder.whereLike('Fk_Transaction.text', `%${searchTerm}%`);
-        builder.orWhereLike('Fk_Transaction.notes', `%${searchTerm}%`);
-        builder.orWhereLike('Fk_Category.fullName', `%${searchTerm}%`);
+        if (_.isString(searchTerm)) {
+          const trimmedSearchTerm = searchTerm.trim();
+          builder.whereLike('Fk_Transaction.text', `%${trimmedSearchTerm}%`);
+          builder.orWhereLike('Fk_Transaction.notes', `%${trimmedSearchTerm}%`);
+          builder.orWhereLike('Fk_Transaction.payee', `%${trimmedSearchTerm}%`);
+          builder.orWhereLike('Fk_Category.fullName', `%${trimmedSearchTerm}%`);
+        }
         const amount = parseFloat(searchTerm);
         if (amount) {
           builder.orWhere('Fk_Transaction.amount', amount);
