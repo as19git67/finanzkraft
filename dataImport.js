@@ -3,6 +3,12 @@ import fs from 'fs';
 import { DateTime } from 'luxon';
 
 export default async function importData(db, importFilename) {
+  const result = await db.getAccounts();
+  if (result.length > 0) {
+    console.log('Database has already data stored. Skip importing initial data.');
+    return;
+  }
+
   const data = yaml.load(fs.readFileSync(importFilename, 'utf8'));
 
   console.log('Importing accounts...');
