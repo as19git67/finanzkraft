@@ -78,7 +78,7 @@ const DbMixinTransactions = {
   },
 
   async deleteAccount(idTransaction) {
-    return this.knex.table('Fk_Transaction').whereIn('id', idTransaction).delete();
+    return this.knex.table('Fk_Transaction').where('id', idTransaction).delete();
   },
 
 };

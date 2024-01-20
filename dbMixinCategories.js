@@ -124,7 +124,7 @@ const DbMixinCategories = {
   },
 
   async deleteCategory(idCategory) {
-    return this.knex.table('Fk_Category').whereIn('id', idCategory).delete();
+    return this.knex.table('Fk_Category').where('id', idCategory).delete();
   },
 
 };

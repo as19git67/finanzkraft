@@ -1,5 +1,5 @@
 const schema = {
-  version: 1,
+  version: 3,
   name: 'finanzkraft',
   tables: [
     {
@@ -24,6 +24,62 @@ const schema = {
       "values": [
         {id: "EUR", name: "Euro", short: "€"},
         {id: "USD", name: "Dollar", short: "$"},
+      ]
+    },
+    {
+      "tableName": "Fk_Timespan",
+      "columns": [
+        {
+          "name": "id",
+          "type": "autoincrement",
+          "primary_key": true,
+        },
+        {
+          "name": "name",
+          "type": "string",
+        },
+        {
+          "name": "fromRuleNo",
+          "type": "integer",
+        },
+        {
+          "name": "fromRuleAttribute",
+          "type": "string",
+        },
+        {
+          "name": "toRuleNo",
+          "type": "integer",
+        },
+        {
+          "name": "toRuleAttribute",
+          "type": "string",
+        },
+        {
+          "name": "order",
+          "type": "integer",
+          "unique": true,
+          "nullable": false,
+        },
+      ],
+      indexes: [
+        {
+          name: 'IDX_Timespan_order',
+          columns: ['order'],
+          unique: true,
+        },
+      ],
+      "values": [
+        {name: "ohne Einschränkung", fromRuleNo: 0, order: 0},
+        {name: "vergangene 1 Monate", fromRuleNo: 1, fromRuleAttribute: "1", order: 1},
+        {name: "vergangene 3 Monate", fromRuleNo: 1, fromRuleAttribute: "3", order: 2},
+        {name: "vergangene 6 Monate", fromRuleNo: 1, fromRuleAttribute: "6", order: 3},
+        {name: "vergangene 12 Monate", fromRuleNo: 1, fromRuleAttribute: "12", order: 4},
+        {name: "vergangene 24 Monate", fromRuleNo: 1, fromRuleAttribute: "24", order: 5},
+        {name: "dieses Jahr", fromRuleNo: 2, order: 6},
+        {name: "letztes Jahr", fromRuleNo: 3, order: 7},
+        {name: "2022", fromRuleNo: 4, fromRuleAttribute: "2022", order: 8},
+        {name: "2021", fromRuleNo: 4, fromRuleAttribute: "2021", order: 9},
+        {name: "2020", fromRuleNo: 4, fromRuleAttribute: "2020", order: 10},
       ]
     },
     {
