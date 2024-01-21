@@ -1,4 +1,34 @@
 const permissions = {
+  timesapans_list_read: {
+    description: "Zeitspannen (Datumsfilter) anzeigen",
+    resources: ["/api/timespans"],
+    permissions: ["get"],
+    menus: ["admin.timespans"]
+  },
+  timesapans_create: {
+    description: "Neue Zeitspanne (Datumsfilter) anlegen",
+    resources: ["/api/timespans"],
+    permissions: ["put"],
+    menus: ["admin.timespans", "admin.timespan"]
+  },
+  timesapans_read: {
+    description: "Zeitspanne (Datumsfilter) anzeigen",
+    resources: ["/api/timespans/:id"],
+    permissions: ["get"],
+    menus: ["admin.timespan"]
+  },
+  timesapans_update: {
+    description: "Zeitspanne (Datumsfilter) ändern",
+    resources: ["/api/timespans/:id"],
+    permissions: ["get", "post"],
+    menus: ["admin.timespans"]
+  },
+  timesapans_delete: {
+    description: "Zeitspanne (Datumsfilter) löschen",
+    resources: ["/api/timespans/:id"],
+    permissions: ["delete"],
+    menus: ["admin.timespan"]
+  },
   accounts_list_read: {
     description: "Konten anzeigen",
     resources: ["/api/accounts"],

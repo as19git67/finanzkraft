@@ -1,5 +1,5 @@
 const schema = {
-  version: 3,
+  version: 4,
   name: 'finanzkraft',
   tables: [
     {
