@@ -5,7 +5,7 @@ const DbMixinTransactions = {
     return 'DbMixinTransactions';
   },
 
-  _selectTransactions: function (idTransaction, maxItems, searchTerm, accountsWhereIn) {
+  _selectTransactions: function (idTransaction, maxItems, searchTerm, accountsWhereIn, dateFilterFrom, dateFilterTo) {
     const builder = this.knex.table('Fk_Transaction')
     .join('Fk_Account', function () {
       this.on('Fk_Transaction.idAccount', '=', 'Fk_Account.id');
@@ -40,6 +40,14 @@ const DbMixinTransactions = {
         }
       }
     })
+    .andWhere((builder) => {
+      if (dateFilterFrom) {
+        builder.where('valueDate', '>=', dateFilterFrom);
+      }
+      if (dateFilterTo) {
+        builder.andWhere('valueDate', '<=', dateFilterTo);
+      }
+    })
     .orderBy('Fk_Transaction.valueDate', 'desc')
     .select([
       'Fk_Account.id as account_id', 'Fk_Account.name as account_name', 'Fk_Transaction.id as t_id',
@@ -53,8 +61,8 @@ const DbMixinTransactions = {
     return builder;
   },
 
-  async getTransactions(maxItems, searchTerm, accountsWhereIn) {
-    return this._selectTransactions(undefined, maxItems, searchTerm, accountsWhereIn);
+  async getTransactions(maxItems, searchTerm, accountsWhereIn, dateFilterFrom, dateFilterTo) {
+    return this._selectTransactions(undefined, maxItems, searchTerm, accountsWhereIn, dateFilterFrom, dateFilterTo);
   },
 
   async getTransaction(idTransaction) {

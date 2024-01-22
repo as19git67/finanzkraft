@@ -5,7 +5,9 @@ export default new AsRouteConfig().get('/', function (req, res, next) {
   const maxItems = req.query.maxItems;
   const searchTerm = req.query.searchTerm;
   const accountsWhereIn = req.query.accountsWhereIn;
-  db.getTransactions(maxItems, searchTerm, accountsWhereIn).then((transactions) => {
+  const dateFilterFrom = req.query.dateFilterFrom;
+  const dateFilterTo = req.query.dateFilterTo;
+  db.getTransactions(maxItems, searchTerm, accountsWhereIn, dateFilterFrom, dateFilterTo).then((transactions) => {
     res.json(transactions);
   }).catch((reason) => {
     console.log(reason);
