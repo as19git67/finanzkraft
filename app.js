@@ -112,7 +112,7 @@ new Promise(async (resolve, reject) => {
   });
 
   asExpress.addRouter("/api/accounts", accountsRouter);
-  asExpress.addRouter("/api/transactions", transactionsRouter);
+  asExpress.addRouter("/api/transaction", transactionsRouter);
   asExpress.addRouter("/api/timespans", timespanRouter);
 
   // const router = express.Router();
