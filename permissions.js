@@ -6,7 +6,7 @@ const permissions = {
     menus: ["admin.timespans"]
   },
   timesapans_create: {
-    description: "Neue Zeitspanne (Datumsfilter) anlegen",
+    description: "Zeitspanne (Datumsfilter) neu anlegen",
     resources: ["/api/timespans"],
     methods: ["put"],
     menus: ["admin.timespans", "admin.timespan"]
@@ -36,7 +36,7 @@ const permissions = {
     menus: ["admin.accounts"]
   },
   account_create: {
-    description: "Neues Konto anlegen",
+    description: "Konto neu anlegen",
     resources: ["/api/accounts"],
     methods: ["put"],
     menus: ["admin.accounts", "admin.account"]
@@ -61,12 +61,12 @@ const permissions = {
   },
   transaction_list_read: {
     description: "Transaktionsliste anzeigen",
-    resources: ["/api/transaction"],
+    resources: ["/api/accounts", "/api/transaction"],
     methods: ["get"],
     menus: ["admin.transactions"]
   },
   transaction_create: {
-    description: "Neue Transaktion anlegen",
+    description: "Transaktion neu anlegen",
     resources: ["/api/transaction"],
     methods: ["put"],
     menus: ["admin.transactions", "admin.transaction"]
