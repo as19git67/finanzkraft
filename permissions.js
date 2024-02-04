@@ -61,9 +61,15 @@ const permissions = {
   },
   transaction_list_read: {
     description: "Transaktionsliste anzeigen",
-    resources: ["/api/accounts", "/api/transaction"],
+    resources: ["/api/accounts", "/api/transaction", "/api/accounts/:id/transactions"],
     methods: ["get"],
     menus: ["admin.transactions"]
+  },
+  transaction_upload: {
+    description: "Transaktionen hochladen (fints)",
+    resources: ["/api/accounts/:id/transactions"],
+    methods: ["get", "post"],
+    menus: ["admin.upload.transactions"]
   },
   transaction_create: {
     description: "Transaktion neu anlegen",

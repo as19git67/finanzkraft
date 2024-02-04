@@ -1,5 +1,5 @@
 const schema = {
-  version: 5,
+  version: 8,
   name: 'finanzkraft',
   tables: [
     {
@@ -221,7 +221,28 @@ const schema = {
           "nullable": true,
         },
         {
+          "name": "payeePayerAcctNo",
+          "type": "string",
+          "nullable": true,
+        },
+        {
           "name": "idCategory",
+          "type": "integer",
+          "nullable": true,
+        },
+        {
+          "name": "entryText",
+          "type": "string",
+          "nullable": true,
+        },
+        {
+          "name": "gvCode",
+          "type": "string",
+          "length": 4,
+          "nullable": true,
+        },
+        {
+          "name": "primaNotaNo",
           "type": "integer",
           "nullable": true,
         },
@@ -237,6 +258,84 @@ const schema = {
           "name": "FK_idCategory__Fk_Category_id",
           "columns": ["idCategory"],
           "foreign_table": "Fk_Category",
+          "foreign_columns": ["id"],
+        },
+      ],
+    },
+    {
+      "tableName": "Fk_TransactionStatus",
+      "columns": [
+        {
+          "name": "idTransaction",
+          "type": "integer",
+          "nullable": false,
+        },
+        {
+          "name": "idUser",
+          "type": "integer",
+          "nullable": false,
+        },
+        {
+          "name": "confirmed",
+          "type": "boolean",
+          "nullable": false,
+        },
+      ],
+      indexes: [
+        {
+          name: 'IDX_idTransaction_idUser_confirmed',
+          columns: ['idTransaction', 'idUser', 'confirmed'],
+          unique: true,
+        },
+      ],
+      "foreign_keys": [
+        {
+          "name": "FK_idTransaction__Fk_Transaction_id",
+          "columns": ["idTransaction"],
+          "foreign_table": "Fk_Transaction",
+          "foreign_columns": ["id"],
+        },
+        {
+          "name": "FK_Fk_TransactionStatus_idUser__Users_id",
+          "columns": ["idUser"],
+          "foreign_table": "Users",
+          "foreign_columns": ["id"],
+        },
+      ],
+    },
+    {
+      "tableName": "Fk_AccountBalance",
+      "columns": [
+        {
+          "name": "idAccount",
+          "type": "integer",
+          "nullable": false,
+        },
+        {
+          "name": "balanceDate",
+          "type": "dateTime",
+          "nullable": false,
+        },
+        {
+          "name": "balance",
+          "type": "decimal",
+          precision: 12,
+          scale: 2,
+          "nullable": false,
+        },
+      ],
+      indexes: [
+        {
+          name: 'IDX_idAccount_balanceDate',
+          columns: ['idAccount', 'balanceDate'],
+          unique: true,
+        },
+      ],
+      "foreign_keys": [
+        {
+          "name": "FK_Fk_AccountBalance_idAccount__Fk_Account_id",
+          "columns": ["idAccount"],
+          "foreign_table": "Fk_Account",
           "foreign_columns": ["id"],
         },
       ],

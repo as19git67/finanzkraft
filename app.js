@@ -12,6 +12,7 @@ import permissions from './permissions.js';
 import dbSchema from './dbSchema.js';
 import accountsRouter from './routes/accounts.js';
 import transactionsRouter from './routes/transactions.js';
+import transactionsOfAccountRouter from './routes/transactionsOfAccount.js';
 import timespanRouter from './routes/timespans.js';
 import dbMixinAccounts from "./dbMixinAccounts.js";
 import dbMixinTransactions from "./dbMixinTransactions.js";
@@ -111,6 +112,7 @@ new Promise(async (resolve, reject) => {
     }
   });
 
+  asExpress.addRouter("/api/accounts", transactionsOfAccountRouter);
   asExpress.addRouter("/api/accounts", accountsRouter);
   asExpress.addRouter("/api/transaction", transactionsRouter);
   asExpress.addRouter("/api/timespans", timespanRouter);

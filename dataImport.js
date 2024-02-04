@@ -1,6 +1,5 @@
 import yaml from 'js-yaml';
 import fs from 'fs';
-import { DateTime } from 'luxon';
 
 export default async function importData(db, importFilename) {
   const result = await db.getAccounts();
@@ -39,6 +38,9 @@ export default async function importData(db, importFilename) {
       amount: tr.t_amount,
       text: tr.t_text,
       payee: tr.payee,
+      entryText: tr.t_type,
+      primaNotaNo: tr.t_prima_nota_no,
+      gvCode: tr.t_zka_tr_code,
       idCategory: idCategory,
     });
     cnt++;

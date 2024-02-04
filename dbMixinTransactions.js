@@ -76,6 +76,17 @@ const DbMixinTransactions = {
     return this.knex('Fk_Transaction').insert(transactionData).returning('id');
   },
 
+  async addTransactions(transactions) {
+    return this.knex.transaction(async (trx) => {
+      let inserts = [];
+      if (transactions.length > 0) {
+        inserts = await trx('Fk_Transaction').insert(transactions).returning('*');
+        console.log(`Inserted ${inserts.length} transactions`);
+      }
+      return inserts;
+    });
+  },
+
   async updateTransaction(idTransaction, data) {
     const result = await this.knex.select().table('Fk_Transaction').where({id: idTransaction});
     if (result.length !== 1) {
