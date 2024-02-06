@@ -1,5 +1,5 @@
 const schema = {
-  version: 8,
+  version: 9,
   name: 'finanzkraft',
   tables: [
     {
@@ -245,6 +245,11 @@ const schema = {
           "name": "primaNotaNo",
           "type": "integer",
           "nullable": true,
+        },
+        {
+          "name": "processed",
+          "type": "boolean",
+          "nullable": false,
         },
       ],
       "foreign_keys": [

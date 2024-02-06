@@ -41,6 +41,7 @@ export default async function importData(db, importFilename) {
       entryText: tr.t_type,
       primaNotaNo: tr.t_prima_nota_no,
       gvCode: tr.t_zka_tr_code,
+      processed: true,
       idCategory: idCategory,
     });
     cnt++;

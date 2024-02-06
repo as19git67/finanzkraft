@@ -72,15 +72,52 @@ const DbMixinTransactions = {
     return this._selectTransactions(idTransaction);
   },
 
+  // Convert empty values to undefined for having null in DB
+  _fixTransactionData: function (t) {
+    const tRet = t;
+    if (t.processed === undefined) {
+      tRet.processed = false;
+    }
+    if (_.isString(t.text) && t.text.trim().length === 0) {
+      tRet.text = undefined;
+    }
+    if (_.isString(t.payee) && t.payee.trim().length === 0) {
+      tRet.payee = undefined;
+    }
+    if (_.isString(t.payeePayerAcctNo) && t.payeePayerAcctNo.trim().length === 0) {
+      tRet.payeePayerAcctNo = undefined;
+    }
+    if (_.isString(t.entryText) && t.entryText.trim().length === 0) {
+      tRet.entryText = undefined;
+    }
+    if (_.isString(t.gvCode) && t.gvCode.trim().length === 0) {
+      tRet.gvCode = undefined;
+    }
+    if (t.primaNotaNo !== undefined) {
+      if (_.isString(t.primaNotaNo) && t.primaNotaNo.trim().length === 0) {
+        tRet.primaNotaNo = undefined;
+      } else {
+        if (parseInt(t.primaNotaNo) === 0) {
+          tRet.primaNotaNo = undefined;
+        }
+      }
+    }
+    return tRet;
+  },
+
   async addTransaction(transactionData) {
-    return this.knex('Fk_Transaction').insert(transactionData).returning('id');
+    const fixedTransactionData = this._fixTransactionData(transactionData);
+    return this.knex('Fk_Transaction').insert(fixedTransactionData).returning('id');
   },
 
   async addTransactions(transactions) {
+    const trToInsert = transactions.map((t) => {
+      return this._fixTransactionData(t);
+    });
     return this.knex.transaction(async (trx) => {
       let inserts = [];
-      if (transactions.length > 0) {
-        inserts = await trx('Fk_Transaction').insert(transactions).returning('*');
+      if (trToInsert.length > 0) {
+        inserts = await trx('Fk_Transaction').insert(trToInsert).returning('*');
         console.log(`Inserted ${inserts.length} transactions`);
       }
       return inserts;
@@ -92,8 +129,10 @@ const DbMixinTransactions = {
     if (result.length !== 1) {
       throw new Error(`Transaction with id ${idTransaction} does not exist`);
     }
-    const updateData = _.pick(data, 'idAccount', 'bookingDate', 'valueDate', 'amount', 'amountCurrency', 'text', 'notes', 'idCategory');
-    return this.knex.table('Fk_Transaction').where('id', idTransaction).update(updateData);
+    const updateData = _.pick(data, 'idAccount', 'bookingDate', 'valueDate', 'amount', 'text', 'notes', 'idCategory',
+      'payee', 'entryText', 'gvCode', 'primaNotaNo', 'payeePayerAcctNo');
+    const fixedUpdateData = this._fixTransactionData(updateData);
+    return this.knex.table('Fk_Transaction').where('id', idTransaction).update(fixedUpdateData);
   },
 
   async deleteAccount(idTransaction) {
