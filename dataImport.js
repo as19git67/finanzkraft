@@ -16,7 +16,7 @@ export default async function importData(db, importFilename) {
     const id = await db.addAccount({
       name: account.name,
       iban: account.iban,
-      number: account.number,
+      number: account.number === '0' ? undefined : account.number,
       idCurrency: account.idCurrency,
       startBalance: account.startBalance,
       closedAt: account.closedAt,
