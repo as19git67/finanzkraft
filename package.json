@@ -1,6 +1,6 @@
 {
   "name": "finanzkraft",
-  "version": "1.0.23",
+  "version": "1.0.24",
   "description": "Finanzkraft server and Docker image",
   "type": "module",
   "scripts": {
