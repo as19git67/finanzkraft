@@ -61,8 +61,34 @@ rc.post(async function (req, res, next) {
     const from = DateTime.fromISO(tr.valueDate).minus({days: 5}).toISO();
     const to = DateTime.fromISO(tr.valueDate).plus({days: 2}).toISO();
     const savedTr = await db.getTransactions(10, tr.text, [tr.idAccount], from, to);
+    // search transaction in saved transactions and add the new transaction only if it was not found
     const filteredTransactions = savedTr.filter((sTr) => {
-      return tr.text?.trim() === sTr.t_text?.trim() && tr.amount === sTr.t_amount;
+      if (tr.text && tr.text.trim()) {
+        if (tr.text.trim() !== sTr.t_text?.trim()) {
+          return false;
+        }
+      }
+      if (tr.entryText && tr.entryText.trim()) {
+        if (tr.entryText.trim() !== sTr.entryText?.trim()) {
+          return false;
+        }
+      }
+      if (tr.payeePayerAcctNo && tr.payeePayerAcctNo.trim()) {
+        if (tr.payeePayerAcctNo.trim() !== sTr.payeePayerAcctNo?.trim()) {
+          return false;
+        }
+      }
+      if (tr.gvCode && tr.gvCode.trim()) {
+        if (tr.gvCode.trim() !== sTr.gvCode?.trim()) {
+          return false;
+        }
+      }
+      if (tr.primaNotaNo) {
+        if (tr.primaNotaNo !== sTr.primaNotaNo) {
+          return false;
+        }
+      }
+      return tr.amount === sTr.t_amount;
     });
     if (filteredTransactions.length === 0) {
       transactionsToSave.push(tr);
