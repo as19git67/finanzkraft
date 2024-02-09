@@ -21,7 +21,7 @@ const DbMixinTransactions = {
     })
     .where((builder) => {
       if (idTransaction !== undefined) {
-        builder.where({id: idTransaction});
+        builder.where({'Fk_Transaction.id': idTransaction});
       }
     })
     .andWhere((builder) => {
@@ -68,9 +68,14 @@ const DbMixinTransactions = {
 
   async getTransaction(idTransaction) {
     if (!idTransaction) {
-      throw new Error('Undefined idTransaction');
+      throw new Error('Undefined idTransaction', { cause: 'unknown' });
     }
-    return this._selectTransactions(idTransaction);
+    const results = await this._selectTransactions(idTransaction);
+    if (results.length > 0) {
+      return results[0];
+    } else {
+      throw new Error(`Transaction with id ${idTransaction} does not exist`, { cause: 'unknown' });
+    }
   },
 
   // Convert empty values to undefined for having null in DB
@@ -128,7 +133,7 @@ const DbMixinTransactions = {
   async updateTransaction(idTransaction, data) {
     const result = await this.knex.select().table('Fk_Transaction').where({id: idTransaction});
     if (result.length !== 1) {
-      throw new Error(`Transaction with id ${idTransaction} does not exist`);
+      throw new Error(`Transaction with id ${idTransaction} does not exist`, { cause: 'unknown' });
     }
     const updateData = _.pick(data, 'idAccount', 'bookingDate', 'valueDate', 'amount', 'text', 'notes', 'idCategory',
       'payee', 'entryText', 'gvCode', 'primaNotaNo', 'payeePayerAcctNo');

@@ -11,6 +11,7 @@ import {AsExpress} from 'as-express';
 import permissions from './permissions.js';
 import dbSchema from './dbSchema.js';
 import accountsRouter from './routes/accounts.js';
+import transactionRouter from './routes/transaction.js';
 import transactionsRouter from './routes/transactions.js';
 import transactionsOfAccountRouter from './routes/transactionsOfAccount.js';
 import timespanRouter from './routes/timespans.js';
@@ -114,6 +115,7 @@ new Promise(async (resolve, reject) => {
 
   asExpress.addRouter("/api/accounts", transactionsOfAccountRouter);
   asExpress.addRouter("/api/accounts", accountsRouter);
+  asExpress.addRouter("/api/transaction", transactionRouter);
   asExpress.addRouter("/api/transaction", transactionsRouter);
   asExpress.addRouter("/api/timespans", timespanRouter);
 

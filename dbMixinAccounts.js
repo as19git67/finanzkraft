@@ -28,7 +28,7 @@ const DbMixinAccounts = {
 
   async getAccount(idAccount) {
     if (!idAccount) {
-      throw new Error('Undefined idAccount');
+      throw new Error('Undefined idAccount', { cause: 'unknown' });
     }
     return this.knex.select().table('Fk_Account').where({id: idAccount});
   },
@@ -36,7 +36,7 @@ const DbMixinAccounts = {
   async updateAccount(idAccount, data) {
     const result = await this.knex.select().table('Fk_Account').where({id: idAccount});
     if (result.length !== 1) {
-      throw new Error(`Account with id ${idAccount} does not exist`);
+      throw new Error(`Account with id ${idAccount} does not exist`, { cause: 'unknown' });
     }
     const updateData = {};
     if (data.name) {
