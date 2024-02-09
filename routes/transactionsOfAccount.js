@@ -69,22 +69,24 @@ rc.post(async function (req, res, next) {
         }
       }
       if (tr.entryText && tr.entryText.trim()) {
-        if (tr.entryText.trim() !== sTr.entryText?.trim()) {
+        if (tr.entryText.trim() !== sTr.t_entry_text?.trim()) {
           return false;
         }
       }
       if (tr.payeePayerAcctNo && tr.payeePayerAcctNo.trim()) {
-        if (tr.payeePayerAcctNo.trim() !== sTr.payeePayerAcctNo?.trim()) {
+        if (tr.payeePayerAcctNo.trim() !== sTr.t_payeePayerAcctNo?.trim()) {
           return false;
         }
       }
       if (tr.gvCode && tr.gvCode.trim()) {
-        if (tr.gvCode.trim() !== sTr.gvCode?.trim()) {
+        if (tr.gvCode.trim() !== sTr.t_gvCode?.trim()) {
           return false;
         }
       }
-      if (tr.primaNotaNo) {
-        if (tr.primaNotaNo !== sTr.primaNotaNo) {
+      if (tr.primaNotaNo && sTr.t_primaNotaNo) {
+        const trPN = parseInt(tr.primaNotaNo);
+        const sTrPN = parseInt(sTr.t_primaNotaNo);
+        if (trPN !== undefined && sTrPN !== undefined && trPN !== sTrPN) {
           return false;
         }
       }

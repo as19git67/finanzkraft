@@ -53,8 +53,10 @@ const DbMixinTransactions = {
       'Fk_Account.id as account_id', 'Fk_Account.name as account_name', 'Fk_Transaction.id as t_id',
       'Fk_Transaction.bookingDate as t_booking_date', 'Fk_Transaction.valueDate as t_value_date',
       'Fk_Transaction.text as t_text', 'Fk_Transaction.entryText as t_entry_text', 'Fk_Transaction.amount as t_amount',
-      'Fk_Transaction.notes as t_notes', 'Fk_Transaction.payee as t_payee', 'Fk_Transaction.processed as t_processed',
-      'Fk_Category.id as category_id', 'Fk_Category.fullName as category_name', 'Fk_Currency.id as currency_id',
+      'Fk_Transaction.notes as t_notes', 'Fk_Transaction.payee as t_payee', 'Fk_Transaction.primaNotaNo as t_primaNotaNo',
+      'Fk_Transaction.payeePayerAcctNo as t_payeePayerAcctNo', 'Fk_Transaction.gvCode as t_gvCode',
+      'Fk_Transaction.processed as t_processed', 'Fk_Category.id as category_id',
+      'Fk_Category.fullName as category_name', 'Fk_Currency.id as currency_id',
       'Fk_Currency.name as currency_name', 'Fk_Currency.short as currency_short']);
     if (maxItems) {
       builder.limit(maxItems);
