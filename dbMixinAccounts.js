@@ -1,5 +1,3 @@
-import _ from 'lodash';
-
 const DbMixinAccounts = {
   getMixinName() {
     return 'DbMixinAccounts';

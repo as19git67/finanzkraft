@@ -137,13 +137,27 @@ const DbMixinTransactions = {
     if (result.length !== 1) {
       throw new Error(`Transaction with id ${idTransaction} does not exist`, { cause: 'unknown' });
     }
-    const updateData = _.pick(data, 'idAccount', 'bookingDate', 'valueDate', 'amount', 'text', 'notes', 'idCategory',
-      'payee', 'entryText', 'gvCode', 'primaNotaNo', 'payeePayerAcctNo');
+    const updateData = _.omitBy({
+      bookingDate: data.t_booking_date,
+      valueDate: data.t_value_date,
+      text: data.t_text,
+      entryText: data.t_entry_text,
+      amount: data.t_amount,
+      notes: data.t_notes,
+      payee: data.t_payee,
+      primaNotaNo: data.t_primaNotaNo,
+      payeePayerAcctNo: data.t_payeePayerAcctNo,
+      gvCode: data.t_gvCode,
+      processed: data.t_processed,
+      idCategory: data.category_id,
+      idAccount: data.account_id,
+    }, _.isUndefined);
+
     const fixedUpdateData = this._fixTransactionData(updateData);
     return this.knex.table('Fk_Transaction').where('id', idTransaction).update(fixedUpdateData);
   },
 
-  async deleteAccount(idTransaction) {
+  async deleteTransaction(idTransaction) {
     return this.knex.table('Fk_Transaction').where('id', idTransaction).delete();
   },
 
