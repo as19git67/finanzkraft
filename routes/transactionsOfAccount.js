@@ -10,7 +10,8 @@ rc.get(function (req, res, next) {
   const accountsWhereIn = [req.params.id];
   const dateFilterFrom = undefined;
   const dateFilterTo = undefined;
-  db.getTransactions(maxItems, searchTerm, accountsWhereIn, dateFilterFrom, dateFilterTo).then((transactions) => {
+  const idUser = req.user.id;
+  db.getTransactions(maxItems, searchTerm, accountsWhereIn, dateFilterFrom, dateFilterTo, idUser).then((transactions) => {
     res.json(transactions);
   }).catch((reason) => {
     console.log(reason);

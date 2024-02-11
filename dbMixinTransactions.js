@@ -5,7 +5,19 @@ const DbMixinTransactions = {
     return 'DbMixinTransactions';
   },
 
-  _selectTransactions: function (idTransaction, maxItems, searchTerm, accountsWhereIn, dateFilterFrom, dateFilterTo) {
+  _selectTransactions: function (idTransaction, maxItems, searchTerm, accountsWhereIn, dateFilterFrom, dateFilterTo, idUser) {
+    const columnsToSelect = [
+      'Fk_Account.id as account_id', 'Fk_Account.name as account_name', 'Fk_Transaction.id as t_id',
+      'Fk_Transaction.bookingDate as t_booking_date', 'Fk_Transaction.valueDate as t_value_date',
+      'Fk_Transaction.text as t_text', 'Fk_Transaction.entryText as t_entry_text', 'Fk_Transaction.amount as t_amount',
+      'Fk_Transaction.notes as t_notes', 'Fk_Transaction.payee as t_payee', 'Fk_Transaction.primaNotaNo as t_primaNotaNo',
+      'Fk_Transaction.payeePayerAcctNo as t_payeePayerAcctNo', 'Fk_Transaction.gvCode as t_gvCode',
+      'Fk_Transaction.processed as t_processed', 'Fk_Category.id as category_id',
+      'Fk_Category.fullName as category_name', 'Fk_Currency.id as currency_id',
+      'Fk_Currency.name as currency_name', 'Fk_Currency.short as currency_short'];
+    if (idUser) {
+      columnsToSelect.push('Fk_TransactionStatus.confirmed as confirmed');
+    }
     const builder = this.knex.table('Fk_Transaction')
     .join('Fk_Account', function () {
       this.on('Fk_Transaction.idAccount', '=', 'Fk_Account.id');
@@ -49,30 +61,28 @@ const DbMixinTransactions = {
       }
     })
     .orderBy('Fk_Transaction.valueDate', 'desc')
-    .select([
-      'Fk_Account.id as account_id', 'Fk_Account.name as account_name', 'Fk_Transaction.id as t_id',
-      'Fk_Transaction.bookingDate as t_booking_date', 'Fk_Transaction.valueDate as t_value_date',
-      'Fk_Transaction.text as t_text', 'Fk_Transaction.entryText as t_entry_text', 'Fk_Transaction.amount as t_amount',
-      'Fk_Transaction.notes as t_notes', 'Fk_Transaction.payee as t_payee', 'Fk_Transaction.primaNotaNo as t_primaNotaNo',
-      'Fk_Transaction.payeePayerAcctNo as t_payeePayerAcctNo', 'Fk_Transaction.gvCode as t_gvCode',
-      'Fk_Transaction.processed as t_processed', 'Fk_Category.id as category_id',
-      'Fk_Category.fullName as category_name', 'Fk_Currency.id as currency_id',
-      'Fk_Currency.name as currency_name', 'Fk_Currency.short as currency_short']);
+    .select(columnsToSelect);
     if (maxItems) {
       builder.limit(maxItems);
+    }
+    if (idUser !== undefined) {
+      builder.leftJoin('Fk_TransactionStatus', function () {
+        this.on('Fk_Transaction.id', '=', 'Fk_TransactionStatus.idTransaction');
+        this.andOn('Fk_TransactionStatus.idUser', '=', idUser);
+      });
     }
     return builder;
   },
 
-  async getTransactions(maxItems, searchTerm, accountsWhereIn, dateFilterFrom, dateFilterTo) {
-    return this._selectTransactions(undefined, maxItems, searchTerm, accountsWhereIn, dateFilterFrom, dateFilterTo);
+  async getTransactions(maxItems, searchTerm, accountsWhereIn, dateFilterFrom, dateFilterTo, idUser) {
+    return this._selectTransactions(undefined, maxItems, searchTerm, accountsWhereIn, dateFilterFrom, dateFilterTo, idUser);
   },
 
-  async getTransaction(idTransaction) {
+  async getTransaction(idTransaction, idUser) {
     if (!idTransaction) {
       throw new Error('Undefined idTransaction', { cause: 'unknown' });
     }
-    const results = await this._selectTransactions(idTransaction);
+    const results = await this._selectTransactions(idTransaction, undefined, undefined, undefined, undefined, undefined, idUser);
     if (results.length > 0) {
       return results[0];
     } else {
@@ -132,10 +142,15 @@ const DbMixinTransactions = {
     });
   },
 
-  async updateTransaction(idTransaction, data) {
+  async updateTransaction(idTransaction, data, idUser) {
     const result = await this.knex.select().table('Fk_Transaction').where({id: idTransaction});
     if (result.length !== 1) {
       throw new Error(`Transaction with id ${idTransaction} does not exist`, { cause: 'unknown' });
+    }
+    let confirmed;
+    if (idUser !== undefined && data.confirmed !== undefined) {
+      confirmed = data.confirmed;
+      delete data.confirmed;
     }
     const updateData = _.omitBy({
       bookingDate: data.t_booking_date,
@@ -153,8 +168,17 @@ const DbMixinTransactions = {
       idAccount: data.account_id,
     }, _.isUndefined);
 
-    const fixedUpdateData = this._fixTransactionData(updateData);
-    return this.knex.table('Fk_Transaction').where('id', idTransaction).update(fixedUpdateData);
+    if (confirmed !== undefined) {
+      const result = await this.knex.table('Fk_TransactionStatus').where('idTransaction', idTransaction).andWhere('idUser', idUser).update({'confirmed': confirmed}).returning('idTransaction');
+      if (result.length === 0 && confirmed) {
+        await this.knex.table('Fk_TransactionStatus').insert({idTransaction: idTransaction, idUser: idUser, confirmed: confirmed});
+      }
+    }
+
+    if (Object.keys(updateData).length > 0) {
+      const fixedUpdateData = this._fixTransactionData(updateData);
+      return this.knex.table('Fk_Transaction').where('id', idTransaction).update(fixedUpdateData);
+    }
   },
 
   async deleteTransaction(idTransaction) {
