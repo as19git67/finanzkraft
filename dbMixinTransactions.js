@@ -123,6 +123,83 @@ const DbMixinTransactions = {
     return tRet;
   },
 
+  async _runRules(trx, t) {
+    let tr = {...t};
+    const rules = await trx('Fk_RuleSet').select(['Fk_RuleSet.id as idRuleSet', 'Fk_RuleSet.name as ruleSetName',
+      'Fk_RuleSet.set_note as setNote', 'Fk_RuleSet.idSetCategory as setIdCategory',
+      'Fk_Rule.idAccount', 'Fk_Rule.entryText', 'Fk_Rule.text', 'Fk_Rule.payee', 'Fk_Rule.payeePayerAcctNo',
+      'Fk_Rule.gvCode',
+    ])
+    .join('Fk_Rule', function () {
+      this.on('Fk_RuleSet.id', '=', 'Fk_Rule.idRuleSet');
+    })
+    .where(function () {
+      this.where('Fk_Rule.idAccount', '=', tr.idAccount);
+      this.orWhere(function() {
+        this.whereNull('Fk_Rule.idAccount');
+      })
+    });
+    let matchingRule = undefined;
+    for (const rule of rules) {
+      if (rule.entryText) {
+        if (!t.entryText) {
+          continue;
+        }
+        const entryText = t.entryText.trim().toLowerCase();
+        if (entryText.indexOf(rule.entryText.trim().toLowerCase()) < 0) {
+          continue; // try next rule
+        }
+      }
+      if (rule.text) {
+        if (!t.text) {
+          continue;
+        }
+        const text = t.text.trim().toLowerCase();
+        if (text.indexOf(rule.text.trim().toLowerCase()) < 0) {
+          continue; // try next rule
+        }
+      }
+      if (rule.payee) {
+        if (!t.payee) {
+          continue;
+        }
+        const payee = t.payee.trim().toLowerCase();
+        if (payee.indexOf(rule.payee.trim().toLowerCase()) < 0) {
+          continue; // try next rule
+        }
+      }
+      if (rule.payeePayerAcctNo) {
+        if (!t.payeePayerAcctNo) {
+          continue;
+        }
+        const payeePayerAcctNo = t.payeePayerAcctNo.trim().toLowerCase();
+        if (payeePayerAcctNo.indexOf(rule.payeePayerAcctNo.trim().toLowerCase()) < 0) {
+          continue; // try next rule
+        }
+      }
+      if (rule.gvCode !== null) {
+        const gvCode = t.gvCode;
+        if (gvCode !== rule.gvCode) {
+          continue; // try next rule
+        }
+      }
+      matchingRule = rule;
+      break;  // skip other rules of set - one is enough
+    }
+    if (matchingRule) {
+      console.log(`rule set ${matchingRule.ruleSetName} matches`);
+      if (matchingRule.setNote) {
+        tr.notes = matchingRule.setNote;
+      }
+      if (matchingRule.setIdCategory) {
+        tr.idCategory = matchingRule.setIdCategory;
+      }
+      tr.idRuleSet = matchingRule.idRuleSet;
+    }
+    tr.processed = true;
+    return tr;
+  },
+
   async addTransaction(transactionData) {
     const fixedTransactionData = this._fixTransactionData(transactionData);
     return this.knex('Fk_Transaction').insert(fixedTransactionData).returning('id');
@@ -134,8 +211,12 @@ const DbMixinTransactions = {
     });
     return this.knex.transaction(async (trx) => {
       let inserts = [];
+      let processedRrToInsert = [];
       if (trToInsert.length > 0) {
-        inserts = await trx('Fk_Transaction').insert(trToInsert).returning('*');
+        for (const tr of trToInsert) {
+          processedRrToInsert.push(await this._runRules(trx, tr));
+        }
+        inserts = await trx('Fk_Transaction').insert(processedRrToInsert).returning('*');
         console.log(`Inserted ${inserts.length} transactions`);
       }
       return inserts;

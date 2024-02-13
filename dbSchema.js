@@ -1,5 +1,5 @@
 const schema = {
-  version: 9,
+  version: 10,
   name: 'finanzkraft',
   tables: [
     {
@@ -176,6 +176,113 @@ const schema = {
       ],
     },
     {
+      "tableName": "Fk_RuleSet",
+      "columns": [
+        {
+          "name": "id",
+          "type": "autoincrement",
+          "primary_key": true,
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "nullable": false,
+        },
+        {
+          "name": "set_note",
+          "type": "string",
+          "nullable": true,
+        },
+        {
+          "name": "idSetCategory",
+          "type": "integer",
+          "nullable": true,
+        },
+      ],
+      indexes: [
+        {
+          name: 'IDX_Fk_RuleSet_name',
+          columns: ['name'],
+          unique: true,
+        },
+      ],
+      "foreign_keys": [
+        {
+          "name": "FK_Fk_RuleSet__Fk_Category_id",
+          "columns": ["idSetCategory"],
+          "foreign_table": "Fk_Category",
+          "foreign_columns": ["id"],
+        },
+      ],
+    },
+    {
+      "tableName": "Fk_Rule",
+      "columns": [
+        {
+          "name": "id",
+          "type": "autoincrement",
+          "primary_key": true,
+        },
+        {
+          "name": "idRuleSet",
+          "type": "integer",
+          "nullable": false,
+        },
+        {
+          "name": "idAccount",
+          "type": "integer",
+          "nullable": true,
+        },
+        {
+          "name": "entryText",
+          "type": "string",
+          "nullable": true,
+        },
+        {
+          "name": "text",
+          "type": "string",
+          "nullable": true,
+        },
+        {
+          "name": "payee",
+          "type": "string",
+          "nullable": true,
+        },
+        {
+          "name": "payeePayerAcctNo",
+          "type": "string",
+          "nullable": true,
+        },
+        {
+          "name": "gvCode",
+          "type": "string",
+          "length": 4,
+          "nullable": true,
+        },
+      ],
+      indexes: [
+        {
+          name: 'IDX_Fk_Rule_idAccount',
+          columns: ['idAccount'],
+          unique: false,
+        },
+      ],
+      "foreign_keys": [
+        {
+          "name": "FK_Fk_Rule__Fk_Account_id",
+          "columns": ["idAccount"],
+          "foreign_table": "Fk_Account",
+          "foreign_columns": ["id"],
+        },
+        {
+          "name": "FK_Fk_Rule__Fk_RuleSet_id",
+          "columns": ["idRuleSet"],
+          "foreign_table": "Fk_RuleSet",
+          "foreign_columns": ["id"],
+        },
+      ],
+    },
+    {
       "tableName": "Fk_Transaction",
       "columns": [
         {
@@ -247,6 +354,11 @@ const schema = {
           "nullable": true,
         },
         {
+          "name": "idRuleSet",
+          "type": "integer",
+          "nullable": true,
+        },
+        {
           "name": "processed",
           "type": "boolean",
           "nullable": false,
@@ -263,6 +375,12 @@ const schema = {
           "name": "FK_idCategory__Fk_Category_id",
           "columns": ["idCategory"],
           "foreign_table": "Fk_Category",
+          "foreign_columns": ["id"],
+        },
+        {
+          "name": "FK_idRuleSet__Fk_RuleSet_id",
+          "columns": ["idRuleSet"],
+          "foreign_table": "Fk_RuleSet",
           "foreign_columns": ["id"],
         },
       ],
