@@ -177,12 +177,21 @@ const DbMixinTransactions = {
           continue; // try next rule
         }
       }
-      if (rule.gvCode !== null) {
-        const gvCode = t.gvCode;
-        if (gvCode !== rule.gvCode) {
+      if (rule.gvCode) {
+        if (!t.gvCode) {
+          continue;
+        }
+        const gvCode = t.gvCode.trim().toLowerCase();
+        if (gvCode.indexOf(rule.gvCode.trim().toLowerCase()) < 0) {
           continue; // try next rule
         }
       }
+      // if (rule.primaNotaNo !== null) {
+      //   const primaNotaNo = t.primaNotaNo;
+      //   if (primaNotaNo !== rule.primaNotaNo) {
+      //     continue; // try next rule
+      //   }
+      // }
       matchingRule = rule;
       break;  // skip other rules of set - one is enough
     }
