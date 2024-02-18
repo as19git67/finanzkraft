@@ -1,11 +1,13 @@
 import _ from 'lodash';
 
 const DbMixinTransactions = {
+  _maxTextToken: 20,
+
   getMixinName() {
     return 'DbMixinTransactions';
   },
 
-  _selectTransactions: function (idTransaction, maxItems, searchTerm, accountsWhereIn, dateFilterFrom, dateFilterTo, idUser) {
+  _selectTransactions: function (idTransaction, maxItems, searchTerm, accountsWhereIn, dateFilterFrom, dateFilterTo, idUser, textToken) {
     const columnsToSelect = [
       'Fk_Account.id as account_id', 'Fk_Account.name as account_name', 'Fk_Transaction.id as t_id',
       'Fk_Transaction.bookingDate as t_booking_date', 'Fk_Transaction.valueDate as t_value_date',
@@ -37,6 +39,11 @@ const DbMixinTransactions = {
       }
     })
     .andWhere((builder) => {
+      if (_.isArray(textToken)) {
+        _.take(textToken, this._maxTextToken).forEach(tt => {
+          builder.whereILike('Fk_Transaction.text', `%${tt}%`);
+        });
+      }
       if (searchTerm) {
         if (_.isString(searchTerm)) {
           const trimmedSearchTerm = searchTerm.trim();
@@ -74,8 +81,8 @@ const DbMixinTransactions = {
     return builder;
   },
 
-  async getTransactions(maxItems, searchTerm, accountsWhereIn, dateFilterFrom, dateFilterTo, idUser) {
-    return this._selectTransactions(undefined, maxItems, searchTerm, accountsWhereIn, dateFilterFrom, dateFilterTo, idUser);
+  async getTransactions(maxItems, searchTerm, accountsWhereIn, dateFilterFrom, dateFilterTo, idUser, textToken) {
+    return this._selectTransactions(undefined, maxItems, searchTerm, accountsWhereIn, dateFilterFrom, dateFilterTo, idUser, textToken);
   },
 
   async getTransaction(idTransaction, idUser) {

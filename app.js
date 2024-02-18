@@ -14,6 +14,7 @@ import accountsRouter from './routes/accounts.js';
 import transactionRouter from './routes/transaction.js';
 import transactionsRouter from './routes/transactions.js';
 import transactionsOfAccountRouter from './routes/transactionsOfAccount.js';
+import categoriesRouter from './routes/categories.js';
 import timespanRouter from './routes/timespans.js';
 import dbMixinAccounts from "./dbMixinAccounts.js";
 import dbMixinTransactions from "./dbMixinTransactions.js";
@@ -118,6 +119,7 @@ new Promise(async (resolve, reject) => {
   asExpress.addRouter("/api/transaction", transactionRouter);
   asExpress.addRouter("/api/transaction", transactionsRouter);
   asExpress.addRouter("/api/timespans", timespanRouter);
+  asExpress.addRouter("/api/category", categoriesRouter);
 
   // const router = express.Router();
   // const corsOptions = {

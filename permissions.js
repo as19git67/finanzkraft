@@ -1,4 +1,34 @@
 const permissions = {
+  category_list_read: {
+    description: "Kategorien anzeigen",
+    resources: ["/api/category"],
+    methods: ["get"],
+    menus: ["admin.categories"]
+  },
+  category_create: {
+    description: "Kategorie neu anlegen",
+    resources: ["/api/category"],
+    methods: ["put"],
+    menus: ["admin.categories", "admin.category"]
+  },
+  category_read: {
+    description: "Kategorie anzeigen",
+    resources: ["/api/category/:id"],
+    methods: ["get"],
+    menus: ["admin.category"]
+  },
+  category_update: {
+    description: "Kategorie ändern",
+    resources: ["/api/category/:id"],
+    methods: ["get", "post"],
+    menus: ["admin.category"]
+  },
+  category_delete: {
+    description: "Kategorie löschen",
+    resources: ["/api/category/:id"],
+    methods: ["delete"],
+    menus: ["admin.category"]
+  },
   timesapans_list_read: {
     description: "Zeitspannen (Datumsfilter) anzeigen",
     resources: ["/api/timespans"],

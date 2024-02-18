@@ -8,7 +8,9 @@ const rc = new AsRouteConfig('/').get(function (req, res, next) {
   const dateFilterFrom = req.query.dateFilterFrom;
   const dateFilterTo = req.query.dateFilterTo;
   const idUser = req.user.id;
-  db.getTransactions(maxItems, searchTerm, accountsWhereIn, dateFilterFrom, dateFilterTo, idUser).then((transactions) => {
+  const textToken = req.query.textToken;
+
+  db.getTransactions(maxItems, searchTerm, accountsWhereIn, dateFilterFrom, dateFilterTo, idUser, textToken).then((transactions) => {
     res.json(transactions);
   }).catch((reason) => {
     console.log(reason);

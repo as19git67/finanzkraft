@@ -7,7 +7,7 @@ const DbMixinCategories = {
 
   _selectCategories: function (idCategory) {
     return this.knex.table('Fk_Category')
-    .leftJoin('Fk_Category parentCat', function () {
+    .leftJoin('Fk_Category as parentCat', function () {
       this.on('parentCat.id', '=', 'Fk_Category.idCategoryParent');
     })
     .where((builder) => {
@@ -18,7 +18,7 @@ const DbMixinCategories = {
     )
     .orderBy('parentCat.name', 'asc')
     .orderBy('Fk_Category.name', 'asc')
-    .select(['parentCat.name as parent_category_name', 'Fk_Category.name as category_name']);
+    .select(['Fk_Category.id as id', 'parentCat.name as parent_name', 'Fk_Category.name as name', 'Fk_Category.fullName as full_name']);
   },
 
   async getCategories() {
