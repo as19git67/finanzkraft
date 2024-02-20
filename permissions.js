@@ -1,4 +1,34 @@
 const permissions = {
+  rule_list_read: {
+    description: "Regeln anzeigen",
+    resources: ["/api/rules"],
+    methods: ["get"],
+    menus: ["admin.rules"]
+  },
+  rule_create: {
+    description: "Regel neu anlegen",
+    resources: ["/api/rules"],
+    methods: ["put"],
+    menus: ["admin.rules", "admin.rule"]
+  },
+  rule_read: {
+    description: "Regel anzeigen",
+    resources: ["/api/rules/:id"],
+    methods: ["get"],
+    menus: ["admin.rule"]
+  },
+  rule_update: {
+    description: "Regel ändern",
+    resources: ["/api/rules/:id"],
+    methods: ["get", "post"],
+    menus: ["admin.rule"]
+  },
+  rule_delete: {
+    description: "Regel löschen",
+    resources: ["/api/rules/:id"],
+    methods: ["delete"],
+    menus: ["admin.rule"]
+  },
   category_list_read: {
     description: "Kategorien anzeigen",
     resources: ["/api/category"],

@@ -5,7 +5,7 @@ const DbMixinTimespan = {
     return 'DbMixinTimespan';
   },
 
-  _selectTimespans: function (idTimespan) {
+  _selectTimespans: async function (idTimespan) {
     return this.knex.table('Fk_Timespan')
     .where((builder) => {
         if (idTimespan !== undefined) {

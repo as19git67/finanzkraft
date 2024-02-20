@@ -132,6 +132,7 @@ const DbMixinTransactions = {
 
   async _runRules(trx, t) {
     let tr = {...t};
+/*
     const rules = await trx('Fk_RuleSet').select(['Fk_RuleSet.id as idRuleSet', 'Fk_RuleSet.name as ruleSetName',
       'Fk_RuleSet.set_note as setNote', 'Fk_RuleSet.idSetCategory as setIdCategory',
       'Fk_Rule.idAccount', 'Fk_Rule.entryText', 'Fk_Rule.text', 'Fk_Rule.payee', 'Fk_Rule.payeePayerAcctNo',
@@ -213,6 +214,7 @@ const DbMixinTransactions = {
       tr.idRuleSet = matchingRule.idRuleSet;
     }
     tr.processed = true;
+*/
     return tr;
   },
 

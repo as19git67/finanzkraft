@@ -1,5 +1,5 @@
 const schema = {
-  version: 10,
+  version: 11,
   name: 'finanzkraft',
   tables: [
     {
@@ -216,13 +216,8 @@ const schema = {
       ],
     },
     {
-      "tableName": "Fk_Rule",
+      "tableName": "Fk_RuleAccount",
       "columns": [
-        {
-          "name": "id",
-          "type": "autoincrement",
-          "primary_key": true,
-        },
         {
           "name": "idRuleSet",
           "type": "integer",
@@ -231,57 +226,132 @@ const schema = {
         {
           "name": "idAccount",
           "type": "integer",
-          "nullable": true,
-        },
-        {
-          "name": "entryText",
-          "type": "string",
-          "nullable": true,
-        },
-        {
-          "name": "text",
-          "type": "string",
-          "nullable": true,
-        },
-        {
-          "name": "payee",
-          "type": "string",
-          "nullable": true,
-        },
-        {
-          "name": "payeePayerAcctNo",
-          "type": "string",
-          "nullable": true,
-        },
-        {
-          "name": "gvCode",
-          "type": "string",
-          "length": 4,
-          "nullable": true,
+          "nullable": false,
         },
       ],
       indexes: [
         {
-          name: 'IDX_Fk_Rule_idAccount',
+          name: 'IDX_Fk_RuleAccount_idRuleSet_idAccount',
+          columns: ['idRuleSet', 'idAccount'],
+          unique: true,
+        },
+        {
+          name: 'IDX_Fk_RuleAccount_idAccount',
           columns: ['idAccount'],
           unique: false,
         },
       ],
       "foreign_keys": [
         {
-          "name": "FK_Fk_Rule__Fk_Account_id",
-          "columns": ["idAccount"],
-          "foreign_table": "Fk_Account",
-          "foreign_columns": ["id"],
-        },
-        {
-          "name": "FK_Fk_Rule__Fk_RuleSet_id",
+          "name": "FK_Fk_RuleAccount__Fk_RuleSet_id",
           "columns": ["idRuleSet"],
           "foreign_table": "Fk_RuleSet",
           "foreign_columns": ["id"],
         },
       ],
     },
+    {
+      "tableName": "Fk_RuleText",
+      "columns": [
+        {
+          "name": "idRuleSet",
+          "type": "integer",
+          "nullable": false,
+        },
+        {
+          "name": "text",
+          "type": "string",
+          "nullable": false,
+        },
+      ],
+      indexes: [
+        {
+          name: 'IDX_Fk_RuleText_idRuleSet_text',
+          columns: ['idRuleSet', 'text'],
+          unique: true,
+        },
+        {
+          name: 'IDX_Fk_RuleText_idRuleSet',
+          columns: ['idRuleSet'],
+          unique: false,
+        },
+      ],
+      "foreign_keys": [
+        {
+          "name": "FK_Fk_RuleText__Fk_RuleSet_id",
+          "columns": ["idRuleSet"],
+          "foreign_table": "Fk_RuleSet",
+          "foreign_columns": ["id"],
+        },
+      ],
+    },
+    // {
+    //   "tableName": "Fk_Rule",
+    //   "columns": [
+    //     {
+    //       "name": "id",
+    //       "type": "autoincrement",
+    //       "primary_key": true,
+    //     },
+    //     {
+    //       "name": "idRuleSet",
+    //       "type": "integer",
+    //       "nullable": false,
+    //     },
+    //     {
+    //       "name": "idAccount",
+    //       "type": "integer",
+    //       "nullable": true,
+    //     },
+    //     {
+    //       "name": "entryText",
+    //       "type": "string",
+    //       "nullable": true,
+    //     },
+    //     {
+    //       "name": "text",
+    //       "type": "string",
+    //       "nullable": true,
+    //     },
+    //     {
+    //       "name": "payee",
+    //       "type": "string",
+    //       "nullable": true,
+    //     },
+    //     {
+    //       "name": "payeePayerAcctNo",
+    //       "type": "string",
+    //       "nullable": true,
+    //     },
+    //     {
+    //       "name": "gvCode",
+    //       "type": "string",
+    //       "length": 4,
+    //       "nullable": true,
+    //     },
+    //   ],
+    //   indexes: [
+    //     {
+    //       name: 'IDX_Fk_Rule_idAccount',
+    //       columns: ['idAccount'],
+    //       unique: false,
+    //     },
+    //   ],
+    //   "foreign_keys": [
+    //     {
+    //       "name": "FK_Fk_Rule__Fk_Account_id",
+    //       "columns": ["idAccount"],
+    //       "foreign_table": "Fk_Account",
+    //       "foreign_columns": ["id"],
+    //     },
+    //     {
+    //       "name": "FK_Fk_Rule__Fk_RuleSet_id",
+    //       "columns": ["idRuleSet"],
+    //       "foreign_table": "Fk_RuleSet",
+    //       "foreign_columns": ["id"],
+    //     },
+    //   ],
+    // },
     {
       "tableName": "Fk_Transaction",
       "columns": [
