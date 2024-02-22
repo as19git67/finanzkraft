@@ -128,11 +128,12 @@ async function exportData() {
     's_kategorien.Name as cat_name',
     'zahlungsempfaenger.Name as payee',
     'accountbalance.Betrag as bal_saldo',
-
     )
   .rightJoin('transaction', function () {
     this.on('transaction.id_transaction', '=', 'transaction_split.id_transaction');
+    this.andOnNull('transaction.valid_end');
   })
+  .where('transaction.deleted', false)
   .leftJoin('accountbalance', function() {
     this.on('transaction.id_accountbalance', '=', 'accountbalance.id_balance');
   })
