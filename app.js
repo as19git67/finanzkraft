@@ -69,6 +69,16 @@ new Promise(async (resolve, reject) => {
     permissions: permissions,
   });
 
+  const result = await app.get('database').applyRules({idRuleSet: 5, minMatchRate: 80, includeProcessed: true});
+  console.log(`Matches: ${result.length}`);
+
+  if (result.length > 0) {
+    console.log('Erster Datensatz:')
+    for (const key in result[0]) {
+      console.log(`${key}: ${result[0][key]}`);
+    }
+  }
+
   app.use(function (req, res, next) {
     // disallow all php requests
     if (req.url.endsWith('.php')) {

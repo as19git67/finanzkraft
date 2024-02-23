@@ -7,6 +7,70 @@ const DbMixinTransactions = {
     return 'DbMixinTransactions';
   },
 
+  async applyRules(options) {
+    const o = options ? options : {};
+    const idRuleSet = o.idRuleSet;
+    const includeProcessed = o.includeProcessed;
+    const includeTransactionsWithRuleSet = o.includeTransactionsWithRuleSet;
+    const minMatchRate = o.minMatchRate ? o.minMatchRate : 100;
+    /*
+      select matches, RulesPerSet, (matches * 100/RulesPerSet) as matchRate, r.idRuleSet, r.id, tr.amount, tr.text
+        from Fk_Transaction tr
+        join (
+            SELECT count(RT.text) as matches, RT.idRuleSet, t.id
+                FROM Fk_transaction t
+                JOIN Fk_RuleText RT ON t.text LIKE '%' + RT.text + '%'
+                join Fk_Transaction tr on t.id = tr.id and t.processed = 'false' and t.idRuleSet is null
+            group by RT.idRuleSet, t.id
+        ) r on tr.id = r.id
+        join (
+            SELECT count(RT.text) as RulesPerSet, RT.idRuleSet
+            FROM Fk_RuleText RT
+            group by RT.idRuleSet
+        ) RTC on RTC.idRuleSet = r.idRuleSet
+     */
+    return this.knex.transaction(async (trx) => {
+      const builder = trx.select(['matches',
+          'RulesPerSet',
+          'r.idRuleSet', 'r.id',
+          'tr.amount', 'tr.text',
+        ]).select(trx.raw('(matches * 100/RulesPerSet) as matchRate'))
+        .table('Fk_Transaction as tr')
+        .join(
+          trx.count({matches: 'RT.text'}).select(['RT.idRuleSet', 't.id'])
+          .table('Fk_transaction as t')
+          .joinRaw("JOIN Fk_RuleText RT ON t.text LIKE '%' + RT.text + '%'").where(function() {
+            if (idRuleSet !== undefined) {
+              this.andWhere('RT.idRuleSet', idRuleSet);
+            }
+          })
+    //          this.on('t.text', 'like', "RT.text");
+          .join('Fk_Transaction as tr', function() {
+            this.on('t.id', '=', 'tr.id');
+          })
+          .groupBy([' RT.idRuleSet', 't.id']).as('r'), function() {
+           this.on('tr.id', '=', 'r.id');
+            if (!includeProcessed) {
+              this.andOnVal('tr.processed', false);
+            }
+            if (!includeTransactionsWithRuleSet) {
+              this.andOnNull('tr.idRuleSet');
+            }
+          }
+        )
+      .join(
+        trx.count({RulesPerSet: 'RT.text'}).select('RT.idRuleSet')
+        .table('Fk_RuleText as RT')
+        .groupBy('RT.idRuleSet').as('RTC'), function() {
+          this.on('RTC.idRuleSet', '=', 'r.idRuleSet');
+        }
+      )
+      .whereRaw('(matches * 100/RulesPerSet) >= ?', [minMatchRate]);
+
+      return builder;
+    });
+  },
+
   _selectTransactions: function (idTransaction, maxItems, searchTerm, accountsWhereIn, dateFilterFrom, dateFilterTo, idUser, textToken) {
     const columnsToSelect = [
       'Fk_Account.id as account_id', 'Fk_Account.name as account_name', 'Fk_Transaction.id as t_id',
