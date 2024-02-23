@@ -7,70 +7,6 @@ const DbMixinTransactions = {
     return 'DbMixinTransactions';
   },
 
-  async applyRules(options) {
-    const o = options ? options : {};
-    const idRuleSet = o.idRuleSet;
-    const includeProcessed = o.includeProcessed;
-    const includeTransactionsWithRuleSet = o.includeTransactionsWithRuleSet;
-    const minMatchRate = o.minMatchRate ? o.minMatchRate : 100;
-    /*
-      select matches, RulesPerSet, (matches * 100/RulesPerSet) as matchRate, r.idRuleSet, r.id, tr.amount, tr.text
-        from Fk_Transaction tr
-        join (
-            SELECT count(RT.text) as matches, RT.idRuleSet, t.id
-                FROM Fk_transaction t
-                JOIN Fk_RuleText RT ON t.text LIKE '%' + RT.text + '%'
-                join Fk_Transaction tr on t.id = tr.id and t.processed = 'false' and t.idRuleSet is null
-            group by RT.idRuleSet, t.id
-        ) r on tr.id = r.id
-        join (
-            SELECT count(RT.text) as RulesPerSet, RT.idRuleSet
-            FROM Fk_RuleText RT
-            group by RT.idRuleSet
-        ) RTC on RTC.idRuleSet = r.idRuleSet
-     */
-    return this.knex.transaction(async (trx) => {
-      const builder = trx.select(['matches',
-          'RulesPerSet',
-          'r.idRuleSet', 'r.id',
-          'tr.amount', 'tr.text',
-        ]).select(trx.raw('(matches * 100/RulesPerSet) as matchRate'))
-        .table('Fk_Transaction as tr')
-        .join(
-          trx.count({matches: 'RT.text'}).select(['RT.idRuleSet', 't.id'])
-          .table('Fk_transaction as t')
-          .joinRaw("JOIN Fk_RuleText RT ON t.text LIKE '%' + RT.text + '%'").where(function() {
-            if (idRuleSet !== undefined) {
-              this.andWhere('RT.idRuleSet', idRuleSet);
-            }
-          })
-    //          this.on('t.text', 'like', "RT.text");
-          .join('Fk_Transaction as tr', function() {
-            this.on('t.id', '=', 'tr.id');
-          })
-          .groupBy([' RT.idRuleSet', 't.id']).as('r'), function() {
-           this.on('tr.id', '=', 'r.id');
-            if (!includeProcessed) {
-              this.andOnVal('tr.processed', false);
-            }
-            if (!includeTransactionsWithRuleSet) {
-              this.andOnNull('tr.idRuleSet');
-            }
-          }
-        )
-      .join(
-        trx.count({RulesPerSet: 'RT.text'}).select('RT.idRuleSet')
-        .table('Fk_RuleText as RT')
-        .groupBy('RT.idRuleSet').as('RTC'), function() {
-          this.on('RTC.idRuleSet', '=', 'r.idRuleSet');
-        }
-      )
-      .whereRaw('(matches * 100/RulesPerSet) >= ?', [minMatchRate]);
-
-      return builder;
-    });
-  },
-
   _selectTransactions: function (idTransaction, maxItems, searchTerm, accountsWhereIn, dateFilterFrom, dateFilterTo, idUser, textToken) {
     const columnsToSelect = [
       'Fk_Account.id as account_id', 'Fk_Account.name as account_name', 'Fk_Transaction.id as t_id',
@@ -282,6 +218,104 @@ const DbMixinTransactions = {
     return tr;
   },
 
+
+  _applyRulesInTrx: async function (trx, idRuleSet, includeProcessed, includeTransactionsWithRuleSet, minMatchRate) {
+    /*
+    select matches, RulesPerSet, (matches * 100/RulesPerSet) as matchRate, r.idRuleSet, r.id, tr.amount, tr.text
+      from Fk_Transaction tr
+      join (
+          SELECT count(RT.text) as matches, RT.idRuleSet, t.id
+              FROM Fk_transaction t
+              JOIN Fk_RuleText RT ON t.text LIKE '%' + RT.text + '%'
+              join Fk_Transaction tr on t.id = tr.id and t.processed = 'false' and t.idRuleSet is null
+          group by RT.idRuleSet, t.id
+      ) r on tr.id = r.id
+      join (
+          SELECT count(RT.text) as RulesPerSet, RT.idRuleSet
+          FROM Fk_RuleText RT
+          group by RT.idRuleSet
+      ) RTC on RTC.idRuleSet = r.idRuleSet
+   */
+    const matchingTransactions = await trx.select(['matches',
+      'RulesPerSet',
+      'r.idRuleSet', 'r.idSetCategory', 'r.set_note', 'r.id',
+      'tr.amount', 'tr.text',
+    ]).select(trx.raw('(matches * 100/RulesPerSet) as matchRate'))
+      .table('Fk_Transaction as tr')
+      .join(
+        trx.count({matches: 'RT.text'}).select(['RT.idRuleSet', 'RS.idSetCategory', 'RS.set_note', 't.id'])
+          .table('Fk_transaction as t')
+          .joinRaw("JOIN Fk_RuleText RT ON t.text LIKE '%' + RT.text + '%'").where(function () {
+          if (idRuleSet !== undefined) {
+            this.andWhere('RT.idRuleSet', idRuleSet);
+          }
+        })
+          //          this.on('t.text', 'like', "RT.text");
+          .join('Fk_RuleSet as RS', function () {
+            this.on('RT.idRuleSet', '=', 'RS.id');
+          })
+          .join('Fk_Transaction as tr', function () {
+            this.on('t.id', '=', 'tr.id');
+          })
+          .groupBy([' RT.idRuleSet', 'RS.idSetCategory', 'RS.set_note', 't.id']).as('r'), function () {
+          this.on('tr.id', '=', 'r.id');
+          if (!includeProcessed) {
+            this.andOnVal('tr.processed', false);
+          }
+          if (!includeTransactionsWithRuleSet) {
+            this.andOnNull('tr.idRuleSet');
+          }
+        }
+      )
+      .join(
+        trx.count({RulesPerSet: 'RT.text'}).select('RT.idRuleSet')
+          .table('Fk_RuleText as RT')
+          .groupBy('RT.idRuleSet').as('RTC'), function () {
+          this.on('RTC.idRuleSet', '=', 'r.idRuleSet');
+        }
+      )
+      .whereRaw('(matches * 100/RulesPerSet) >= ?', [minMatchRate]);
+
+    for (const m of matchingTransactions) {
+      const updateData = {
+        processed: true,
+        idRuleSet: m.idRuleSet,
+      };
+      if (m.set_note) {
+        updateData.notes = m.set_note;
+      }
+      if (m.idSetCategory) {
+        updateData.idCategory = m.idSetCategory;
+      }
+      await trx.table('Fk_Transaction').where('id', m.id).update(updateData);
+      console.log(`Updated transaction ${m.id} with category: ${updateData.idCategory}, notes ${updateData.notes}`);
+    }
+    // if (matchingTransactions.length > 0) {
+    //   console.log('Erster Datensatz:')
+    //   for (const key in matchingTransactions[0]) {
+    //     console.log(`${key}: ${matchingTransactions[0][key]}`);
+    //   }
+    // }
+
+    return matchingTransactions;
+  },
+
+  async applyRules(options) {
+    const o = options ? options : {};
+    const trx = options.trx;
+    const idRuleSet = o.idRuleSet;
+    const includeProcessed = o.includeProcessed;
+    const includeTransactionsWithRuleSet = o.includeTransactionsWithRuleSet;
+    const minMatchRate = o.minMatchRate ? o.minMatchRate : 100;
+    if (trx) {
+      return await this._applyRulesInTrx(trx, idRuleSet, includeProcessed, includeTransactionsWithRuleSet, minMatchRate);
+    } else {
+      return this.knex.transaction(async (newTrx) => {
+        return await this._applyRulesInTrx(newTrx, idRuleSet, includeProcessed, includeTransactionsWithRuleSet, minMatchRate);
+      });
+    }
+  },
+
   async addTransaction(transactionData) {
     const fixedTransactionData = this._fixTransactionData(transactionData);
     return this.knex('Fk_Transaction').insert(fixedTransactionData).returning('id');
@@ -300,6 +334,7 @@ const DbMixinTransactions = {
         }
         inserts = await trx('Fk_Transaction').insert(processedRrToInsert).returning('*');
         console.log(`Inserted ${inserts.length} transactions`);
+        await this.applyRules({trx: trx, includeProcessed: false, includeTransactionsWithRuleSet: false});
       }
       return inserts;
     });
