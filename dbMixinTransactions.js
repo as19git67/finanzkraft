@@ -16,6 +16,7 @@ const DbMixinTransactions = {
       'Fk_Transaction.payeePayerAcctNo as t_payeePayerAcctNo', 'Fk_Transaction.gvCode as t_gvCode',
       'Fk_Transaction.processed as t_processed', 'Fk_Category.id as category_id',
       'Fk_Category.fullName as category_name', 'Fk_Currency.id as currency_id',
+      'Fk_Transaction.idRuleSet as rule_set_id', 'Fk_RuleSet.name as rule_set_name',
       'Fk_Currency.name as currency_name', 'Fk_Currency.short as currency_short'];
     if (idUser) {
       columnsToSelect.push('Fk_TransactionStatus.confirmed as confirmed');
@@ -32,6 +33,9 @@ const DbMixinTransactions = {
     })
     .leftJoin('Fk_Category', function () {
       this.on('Fk_Transaction.idCategory', '=', 'Fk_Category.id');
+    })
+    .leftJoin('Fk_RuleSet', function () {
+      this.on('Fk_Transaction.idRuleSet', '=', 'Fk_RuleSet.id');
     })
     .where((builder) => {
       if (idTransaction !== undefined) {
