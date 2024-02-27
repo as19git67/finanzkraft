@@ -134,6 +134,7 @@ async function exportData() {
     this.andOnNull('transaction.valid_end');
   })
   .where('transaction.deleted', false)
+    .andWhere('transaction.valid_end', null)
   .leftJoin('accountbalance', function() {
     this.on('transaction.id_accountbalance', '=', 'accountbalance.id_balance');
   })
