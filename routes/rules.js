@@ -2,6 +2,16 @@ import {AsRouteConfig} from 'as-express';
 
 const rc = new AsRouteConfig('/');
 
+rc.get(function (req, res, next) {
+  const db = req.app.get('database');
+  db.getRuleSets().then((ruleSets) => {
+    res.json(ruleSets);
+  }).catch((reason) => {
+    console.log(reason);
+    res.sendStatus(500);
+  });
+});
+
 rc.put(async (req, res, next) => {
   const ruleInfo = req.body;
   const db = req.app.get('database');
