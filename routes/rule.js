@@ -23,7 +23,7 @@ rc.post(function (req, res, next) {
     res.send(404);
     return;
   }
-  const {ruleInfo} = req.body;
+  const ruleInfo = req.body;
   ruleInfo.id = idRuleSet;
   const db = req.app.get('database');
   db.updateRuleSet(ruleInfo).then(() => {
