@@ -222,7 +222,6 @@ const DbMixinTransactions = {
     return tr;
   },
 
-
   _applyRulesInTrx: async function (trx, idRuleSet, includeProcessed, includeTransactionsWithRuleSet, minMatchRate) {
     /*
     select matches, RulesPerSet, (matches * 100/RulesPerSet) as matchRate, r.idRuleSet, r.id, tr.amount, tr.text
@@ -248,7 +247,7 @@ const DbMixinTransactions = {
       .table('Fk_Transaction as tr')
       .join(
         trx.count({matches: 'RT.text'}).select(['RT.idRuleSet', 'RS.idSetCategory', 'RS.set_note', 't.id'])
-          .table('Fk_transaction as t')
+          .table('Fk_Transaction as t')
           .joinRaw("JOIN Fk_RuleText RT ON t.text LIKE '%' + RT.text + '%'").where(function () {
           if (idRuleSet !== undefined) {
             this.andWhere('RT.idRuleSet', idRuleSet);

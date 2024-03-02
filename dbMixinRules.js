@@ -147,6 +147,7 @@ const DbMixinRules = {
 
       await trx.table('Fk_RuleText').where('idRuleSet', id).delete();
       await trx.table('Fk_RuleAccount').where('idRuleSet', id).delete();
+      await trx.table('Fk_Transaction').where('idRuleSet', id).update({ idRuleSet: null });
       await trx.table('Fk_RuleSet').where('id', id).delete();
     });
   }
