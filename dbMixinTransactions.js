@@ -45,16 +45,16 @@ const DbMixinTransactions = {
     .andWhere((builder) => {
       if (_.isArray(textToken)) {
         _.take(textToken, this._maxTextToken).forEach(tt => {
-          builder.whereILike('Fk_Transaction.text', `%${tt}%`);
+          builder.whereLike('Fk_Transaction.text', `%${tt}%`);
         });
       }
       if (searchTerm) {
         if (_.isString(searchTerm)) {
           const trimmedSearchTerm = searchTerm.trim();
-          builder.whereILike('Fk_Transaction.text', `%${trimmedSearchTerm}%`);
-          builder.orWhereILike('Fk_Transaction.notes', `%${trimmedSearchTerm}%`);
-          builder.orWhereILike('Fk_Transaction.payee', `%${trimmedSearchTerm}%`);
-          builder.orWhereILike('Fk_Category.fullName', `%${trimmedSearchTerm}%`);
+          builder.whereLike('Fk_Transaction.text', `%${trimmedSearchTerm}%`);
+          builder.orWhereLike('Fk_Transaction.notes', `%${trimmedSearchTerm}%`);
+          builder.orWhereLike('Fk_Transaction.payee', `%${trimmedSearchTerm}%`);
+          builder.orWhereLike('Fk_Category.fullName', `%${trimmedSearchTerm}%`);
         }
         const amount = parseFloat(searchTerm);
         if (amount) {

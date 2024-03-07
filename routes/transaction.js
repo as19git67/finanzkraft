@@ -24,7 +24,7 @@ rc.post((req, res, next) => {
     return;
   }
   const db = req.app.get('database');
-  const updateData = _.pick(req.body, 'idAccount', 't_booking_date', 't_value_date', 't_amount', 't_text', 't_notes', 'idCategory',
+  const updateData = _.pick(req.body, 'idAccount', 't_booking_date', 't_value_date', 't_amount', 't_text', 't_notes', 'category_id',
     't_payee', 't_entry_text', 't_gvCode', 't_primaNotaNo', 't_payeePayerAcctNo', 't_processed', 'confirmed');
   if (Object.keys(updateData).length === 0) {
     console.log('Ignoring empty update of transaction');
