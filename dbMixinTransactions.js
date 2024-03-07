@@ -45,16 +45,27 @@ const DbMixinTransactions = {
     .andWhere((builder) => {
       if (_.isArray(textToken)) {
         _.take(textToken, this._maxTextToken).forEach(tt => {
-          builder.whereLike('Fk_Transaction.text', `%${tt}%`);
+          if (this.supportsILike()) {
+            builder.whereILike('Fk_Transaction.text', `%${tt}%`);
+          } else {
+            builder.whereLike('Fk_Transaction.text', `%${tt}%`);
+          }
         });
       }
       if (searchTerm) {
         if (_.isString(searchTerm)) {
           const trimmedSearchTerm = searchTerm.trim();
-          builder.whereLike('Fk_Transaction.text', `%${trimmedSearchTerm}%`);
-          builder.orWhereLike('Fk_Transaction.notes', `%${trimmedSearchTerm}%`);
-          builder.orWhereLike('Fk_Transaction.payee', `%${trimmedSearchTerm}%`);
-          builder.orWhereLike('Fk_Category.fullName', `%${trimmedSearchTerm}%`);
+          if (this.supportsILike()) {
+            builder.whereILike('Fk_Transaction.text', `%${trimmedSearchTerm}%`);
+            builder.orWhereILike('Fk_Transaction.notes', `%${trimmedSearchTerm}%`);
+            builder.orWhereILike('Fk_Transaction.payee', `%${trimmedSearchTerm}%`);
+            builder.orWhereILike('Fk_Category.fullName', `%${trimmedSearchTerm}%`);
+          } else {
+            builder.whereLike('Fk_Transaction.text', `%${trimmedSearchTerm}%`);
+            builder.orWhereLike('Fk_Transaction.notes', `%${trimmedSearchTerm}%`);
+            builder.orWhereLike('Fk_Transaction.payee', `%${trimmedSearchTerm}%`);
+            builder.orWhereLike('Fk_Category.fullName', `%${trimmedSearchTerm}%`);
+          }
         }
         const amount = parseFloat(searchTerm);
         if (amount) {
