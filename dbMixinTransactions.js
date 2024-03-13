@@ -102,13 +102,13 @@ const DbMixinTransactions = {
 
   async getTransaction(idTransaction, idUser) {
     if (!idTransaction) {
-      throw new Error('Undefined idTransaction', { cause: 'unknown' });
+      throw new Error('Undefined idTransaction', {cause: 'unknown'});
     }
     const results = await this._selectTransactions(idTransaction, undefined, undefined, undefined, undefined, undefined, idUser);
     if (results.length > 0) {
       return results[0];
     } else {
-      throw new Error(`Transaction with id ${idTransaction} does not exist`, { cause: 'unknown' });
+      throw new Error(`Transaction with id ${idTransaction} does not exist`, {cause: 'unknown'});
     }
   },
 
@@ -147,89 +147,89 @@ const DbMixinTransactions = {
 
   async _runRules(trx, t) {
     let tr = {...t};
-/*
-    const rules = await trx('Fk_RuleSet').select(['Fk_RuleSet.id as idRuleSet', 'Fk_RuleSet.name as ruleSetName',
-      'Fk_RuleSet.set_note as setNote', 'Fk_RuleSet.idSetCategory as setIdCategory',
-      'Fk_Rule.idAccount', 'Fk_Rule.entryText', 'Fk_Rule.text', 'Fk_Rule.payee', 'Fk_Rule.payeePayerAcctNo',
-      'Fk_Rule.gvCode',
-    ])
-    .join('Fk_Rule', function () {
-      this.on('Fk_RuleSet.id', '=', 'Fk_Rule.idRuleSet');
-    })
-    .where(function () {
-      this.where('Fk_Rule.idAccount', '=', tr.idAccount);
-      this.orWhere(function() {
-        this.whereNull('Fk_Rule.idAccount');
-      })
-    });
-    let matchingRule = undefined;
-    for (const rule of rules) {
-      if (rule.entryText) {
-        if (!t.entryText) {
-          continue;
+    /*
+        const rules = await trx('Fk_RuleSet').select(['Fk_RuleSet.id as idRuleSet', 'Fk_RuleSet.name as ruleSetName',
+          'Fk_RuleSet.set_note as setNote', 'Fk_RuleSet.idSetCategory as setIdCategory',
+          'Fk_Rule.idAccount', 'Fk_Rule.entryText', 'Fk_Rule.text', 'Fk_Rule.payee', 'Fk_Rule.payeePayerAcctNo',
+          'Fk_Rule.gvCode',
+        ])
+        .join('Fk_Rule', function () {
+          this.on('Fk_RuleSet.id', '=', 'Fk_Rule.idRuleSet');
+        })
+        .where(function () {
+          this.where('Fk_Rule.idAccount', '=', tr.idAccount);
+          this.orWhere(function() {
+            this.whereNull('Fk_Rule.idAccount');
+          })
+        });
+        let matchingRule = undefined;
+        for (const rule of rules) {
+          if (rule.entryText) {
+            if (!t.entryText) {
+              continue;
+            }
+            const entryText = t.entryText.trim().toLowerCase();
+            if (entryText.indexOf(rule.entryText.trim().toLowerCase()) < 0) {
+              continue; // try next rule
+            }
+          }
+          if (rule.text) {
+            if (!t.text) {
+              continue;
+            }
+            const text = t.text.trim().toLowerCase();
+            if (text.indexOf(rule.text.trim().toLowerCase()) < 0) {
+              continue; // try next rule
+            }
+          }
+          if (rule.payee) {
+            if (!t.payee) {
+              continue;
+            }
+            const payee = t.payee.trim().toLowerCase();
+            if (payee.indexOf(rule.payee.trim().toLowerCase()) < 0) {
+              continue; // try next rule
+            }
+          }
+          if (rule.payeePayerAcctNo) {
+            if (!t.payeePayerAcctNo) {
+              continue;
+            }
+            const payeePayerAcctNo = t.payeePayerAcctNo.trim().toLowerCase();
+            if (payeePayerAcctNo.indexOf(rule.payeePayerAcctNo.trim().toLowerCase()) < 0) {
+              continue; // try next rule
+            }
+          }
+          if (rule.gvCode) {
+            if (!t.gvCode) {
+              continue;
+            }
+            const gvCode = t.gvCode.trim().toLowerCase();
+            if (gvCode.indexOf(rule.gvCode.trim().toLowerCase()) < 0) {
+              continue; // try next rule
+            }
+          }
+          // if (rule.primaNotaNo !== null) {
+          //   const primaNotaNo = t.primaNotaNo;
+          //   if (primaNotaNo !== rule.primaNotaNo) {
+          //     continue; // try next rule
+          //   }
+          // }
+          matchingRule = rule;
+          break;  // skip other rules of set - one is enough
         }
-        const entryText = t.entryText.trim().toLowerCase();
-        if (entryText.indexOf(rule.entryText.trim().toLowerCase()) < 0) {
-          continue; // try next rule
+        if (matchingRule) {
+          console.log(`rule set ${matchingRule.ruleSetName} matches`);
+          if (matchingRule.setNote) {
+            tr.notes = matchingRule.setNote;
+          }
+          if (matchingRule.setIdCategory) {
+            tr.idCategory = matchingRule.setIdCategory;
+          }
+          tr.idRuleSet = matchingRule.idRuleSet;
         }
-      }
-      if (rule.text) {
-        if (!t.text) {
-          continue;
-        }
-        const text = t.text.trim().toLowerCase();
-        if (text.indexOf(rule.text.trim().toLowerCase()) < 0) {
-          continue; // try next rule
-        }
-      }
-      if (rule.payee) {
-        if (!t.payee) {
-          continue;
-        }
-        const payee = t.payee.trim().toLowerCase();
-        if (payee.indexOf(rule.payee.trim().toLowerCase()) < 0) {
-          continue; // try next rule
-        }
-      }
-      if (rule.payeePayerAcctNo) {
-        if (!t.payeePayerAcctNo) {
-          continue;
-        }
-        const payeePayerAcctNo = t.payeePayerAcctNo.trim().toLowerCase();
-        if (payeePayerAcctNo.indexOf(rule.payeePayerAcctNo.trim().toLowerCase()) < 0) {
-          continue; // try next rule
-        }
-      }
-      if (rule.gvCode) {
-        if (!t.gvCode) {
-          continue;
-        }
-        const gvCode = t.gvCode.trim().toLowerCase();
-        if (gvCode.indexOf(rule.gvCode.trim().toLowerCase()) < 0) {
-          continue; // try next rule
-        }
-      }
-      // if (rule.primaNotaNo !== null) {
-      //   const primaNotaNo = t.primaNotaNo;
-      //   if (primaNotaNo !== rule.primaNotaNo) {
-      //     continue; // try next rule
-      //   }
-      // }
-      matchingRule = rule;
-      break;  // skip other rules of set - one is enough
-    }
-    if (matchingRule) {
-      console.log(`rule set ${matchingRule.ruleSetName} matches`);
-      if (matchingRule.setNote) {
-        tr.notes = matchingRule.setNote;
-      }
-      if (matchingRule.setIdCategory) {
-        tr.idCategory = matchingRule.setIdCategory;
-      }
-      tr.idRuleSet = matchingRule.idRuleSet;
-    }
-    tr.processed = true;
-*/
+        tr.processed = true;
+    */
     return tr;
   },
 
@@ -250,45 +250,46 @@ const DbMixinTransactions = {
           group by RT.idRuleSet
       ) RTC on RTC.idRuleSet = r.idRuleSet
    */
+    const joinRaw = this.supportsILike() ? "JOIN Fk_RuleText RT ON t.text LIKE '%' + RT.text + '%'" : "JOIN Fk_RuleText RT ON t.text LIKE '%' || RT.text || '%'";
     const matchingTransactions = await trx.select(['matches',
       'RulesPerSet',
       'r.idRuleSet', 'r.idSetCategory', 'r.set_note', 'r.id',
       'tr.amount', 'tr.text',
     ]).select(trx.raw('(matches * 100/RulesPerSet) as matchRate'))
-      .table('Fk_Transaction as tr')
-      .join(
-        trx.count({matches: 'RT.text'}).select(['RT.idRuleSet', 'RS.idSetCategory', 'RS.set_note', 't.id'])
-          .table('Fk_Transaction as t')
-          .joinRaw("JOIN Fk_RuleText RT ON t.text LIKE '%' + RT.text + '%'").where(function () {
-          if (idRuleSet !== undefined) {
-            this.andWhere('RT.idRuleSet', idRuleSet);
-          }
-        })
-          //          this.on('t.text', 'like', "RT.text");
-          .join('Fk_RuleSet as RS', function () {
-            this.on('RT.idRuleSet', '=', 'RS.id');
-          })
-          .join('Fk_Transaction as tr', function () {
-            this.on('t.id', '=', 'tr.id');
-          })
-          .groupBy([' RT.idRuleSet', 'RS.idSetCategory', 'RS.set_note', 't.id']).as('r'), function () {
-          this.on('tr.id', '=', 'r.id');
-          if (!includeProcessed) {
-            this.andOnVal('tr.processed', false);
-          }
-          if (!includeTransactionsWithRuleSet) {
-            this.andOnNull('tr.idRuleSet');
-          }
+    .table('Fk_Transaction as tr')
+    .join(
+      trx.count({matches: 'RT.text'}).select(['RT.idRuleSet', 'RS.idSetCategory', 'RS.set_note', 't.id'])
+      .table('Fk_Transaction as t')
+      .joinRaw(joinRaw).where(function () {
+        if (idRuleSet !== undefined) {
+          this.andWhere('RT.idRuleSet', idRuleSet);
         }
-      )
-      .join(
-        trx.count({RulesPerSet: 'RT.text'}).select('RT.idRuleSet')
-          .table('Fk_RuleText as RT')
-          .groupBy('RT.idRuleSet').as('RTC'), function () {
-          this.on('RTC.idRuleSet', '=', 'r.idRuleSet');
+      })
+      //          this.on('t.text', 'like', "RT.text");
+      .join('Fk_RuleSet as RS', function () {
+        this.on('RT.idRuleSet', '=', 'RS.id');
+      })
+      .join('Fk_Transaction as tr', function () {
+        this.on('t.id', '=', 'tr.id');
+      })
+      .groupBy([' RT.idRuleSet', 'RS.idSetCategory', 'RS.set_note', 't.id']).as('r'), function () {
+        this.on('tr.id', '=', 'r.id');
+        if (!includeProcessed) {
+          this.andOnVal('tr.processed', false);
         }
-      )
-      .whereRaw('(matches * 100/RulesPerSet) >= ?', [minMatchRate]);
+        if (!includeTransactionsWithRuleSet) {
+          this.andOnNull('tr.idRuleSet');
+        }
+      }
+    )
+    .join(
+      trx.count({RulesPerSet: 'RT.text'}).select('RT.idRuleSet')
+      .table('Fk_RuleText as RT')
+      .groupBy('RT.idRuleSet').as('RTC'), function () {
+        this.on('RTC.idRuleSet', '=', 'r.idRuleSet');
+      }
+    )
+    .whereRaw('(matches * 100/RulesPerSet) >= ?', [minMatchRate]);
 
     for (const m of matchingTransactions) {
       const updateData = {
