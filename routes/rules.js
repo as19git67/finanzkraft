@@ -29,7 +29,11 @@ rc.put(async (req, res, next) => {
         break;
       default:
         console.error(error);
-        res.sendStatus(500);
+        if (error.message) {
+          res.send(500, error.message);
+        } else {
+          res.sendStatus(500);
+        }
     }
   }
 });
