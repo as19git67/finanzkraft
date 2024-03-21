@@ -1,5 +1,5 @@
 const schema = {
-  version: 11,
+  version: 12,
   name: 'finanzkraft',
   tables: [
     {
@@ -386,6 +386,54 @@ const schema = {
           "name": "text",
           "type": "text",
           "nullable": true,
+        },
+        {
+          "name": "EREF",
+          "type": "string",
+          "length": 15,
+          "nullable": true,
+        },
+        {
+          "name": "CRED",
+          "type": "string",
+          "length": 22,
+          "nullable": true,
+        },
+        {
+          "name": "MREF",
+          "type": "string",
+          "length": 22,
+          "nullable": true,
+        },
+        {
+          "name": "ABWA",
+          "type": "string",
+          "length": 22,
+          "nullable": true,
+        },
+        {
+          "name": "ABWE",
+          "type": "string",
+          "length": 22,
+          "nullable": true,
+        },
+        {
+          "name": "IBAN",
+          "type": "string",
+          "length": 22,
+          "nullable": true,
+        },
+        {
+          "name": "BIC",
+          "type": "string",
+          "length": 22,
+          "nullable": true,
+        },
+        {
+          "name": "ref",
+          "type": "string",
+          "nullable": true,
+          "length": 22,
         },
         {
           "name": "notes",

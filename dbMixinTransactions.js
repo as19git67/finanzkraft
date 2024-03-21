@@ -1,4 +1,5 @@
 import _ from 'lodash';
+import {referrerPolicy} from "helmet";
 
 const DbMixinTransactions = {
   _maxTextToken: 20,
@@ -7,11 +8,11 @@ const DbMixinTransactions = {
     return 'DbMixinTransactions';
   },
 
-  _selectTransactions: function (idTransaction, maxItems, searchTerm, accountsWhereIn, dateFilterFrom, dateFilterTo, idUser, textToken) {
+  _selectTransactions: function (idTransaction, maxItems, searchTerm, accountsWhereIn, dateFilterFrom, dateFilterTo, idUser, textToken, mandateRefToken) {
     const columnsToSelect = [
       'Fk_Account.id as account_id', 'Fk_Account.name as account_name', 'Fk_Transaction.id as t_id',
       'Fk_Transaction.bookingDate as t_booking_date', 'Fk_Transaction.valueDate as t_value_date',
-      'Fk_Transaction.text as t_text', 'Fk_Transaction.entryText as t_entry_text', 'Fk_Transaction.amount as t_amount',
+      'Fk_Transaction.text as t_text', 'Fk_Transaction.EREF as t_EREF', 'Fk_Transaction.CRED as t_CRED', 'Fk_Transaction.MREF as t_MREF', 'Fk_Transaction.entryText as t_entry_text', 'Fk_Transaction.amount as t_amount',
       'Fk_Transaction.notes as t_notes', 'Fk_Transaction.payee as t_payee', 'Fk_Transaction.primaNotaNo as t_primaNotaNo',
       'Fk_Transaction.payeePayerAcctNo as t_payeePayerAcctNo', 'Fk_Transaction.gvCode as t_gvCode',
       'Fk_Transaction.processed as t_processed', 'Fk_Category.id as category_id',
@@ -52,16 +53,29 @@ const DbMixinTransactions = {
           }
         });
       }
+      if (_.isString(mandateRefToken)) {
+        if (this.supportsILike()) {
+          builder.whereILike('Fk_Transaction.MREF', `%${mandateRefToken}%`);
+        } else {
+          builder.whereLike('Fk_Transaction.MREF', `%${mandateRefToken}%`);
+        }
+      }
       if (searchTerm) {
         if (_.isString(searchTerm)) {
           const trimmedSearchTerm = searchTerm.trim();
           if (this.supportsILike()) {
             builder.whereILike('Fk_Transaction.text', `%${trimmedSearchTerm}%`);
             builder.orWhereILike('Fk_Transaction.notes', `%${trimmedSearchTerm}%`);
+            builder.orWhereILike('Fk_Transaction.EREF', `%${trimmedSearchTerm}%`);
+            builder.orWhereILike('Fk_Transaction.CRED', `%${trimmedSearchTerm}%`);
+            builder.orWhereILike('Fk_Transaction.MREF', `%${trimmedSearchTerm}%`);
             builder.orWhereILike('Fk_Transaction.payee', `%${trimmedSearchTerm}%`);
             builder.orWhereILike('Fk_Category.fullName', `%${trimmedSearchTerm}%`);
           } else {
             builder.whereLike('Fk_Transaction.text', `%${trimmedSearchTerm}%`);
+            builder.orWhereLike('Fk_Transaction.EREF', `%${trimmedSearchTerm}%`);
+            builder.orWhereLike('Fk_Transaction.CRED', `%${trimmedSearchTerm}%`);
+            builder.orWhereLike('Fk_Transaction.MREF', `%${trimmedSearchTerm}%`);
             builder.orWhereLike('Fk_Transaction.notes', `%${trimmedSearchTerm}%`);
             builder.orWhereLike('Fk_Transaction.payee', `%${trimmedSearchTerm}%`);
             builder.orWhereLike('Fk_Category.fullName', `%${trimmedSearchTerm}%`);
@@ -96,8 +110,8 @@ const DbMixinTransactions = {
     return builder;
   },
 
-  async getTransactions(maxItems, searchTerm, accountsWhereIn, dateFilterFrom, dateFilterTo, idUser, textToken) {
-    return this._selectTransactions(undefined, maxItems, searchTerm, accountsWhereIn, dateFilterFrom, dateFilterTo, idUser, textToken);
+  async getTransactions(maxItems, searchTerm, accountsWhereIn, dateFilterFrom, dateFilterTo, idUser, textToken, mandateRefToken) {
+    return this._selectTransactions(undefined, maxItems, searchTerm, accountsWhereIn, dateFilterFrom, dateFilterTo, idUser, textToken, mandateRefToken);
   },
 
   async getTransaction(idTransaction, idUser) {
@@ -112,6 +126,34 @@ const DbMixinTransactions = {
     }
   },
 
+  _extractFromText: function (tRet, marker, property) {
+    let pos = tRet.text.lastIndexOf(marker);
+    if (pos >= 0) {
+      tRet[property] = tRet.text.substring(pos + marker.length).trim();
+      tRet.text = tRet.text.substring(0, pos).trim();
+    }
+  },
+
+  _parseText: function(parsed, text, markers, key) {
+    for (const marker of markers) {
+      let pos = text.lastIndexOf(marker);
+      if (pos >= 0) {
+        parsed.push({
+          pos: pos,
+          key: key,
+          keyLen: marker.length,
+        });
+        break;
+      }
+    }
+  },
+  
+  _eliminateSpaces: function(tRet, property) {
+    if (tRet[property]) {
+      tRet[property] = tRet[property].replace(/\s+/g, '');
+    }
+  },
+
   // Convert empty values to undefined for having null in DB
   _fixTransactionData: function (t) {
     const tRet = t;
@@ -120,6 +162,100 @@ const DbMixinTransactions = {
     }
     if (_.isString(t.text) && t.text.trim().length === 0) {
       tRet.text = undefined;
+    } else {
+      if (_.isString(tRet.text)) {
+        const parts = [];
+        this._parseText(parts, tRet.text, ['ABWE:', 'ABWE+'], 'ABWE');
+        this._parseText(parts, tRet.text, ['ABWA:', 'ABWE+'], 'ABWA');
+        this._parseText(parts, tRet.text, ['ANAM:'], 'ANAM');
+        this._parseText(parts, tRet.text, ['BIC:', 'BIC '], 'BIC');
+        this._parseText(parts, tRet.text, ['IBAN:', 'IBAN '], 'IBAN');
+        this._parseText(parts, tRet.text, ['Ref.'], 'REF');
+        this._parseText(parts, tRet.text, ['GLÄUBIGER-ID:', 'CRED:', 'CRED'], 'CRED');
+        this._parseText(parts, tRet.text, ['CORE / MANDATSREF.:', 'COR1 / MANDATSREF.:', 'MREF:', 'MREF '], 'MREF');
+        this._parseText(parts, tRet.text, ['SVWZ:'], 'SVWZ');
+        this._parseText(parts, tRet.text, ['END-TO-END-REF.:', 'EREF:', ' EREF '], 'EREF');
+        if (parts.length > 0) {
+          const sorted = parts.toSorted((a, b) => {
+            if (a.pos < b.pos) {
+              return 1;
+            }
+            if (a.pos > b.pos) {
+              return -1;
+            }
+            return 0;
+          });
+
+          for (const partInfo of sorted) {
+            let part = tRet.text.substring(partInfo.pos + partInfo.keyLen).trim();
+            switch (partInfo.key) {
+              case 'BIC':
+              case 'IBAN':
+              case 'CRED':
+              case 'MREF':
+                part = part.replace(/\s+/g, '');
+                tRet[partInfo.key] = part;
+                break;
+              case 'ANAM':
+                // ignore this, because it duplicates payee
+                break;
+              case 'EREF':
+              case 'ABWE':
+              case 'ABWA':
+                part = part.replace(/\s+/g, '');
+                if (part !== 'NICHT ANGEGEBEN' && part !== 'NOTPROVIDED') {
+                  // store only if not not-provided
+                  tRet[partInfo.key] = part;
+                }
+                break;
+              case 'SVWZ':
+                tRet[partInfo.key] = part;
+                break;
+              default:
+                tRet[partInfo.key] = part;
+            }
+
+            tRet.text = tRet.text.substring(0, partInfo.pos);
+          }
+          if (tRet.SVWZ) {
+            tRet.text = tRet.SVWZ + ' ' + tRet.text;  // insert SEPA Verwendungszweck at beginning of text
+            delete tRet.SVWZ;
+          }
+          tRet.text = tRet.text.trim();
+
+          // this._extractFromText(tRet, 'ABWE:', 'ABWE');
+          // this._extractFromText(tRet, 'ABWE+', 'ABWE');
+          // this._extractFromText(tRet, 'ABWA:', 'ABWA');
+          // this._extractFromText(tRet, 'ABWA', 'ABWA');
+          // this._extractFromText(tRet, 'ANAM:', 'ANAM');
+          // this._extractFromText(tRet, 'BIC:', 'BIC');
+          // this._eliminateSpaces(tRet, 'BIC');
+          // this._extractFromText(tRet, 'IBAN:', 'IBAN');
+          // this._extractFromText(tRet, 'IBAN', 'IBAN');
+          // this._eliminateSpaces(tRet, 'IBAN');
+          // this._extractFromText(tRet, 'Ref.', 'ref');
+          // this._extractFromText(tRet, 'GLÄUBIGER-ID:', 'CRED');
+          // this._extractFromText(tRet, 'CRED:', 'CRED');
+          // this._eliminateSpaces(tRet, 'CRED');
+          // this._extractFromText(tRet, 'COR1 / MANDATSREF.:', 'MREF');
+          // this._extractFromText(tRet, 'CORE / MANDATSREF.:', 'MREF');
+          // this._extractFromText(tRet, 'MREF:', 'MREF');
+          // this._eliminateSpaces(tRet, 'MREF');
+          // this._extractFromText(tRet, 'SVWZ:', 'SVWZ');
+          // this._extractFromText(tRet, 'END-TO-END-REF.:', 'EREF');
+          // this._extractFromText(tRet, 'EREF:', 'EREF');
+          // delete tRet.ANAM; // duplicates payee
+          // if (tRet.EREF === 'NICHT ANGEGEBEN' || tRet.EREF === 'NOTPROVIDED') {
+          //   delete tRet.EREF;
+          // }
+          // if (tRet.ABWE === 'NICHT ANGEGEBEN' || tRet.ABWE === 'NOTPROVIDED') {
+          //   delete tRet.ABWE;
+          // }
+          // if (tRet.ABWA === 'NICHT ANGEGEBEN' || tRet.ABWA === 'NOTPROVIDED') {
+          //   delete tRet.ABWA;
+          // }
+        }
+      }
     }
     if (_.isString(t.payee) && t.payee.trim().length === 0) {
       tRet.payee = undefined;

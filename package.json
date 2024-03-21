@@ -23,7 +23,6 @@
     "luxon": "^3.4.4",
     "morgan": "^1.10.0",
     "mssql": "^10.0.2",
-    "node-sass-middleware": "^1.1.0",
     "sqlite3": "^5.1.7"
   },
   "devDependencies": {
