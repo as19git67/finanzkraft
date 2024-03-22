@@ -8,7 +8,7 @@ const DbMixinTransactions = {
     return 'DbMixinTransactions';
   },
 
-  _selectTransactions: function (idTransaction, maxItems, searchTerm, accountsWhereIn, dateFilterFrom, dateFilterTo, idUser, textToken, mandateRefToken) {
+  _selectTransactions: function (idTransaction, maxItems, searchTerm, accountsWhereIn, dateFilterFrom, dateFilterTo, idUser, textToken, mRefToken) {
     const columnsToSelect = [
       'Fk_Account.id as account_id', 'Fk_Account.name as account_name', 'Fk_Transaction.id as t_id',
       'Fk_Transaction.bookingDate as t_booking_date', 'Fk_Transaction.valueDate as t_value_date',
@@ -53,11 +53,11 @@ const DbMixinTransactions = {
           }
         });
       }
-      if (_.isString(mandateRefToken)) {
+      if (_.isString(mRefToken)) {
         if (this.supportsILike()) {
-          builder.whereILike('Fk_Transaction.MREF', `%${mandateRefToken}%`);
+          builder.whereILike('Fk_Transaction.MREF', `%${mRefToken}%`);
         } else {
-          builder.whereLike('Fk_Transaction.MREF', `%${mandateRefToken}%`);
+          builder.whereLike('Fk_Transaction.MREF', `%${mRefToken}%`);
         }
       }
       if (searchTerm) {
@@ -110,8 +110,8 @@ const DbMixinTransactions = {
     return builder;
   },
 
-  async getTransactions(maxItems, searchTerm, accountsWhereIn, dateFilterFrom, dateFilterTo, idUser, textToken, mandateRefToken) {
-    return this._selectTransactions(undefined, maxItems, searchTerm, accountsWhereIn, dateFilterFrom, dateFilterTo, idUser, textToken, mandateRefToken);
+  async getTransactions(maxItems, searchTerm, accountsWhereIn, dateFilterFrom, dateFilterTo, idUser, textToken, mRefToken) {
+    return this._selectTransactions(undefined, maxItems, searchTerm, accountsWhereIn, dateFilterFrom, dateFilterTo, idUser, textToken, mRefToken);
   },
 
   async getTransaction(idTransaction, idUser) {

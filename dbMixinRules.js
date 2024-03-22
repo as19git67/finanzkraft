@@ -50,6 +50,9 @@ const DbMixinRules = {
       if (ruleInfo.idSetCategory !== undefined) {
         ruleSetInsertData.idSetCategory = ruleInfo.idSetCategory;
       }
+      if (ruleInfo.is_MREF !== undefined) {
+        ruleSetInsertData.is_MREF = ruleInfo.is_MREF;
+      }
       const result = await trx.table('Fk_RuleSet').insert(ruleSetInsertData).returning('id');
       const idRuleSet = result[0].id;
 
@@ -103,6 +106,13 @@ const DbMixinRules = {
       }
       if (ruleInfo.idSetCategory !== undefined) {
         ruleSetUpdateInfo.idSetCategory = ruleInfo.idSetCategory;
+      }
+      if (ruleInfo.is_MREF !== undefined) {
+        if (ruleInfo.is_MREF === '') {
+          ruleSetUpdateInfo.is_MREF = null;
+        } else {
+          ruleSetUpdateInfo.is_MREF = ruleInfo.is_MREF;
+        }
       }
       await trx.table('Fk_RuleSet').where('id', ruleInfo.id).update(ruleSetUpdateInfo);
 

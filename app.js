@@ -134,8 +134,19 @@ new Promise(async (resolve, reject) => {
 
   // error handler
   app.use(function (err, req, res, next) {
+    let status = err.status;
+    if (!status) {
+      switch (err.cause) {
+        case 'expired':
+          status = 403;
+          break;
+        default:
+          status = 500;
+      }
+    }
+    console.log(err.message);
     // set locals, only providing error in development
-    res.send(err.status, err.message);
+    res.status(status).send(err.message);
     // res.locals.message = err.message;
     // res.locals.error = req.app.get('env') === 'development' ? err : {};
     //

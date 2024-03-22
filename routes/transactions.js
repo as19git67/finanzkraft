@@ -11,8 +11,9 @@ rc.get(function (req, res, next) {
   const dateFilterTo = req.query.dateFilterTo;
   const idUser = req.user.id;
   const textToken = req.query.textToken;
+  const mRefToken = req.query.mRefToken;
 
-  db.getTransactions(maxItems, searchTerm, accountsWhereIn, dateFilterFrom, dateFilterTo, idUser, textToken).then((transactions) => {
+  db.getTransactions(maxItems, searchTerm, accountsWhereIn, dateFilterFrom, dateFilterTo, idUser, textToken, mRefToken).then((transactions) => {
     res.json(transactions);
   }).catch((reason) => {
     console.log(reason);

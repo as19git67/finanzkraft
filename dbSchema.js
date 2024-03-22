@@ -1,5 +1,5 @@
 const schema = {
-  version: 12,
+  version: 13,
   name: 'finanzkraft',
   tables: [
     {
@@ -196,6 +196,12 @@ const schema = {
         {
           "name": "idSetCategory",
           "type": "integer",
+          "nullable": true,
+        },
+        {
+          "name": "is_MREF",
+          "type": "string",
+          "length": 22,
           "nullable": true,
         },
       ],
