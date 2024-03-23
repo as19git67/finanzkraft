@@ -199,6 +199,20 @@ const schema = {
           "nullable": true,
         },
         {
+          "name": "is_amount_min",
+          "type": "decimal",
+          precision: 12,
+          scale: 2,
+          "nullable": true,
+        },
+        {
+          "name": "is_amount_max",
+          "type": "decimal",
+          precision: 12,
+          scale: 2,
+          "nullable": true,
+        },
+        {
           "name": "is_MREF",
           "type": "string",
           "length": 22,

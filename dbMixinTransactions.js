@@ -371,28 +371,83 @@ const DbMixinTransactions = {
 
   _applyRulesInTrx: async function (trx, idRuleSet, includeProcessed, includeTransactionsWithRuleSet, minMatchRate) {
     /*
-    select matches, RulesPerSet, (matches * 100/RulesPerSet) as matchRate, r.idRuleSet, r.id, tr.amount, tr.text
-      from Fk_Transaction tr
-      join (
-          SELECT count(RT.text) as matches, RT.idRuleSet, t.id
-              FROM Fk_transaction t
-              JOIN Fk_RuleText RT ON t.text LIKE '%' + RT.text + '%'
-              join Fk_Transaction tr on t.id = tr.id and t.processed = 'false' and t.idRuleSet is null
-          group by RT.idRuleSet, t.id
-      ) r on tr.id = r.id
-      join (
-          SELECT count(RT.text) as RulesPerSet, RT.idRuleSet
-          FROM Fk_RuleText RT
-          group by RT.idRuleSet
-      ) RTC on RTC.idRuleSet = r.idRuleSet
-   */
-    const joinRaw = this.supportsILike() ? "JOIN Fk_RuleText RT ON t.text LIKE '%' + RT.text + '%'" : "JOIN Fk_RuleText RT ON t.text LIKE '%' || RT.text || '%'";
-    const matchingTransactions = await trx.select(['matches',
-      'RulesPerSet',
-      'r.idRuleSet', 'r.idSetCategory', 'r.set_note', 'r.id',
-      'tr.amount', 'tr.text',
-    ]).select(trx.raw('(matches * 100/RulesPerSet) as matchRate'))
-    .table('Fk_Transaction as tr')
+        select t_id,
+             MREF,
+             idRuleSet,
+             RuleSetName,
+             idSetCategory,
+             set_note,
+             sum(matches)                            as sumMatches,
+             sum(RulesPerSet)                        as sumRulesPerSet,
+             (sum(matches) * 100 / sum(RulesPerSet)) as matchRate
+      from (select RS.id             as idRuleSet,
+                   RS.name           as RuleSetName,
+                   RS.idSetCategory,
+                   RS.set_note,
+                   Fk_Transaction.id as t_id,
+                   MREF,
+                   1                 as matches,
+                   1                 as RulesPerSet
+            from Fk_RuleSet as RS
+                     join Fk_Transaction on Fk_Transaction.MREF = RS.is_MREF
+            union
+            select r.idRuleSet as idRuleSet, r.RuleSetName as RuleSetName, r.idSetCategory, r.set_note, r.t_id as t_id, null as MREF, r.matches, RulesPerSet
+            from
+                (SELECT FRS.id as idRuleSet, FRS.name as RuleSetName, FRS.idSetCategory, FRS.set_note, t.id as t_id, null as MREF, count(RT.text) as matches
+                  FROM Fk_transaction t
+                           JOIN Fk_RuleText RT ON t.text LIKE '%' || RT.text || '%'
+                           join Fk_RuleSet FRS on t.idRuleSet = FRS.id
+                  group by RT.idRuleSet, t.id
+                  ) r
+            left join (SELECT count(RT.text) as RulesPerSet, RT.idRuleSet
+                       FROM Fk_RuleText RT
+                       group by RT.idRuleSet)
+                    RTC on RTC.idRuleSet = r.idRuleSet
+      ) u group by u.t_id
+     */
+    const joinRaw = this.supportsILike() ? "JOIN Fk_RuleText RT ON Fk_Transaction.text LIKE '%' + RT.text + '%'" : "JOIN Fk_RuleText RT ON Fk_Transaction.text LIKE '%' || RT.text || '%'";
+    const matchingTransactions = await trx.select(['t_id', 'MREF', 'idRuleSet', 'RuleSetName', 'idSetCategory', 'set_note'])
+    .select(trx.raw('sum(matches) as sumMatches, sum(RulesPerSet) as sumRulesPerSet, (sum(matches) * 100 / sum(RulesPerSet)) as matchRate'))
+    .table(
+      // subquery
+      trx.table('Fk_RuleSet as RS').select(
+        ['RS.id as idRuleSet', 'RS.name as RuleSetName', 'RS.idSetCategory', 'RS.set_note', 'Fk_Transaction.id as t_id', 'MREF']
+      ).select(trx.raw('1 as matches, 1 as RulesPerSet'))
+      .join('Fk_Transaction', function () {
+        this.on('Fk_Transaction.MREF', '=', 'RS.is_MREF');
+      })
+      .union(
+        trx.select(['r.idRuleSet as idRuleSet', 'r.RuleSetName as RuleSetName', 'r.idSetCategory', 'r.set_note', 'r.t_id as t_id', 'r.matches', 'RulesPerSet'])
+        .select(trx.raw('null as MREF'))
+        .table(
+          // subquery
+          trx.select('FRS.id as idRuleSet', 'FRS.name as RuleSetName', 'FRS.idSetCategory', 'FRS.set_note', 'Fk_Transaction.id as t_id')
+          .select(trx.raw('null as MREF')).count({matches: 'RT.text'})
+          .table('Fk_Transaction')
+          .joinRaw(joinRaw).where(function () {
+            if (idRuleSet !== undefined) {
+              this.andWhere('RT.idRuleSet', idRuleSet);
+            }
+          })
+          .join('Fk_RuleSet as FRS', function () {
+            this.on('Fk_Transaction.idRuleSet', '=', 'FRS.id');
+          })
+          .groupBy([' RT.idRuleSet', 'Fk_Transaction.id']).as('r')
+        )
+        .leftJoin(
+          trx.count({RulesPerSet: 'RT.text'}).select('RT.idRuleSet')
+          .table('Fk_RuleText as RT')
+          .groupBy('RT.idRuleSet').as('RTC'), function () {
+            this.on('RTC.idRuleSet', '=', 'r.idRuleSet');
+          }
+        ),
+      ).as('u')
+    )
+    .groupBy(['u.t_id']);
+
+
+/*
+  .table('Fk_Transaction as tr')
     .join(
       trx.count({matches: 'RT.text'}).select(['RT.idRuleSet', 'RS.idSetCategory', 'RS.set_note', 't.id'])
       .table('Fk_Transaction as t')
@@ -425,7 +480,12 @@ const DbMixinTransactions = {
         this.on('RTC.idRuleSet', '=', 'r.idRuleSet');
       }
     )
+    .join('Fk_RuleSet as FRS', function () {
+      this.on('FRS.id', '=', 'tr.idRuleSet');
+    })
     .whereRaw('(matches * 100/RulesPerSet) >= ?', [minMatchRate]);
+*/
+
 
     for (const m of matchingTransactions) {
       const updateData = {
@@ -438,8 +498,8 @@ const DbMixinTransactions = {
       if (m.idSetCategory) {
         updateData.idCategory = m.idSetCategory;
       }
-      await trx.table('Fk_Transaction').where('id', m.id).update(updateData);
-      console.log(`Updated transaction ${m.id} with category: ${updateData.idCategory}, notes ${updateData.notes}`);
+      await trx.table('Fk_Transaction').where('id', m.t_id).update(updateData);
+      console.log(`Updated transaction ${m.t_id} with category: ${updateData.idCategory}, notes ${updateData.notes}`);
     }
     // if (matchingTransactions.length > 0) {
     //   console.log('Erster Datensatz:')

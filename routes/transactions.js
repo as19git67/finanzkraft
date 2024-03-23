@@ -10,10 +10,12 @@ rc.get(function (req, res, next) {
   const dateFilterFrom = req.query.dateFilterFrom;
   const dateFilterTo = req.query.dateFilterTo;
   const idUser = req.user.id;
+  const amountMin = req.query.amountMin;
+  const amountMax = req.query.amountMax;
   const textToken = req.query.textToken;
   const mRefToken = req.query.mRefToken;
 
-  db.getTransactions(maxItems, searchTerm, accountsWhereIn, dateFilterFrom, dateFilterTo, idUser, textToken, mRefToken).then((transactions) => {
+  db.getTransactions(maxItems, searchTerm, accountsWhereIn, dateFilterFrom, dateFilterTo, idUser, amountMin, amountMax, textToken, mRefToken).then((transactions) => {
     res.json(transactions);
   }).catch((reason) => {
     console.log(reason);
