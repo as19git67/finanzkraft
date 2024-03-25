@@ -29,7 +29,7 @@ rc.post(async function (req, res, next) {
   const db = req.app.get('database');
 
   try {
-    await db.updateRuleSet(ruleInfo);
+    await db.updateRuleSet(ruleInfo, true);
     console.log(`RuleSet with idRuleSet ${idRuleSet} updated in DB`);
     await db.applyRules({idRuleSet: idRuleSet, includeProcessed: includeProcessed, includeTransactionsWithRuleSet: true});
     console.log(`RuleSet applied to transactions`);

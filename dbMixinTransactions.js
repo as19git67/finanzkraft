@@ -420,17 +420,17 @@ const DbMixinTransactions = {
         // subquery
         trx.table('Fk_RuleSet as RS').select(
           ['RS.id as idRuleSet', 'RS.name as RuleSetName', 'RS.idSetCategory', 'RS.set_note', 'Fk_Transaction.id as t_id']
-        ).select(trx.raw('1 as matches, 1 as RulesPerSet')).select('MREF')
+        ).select(trx.raw('1 as matches, 1 as RulesPerSet')).select('MREF', 'processed')
           .join('Fk_Transaction', function () {
             this.on('Fk_Transaction.MREF', '=', 'RS.is_MREF');
           })
           .union(
             trx.select(['r.idRuleSet as idRuleSet', 'r.RuleSetName as RuleSetName', 'r.idSetCategory', 'r.set_note', 'r.t_id as t_id', 'r.matches', 'RTC.RulesPerSet'])
-              .select(trx.raw('null as MREF'))
+              .select(trx.raw('null as MREF')).select('r.processed')
               .table(
                 // subquery
                 trx.select('FRS.id as idRuleSet', 'FRS.name as RuleSetName', 'FRS.idSetCategory', 'FRS.set_note', 'Fk_Transaction.id as t_id')
-                  .select(trx.raw('null as MREF')).count({matches: 'RT.text'})
+                  .select(trx.raw('null as MREF')).select('processed').count({matches: 'RT.text'})
                   .table('Fk_Transaction')
                   .joinRaw(joinRaw).where(function () {
                   if (idRuleSet !== undefined) {
@@ -454,15 +454,12 @@ const DbMixinTransactions = {
       .groupBy(['u.t_id'])
       .where(function () {
         if (!includeProcessed) {
-          this.andWhere('Fk_Transaction.processed', false);
+          this.andWhere('u.processed', false);
         }
         if (!includeTransactionsWithRuleSet) {
-          this.whereNull('Fk_Transaction.idRuleSet');
+          this.whereNull('u.idRuleSet');
         }
-      })
-      .having(function() {
-        this.havingRaw('matchRate >= ?', [minMatchRate]);
-      });
+      }).havingRaw('matchRate >= ?', [minMatchRate]);
 
 
     /*

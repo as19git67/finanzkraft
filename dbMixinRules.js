@@ -53,6 +53,12 @@ const DbMixinRules = {
       if (ruleInfo.is_MREF !== undefined) {
         ruleSetInsertData.is_MREF = ruleInfo.is_MREF;
       }
+      if (ruleInfo.is_amount_min !== undefined) {
+        ruleSetInsertData.is_amount_min = ruleInfo.is_amount_min;
+      }
+      if (ruleInfo.is_amount_max !== undefined) {
+        ruleSetInsertData.is_amount_max = ruleInfo.is_amount_max;
+      }
       const result = await trx.table('Fk_RuleSet').insert(ruleSetInsertData).returning('id');
       const idRuleSet = result[0].id;
 
@@ -83,7 +89,7 @@ const DbMixinRules = {
     });
   },
 
-  async updateRuleSet(ruleInfo) {
+  async updateRuleSet(ruleInfo, removeFromTransactions) {
     if (!ruleInfo || !ruleInfo.id) {
       throw new Error(`id of RuleSet must be specified`, {cause: 'unknown'});
     }
@@ -114,6 +120,12 @@ const DbMixinRules = {
           ruleSetUpdateInfo.is_MREF = ruleInfo.is_MREF;
         }
       }
+      if (ruleInfo.is_amount_min !== undefined) {
+        ruleSetUpdateInfo.is_amount_min = ruleInfo.is_amount_min;
+      }
+      if (ruleInfo.is_amount_max !== undefined) {
+        ruleSetUpdateInfo.is_amount_max = ruleInfo.is_amount_max;
+      }
       await trx.table('Fk_RuleSet').where('id', ruleInfo.id).update(ruleSetUpdateInfo);
 
       if (ruleInfo.textRules) {
@@ -140,6 +152,10 @@ const DbMixinRules = {
           });
           await trx.table('Fk_RuleAccount').insert(accountRulesInsertData);
         }
+      }
+
+      if (removeFromTransactions) {
+        await trx.table('Fk_Transaction').where('idRuleSet', ruleInfo.id).update({idRuleSet: null, processed: false});
       }
     });
   },
