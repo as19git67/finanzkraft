@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import {referrerPolicy} from "helmet";
+import NumberParser from './NumberParser.js';
 
 const DbMixinTransactions = {
   _maxTextToken: 20,
@@ -9,6 +9,10 @@ const DbMixinTransactions = {
   },
 
   _selectTransactions: function (idTransaction, maxItems, searchTerm, accountsWhereIn, dateFilterFrom, dateFilterTo, idUser, amountMin, amountMax, textToken, mRefToken) {
+    const np = new NumberParser();
+    const amountMinParsed = np.parse(amountMin);
+    const amountMaxParsed = np.parse(amountMax);
+
     const columnsToSelect = [
       'Fk_Account.id as account_id', 'Fk_Account.name as account_name', 'Fk_Transaction.id as t_id',
       'Fk_Transaction.bookingDate as t_booking_date', 'Fk_Transaction.valueDate as t_value_date',
@@ -97,11 +101,11 @@ const DbMixinTransactions = {
         }
       })
       .andWhere((builder) => {
-        if (amountMin) {
-          builder.andWhere('amount', '>=', amountMin);
+        if (!Number.isNaN(amountMinParsed)) {
+          builder.andWhere('amount', '>=', amountMinParsed);
         }
-        if (amountMax) {
-          builder.andWhere('amount', '<=', amountMax);
+        if (!Number.isNaN(amountMaxParsed)) {
+          builder.andWhere('amount', '<=', amountMaxParsed);
         }
       })
       .orderBy('Fk_Transaction.valueDate', 'desc')
