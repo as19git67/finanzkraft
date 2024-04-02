@@ -9,16 +9,21 @@ export default class NumberParser {
     this._index = d => index.get(d);
   }
 
-  parse(string) {
-    if (string == null) {
+  parse(value) {
+    if (value == null) {
       return NaN;
     }
-    if (!Number.isNaN(string)) {
-      return string;
+    if (NumberParser.isNumber(value)) {
+      return value; // return if already a number
     }
-    return (string = string.trim()
-      .replace(this._group, "")
-      .replace(this._decimal, ".")
-      .replace(this._numeral, this._index)) ? +string : NaN;
+    const trimmedValue = (value.trim()
+        .replace(this._group, '')
+        .replace(this._decimal, '.')
+        .replace(this._numeral, this._index));
+    return parseFloat(trimmedValue);
+  }
+
+  static isNumber(value) {
+    return typeof value === 'number' && Number.isNaN(value) === false;
   }
 }

@@ -16,6 +16,7 @@ rc.get(function (req, res, next) {
   const mRefToken = req.query.mRefToken;
 
   db.getTransactions(maxItems, searchTerm, accountsWhereIn, dateFilterFrom, dateFilterTo, idUser, amountMin, amountMax, textToken, mRefToken).then((transactions) => {
+    console.log(`Returning ${transactions.length} transactions in response`);
     res.json(transactions);
   }).catch((reason) => {
     console.log(reason);

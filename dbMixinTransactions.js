@@ -101,10 +101,10 @@ const DbMixinTransactions = {
         }
       })
       .andWhere((builder) => {
-        if (!Number.isNaN(amountMinParsed)) {
+        if (NumberParser.isNumber(amountMinParsed)) {
           builder.andWhere('amount', '>=', amountMinParsed);
         }
-        if (!Number.isNaN(amountMaxParsed)) {
+        if (NumberParser.isNumber(amountMaxParsed)) {
           builder.andWhere('amount', '<=', amountMaxParsed);
         }
       })
