@@ -138,14 +138,6 @@ const DbMixinTransactions = {
     }
   },
 
-  _extractFromText: function (tRet, marker, property) {
-    let pos = tRet.text.lastIndexOf(marker);
-    if (pos >= 0) {
-      tRet[property] = tRet.text.substring(pos + marker.length).trim();
-      tRet.text = tRet.text.substring(0, pos).trim();
-    }
-  },
-
   _parseText: function (parsed, text, markers, key) {
     for (const marker of markers) {
       let pos = text.lastIndexOf(marker);
@@ -157,12 +149,6 @@ const DbMixinTransactions = {
         });
         break;
       }
-    }
-  },
-
-  _eliminateSpaces: function (tRet, property) {
-    if (tRet[property]) {
-      tRet[property] = tRet[property].replace(/\s+/g, '');
     }
   },
 
@@ -234,38 +220,6 @@ const DbMixinTransactions = {
             delete tRet.SVWZ;
           }
           tRet.text = tRet.text.trim();
-
-          // this._extractFromText(tRet, 'ABWE:', 'ABWE');
-          // this._extractFromText(tRet, 'ABWE+', 'ABWE');
-          // this._extractFromText(tRet, 'ABWA:', 'ABWA');
-          // this._extractFromText(tRet, 'ABWA', 'ABWA');
-          // this._extractFromText(tRet, 'ANAM:', 'ANAM');
-          // this._extractFromText(tRet, 'BIC:', 'BIC');
-          // this._eliminateSpaces(tRet, 'BIC');
-          // this._extractFromText(tRet, 'IBAN:', 'IBAN');
-          // this._extractFromText(tRet, 'IBAN', 'IBAN');
-          // this._eliminateSpaces(tRet, 'IBAN');
-          // this._extractFromText(tRet, 'Ref.', 'ref');
-          // this._extractFromText(tRet, 'GLÄUBIGER-ID:', 'CRED');
-          // this._extractFromText(tRet, 'CRED:', 'CRED');
-          // this._eliminateSpaces(tRet, 'CRED');
-          // this._extractFromText(tRet, 'COR1 / MANDATSREF.:', 'MREF');
-          // this._extractFromText(tRet, 'CORE / MANDATSREF.:', 'MREF');
-          // this._extractFromText(tRet, 'MREF:', 'MREF');
-          // this._eliminateSpaces(tRet, 'MREF');
-          // this._extractFromText(tRet, 'SVWZ:', 'SVWZ');
-          // this._extractFromText(tRet, 'END-TO-END-REF.:', 'EREF');
-          // this._extractFromText(tRet, 'EREF:', 'EREF');
-          // delete tRet.ANAM; // duplicates payee
-          // if (tRet.EREF === 'NICHT ANGEGEBEN' || tRet.EREF === 'NOTPROVIDED') {
-          //   delete tRet.EREF;
-          // }
-          // if (tRet.ABWE === 'NICHT ANGEGEBEN' || tRet.ABWE === 'NOTPROVIDED') {
-          //   delete tRet.ABWE;
-          // }
-          // if (tRet.ABWA === 'NICHT ANGEGEBEN' || tRet.ABWA === 'NOTPROVIDED') {
-          //   delete tRet.ABWA;
-          // }
         }
       }
     }
@@ -418,28 +372,46 @@ const DbMixinTransactions = {
       ) u group by u.t_id
      */
     const joinRaw = this.supportsILike() ? "JOIN Fk_RuleText RT ON Fk_Transaction.text LIKE '%' + RT.text + '%'" : "JOIN Fk_RuleText RT ON Fk_Transaction.text LIKE '%' || RT.text || '%'";
-    const matchingTransactions = await trx.select(['t_id', 'MREF', 'idRuleSet', 'RuleSetName', 'idSetCategory', 'set_note'])
+    const matchingTransactions = await trx.select(['t_id', 'MREF', 'is_amount_min', 'is_amount_max', 'idRuleSet', 'RuleSetName', 'idSetCategory', 'set_note'])
       .select(trx.raw('sum(matches) as sumMatches, sum(RulesPerSet) as sumRulesPerSet, (sum(matches) * 100 / sum(RulesPerSet)) as matchRate'))
       .table(
         // subquery
-        trx.table('Fk_RuleSet as RS').select(
-          ['RS.id as idRuleSet', 'RS.name as RuleSetName', 'RS.idSetCategory', 'RS.set_note', 'Fk_Transaction.id as t_id']
-        ).select(trx.raw('1 as matches, 1 as RulesPerSet')).select('MREF', 'processed')
+        trx.table('Fk_RuleSet as RS')
+            .select(['RS.id as idRuleSet', 'RS.name as RuleSetName', 'RS.idSetCategory', 'RS.set_note', 'Fk_Transaction.id as t_id'])
+            .select(trx.raw('1 as matches, 1 as RulesPerSet'))
+            .select('MREF', 'is_amount_min', 'is_amount_max', 'processed')
           .join('Fk_Transaction', function () {
             this.on('Fk_Transaction.MREF', '=', 'RS.is_MREF');
+            this.andOn(function() {
+              this.onNull('RS.is_amount_min')
+              this.orOn('Fk_Transaction.amount', '>=', 'RS.is_amount_min');
+            });
+            this.andOn(function() {
+              this.onNull('RS.is_amount_max')
+              this.orOn('Fk_Transaction.amount', '<=', 'RS.is_amount_max');
+            });
           })
           .union(
             trx.select(['r.idRuleSet as idRuleSet', 'r.RuleSetName as RuleSetName', 'r.idSetCategory', 'r.set_note', 'r.t_id as t_id', 'r.matches', 'RTC.RulesPerSet'])
-              .select(trx.raw('null as MREF')).select('r.processed')
+              .select(trx.raw('null as MREF, null as is_amount_min, null as is_amount_max')).select('r.processed')
               .table(
                 // subquery
                 trx.select('FRS.id as idRuleSet', 'FRS.name as RuleSetName', 'FRS.idSetCategory', 'FRS.set_note', 'Fk_Transaction.id as t_id')
-                  .select(trx.raw('null as MREF')).select('processed').count({matches: 'RT.text'})
+                  .select(trx.raw('null as MREF, null as is_amount_min, null as is_amount_max')).select('processed').count({matches: 'RT.text'})
                   .table('Fk_Transaction')
                   .joinRaw(joinRaw).where(function () {
                   if (idRuleSet !== undefined) {
                     this.andWhere('RT.idRuleSet', idRuleSet);
                   }
+                  this.andWhere(function() {
+                    this.whereNull('FRS.is_amount_min')
+                    this.orWhere('Fk_Transaction.amount', '>=', 'FRS.is_amount_min');
+                  });
+                  this.andWhere(function() {
+                    this.whereNull('FRS.is_amount_max')
+                    this.orWhere('Fk_Transaction.amount', '<=', 'FRS.is_amount_max');
+                  });
+
                 })
                   .join('Fk_RuleSet as FRS', function () {
                     this.on('RT.idRuleSet', '=', 'FRS.id');
