@@ -164,7 +164,7 @@ const DbMixinTransactions = {
       if (_.isString(tRet.text)) {
         const parts = [];
         this._parseText(parts, tRet.text, ['ABWE:', 'ABWE+'], 'ABWE');
-        this._parseText(parts, tRet.text, ['ABWA:', 'ABWE+'], 'ABWA');
+        this._parseText(parts, tRet.text, ['ABWA:', 'ABWE+', ' ABWA '], 'ABWA');
         this._parseText(parts, tRet.text, ['ANAM:'], 'ANAM');
         this._parseText(parts, tRet.text, ['BIC:', 'BIC '], 'BIC');
         this._parseText(parts, tRet.text, ['IBAN:', 'IBAN '], 'IBAN');
