@@ -15,13 +15,17 @@ rc.get(function (req, res, next) {
 rc.put(async (req, res, next) => {
   const ruleInfo = req.body;
   const db = req.app.get('database');
+  const trx = await db.startTransaction();
+
   try {
-    const idRuleSet = await db.createRuleSet(ruleInfo);
+    const idRuleSet = await db.createRuleSet(trx, ruleInfo);
     console.log(`RuleSet with idRuleSet ${idRuleSet} added to DB`);
-    await db.applyRules({idRuleSet: idRuleSet, includeProcessed: true, includeTransactionsWithRuleSet: true});
+    await db.applyRules(trx, {idRuleSet: idRuleSet, includeProcessed: true, includeTransactionsWithRuleSet: true});
+    trx.commit();
     console.log(`RuleSet applied to transactions`);
     res.sendStatus(200);
   } catch (error) {
+    trx.rollback();
     switch (error.cause) {
       case 'exists':
         console.error(error.message);
@@ -30,7 +34,7 @@ rc.put(async (req, res, next) => {
       default:
         console.error(error);
         if (error.message) {
-          res.send(500, error.message);
+          res.status(500).send(error.message);
         } else {
           res.sendStatus(500);
         }

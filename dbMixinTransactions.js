@@ -27,89 +27,89 @@ const DbMixinTransactions = {
       columnsToSelect.push('Fk_TransactionStatus.confirmed as confirmed');
     }
     const builder = this.knex.table('Fk_Transaction')
-      .join('Fk_Account', function () {
-        this.on('Fk_Transaction.idAccount', '=', 'Fk_Account.id');
-        if (accountsWhereIn && _.isArray(accountsWhereIn) && accountsWhereIn.length > 0) {
-          this.andOnIn('Fk_Account.id', accountsWhereIn);
-        }
-      })
-      .join('Fk_Currency', function () {
-        this.on('Fk_Account.idCurrency', '=', 'Fk_Currency.id');
-      })
-      .leftJoin('Fk_Category', function () {
-        this.on('Fk_Transaction.idCategory', '=', 'Fk_Category.id');
-      })
-      .leftJoin('Fk_RuleSet', function () {
-        this.on('Fk_Transaction.idRuleSet', '=', 'Fk_RuleSet.id');
-      })
-      .where((builder) => {
-        if (idTransaction !== undefined) {
-          builder.where({'Fk_Transaction.id': idTransaction});
-        }
-      })
-      .andWhere((builder) => {
-        if (_.isArray(textToken)) {
-          _.take(textToken, this._maxTextToken).forEach(tt => {
-            if (this.supportsILike()) {
-              builder.whereILike('Fk_Transaction.text', `%${tt}%`);
-            } else {
-              builder.whereLike('Fk_Transaction.text', `%${tt}%`);
-            }
-          });
-        }
-        if (_.isString(mRefToken) && mRefToken) {
+    .join('Fk_Account', function () {
+      this.on('Fk_Transaction.idAccount', '=', 'Fk_Account.id');
+      if (accountsWhereIn && _.isArray(accountsWhereIn) && accountsWhereIn.length > 0) {
+        this.andOnIn('Fk_Account.id', accountsWhereIn);
+      }
+    })
+    .join('Fk_Currency', function () {
+      this.on('Fk_Account.idCurrency', '=', 'Fk_Currency.id');
+    })
+    .leftJoin('Fk_Category', function () {
+      this.on('Fk_Transaction.idCategory', '=', 'Fk_Category.id');
+    })
+    .leftJoin('Fk_RuleSet', function () {
+      this.on('Fk_Transaction.idRuleSet', '=', 'Fk_RuleSet.id');
+    })
+    .where((builder) => {
+      if (idTransaction !== undefined) {
+        builder.where({'Fk_Transaction.id': idTransaction});
+      }
+    })
+    .andWhere((builder) => {
+      if (_.isArray(textToken)) {
+        _.take(textToken, this._maxTextToken).forEach(tt => {
           if (this.supportsILike()) {
-            builder.whereILike('Fk_Transaction.MREF', `%${mRefToken}%`);
+            builder.whereILike('Fk_Transaction.text', `%${tt}%`);
           } else {
-            builder.whereLike('Fk_Transaction.MREF', `%${mRefToken}%`);
+            builder.whereLike('Fk_Transaction.text', `%${tt}%`);
+          }
+        });
+      }
+      if (_.isString(mRefToken) && mRefToken) {
+        if (this.supportsILike()) {
+          builder.whereILike('Fk_Transaction.MREF', `%${mRefToken}%`);
+        } else {
+          builder.whereLike('Fk_Transaction.MREF', `%${mRefToken}%`);
+        }
+      }
+      if (searchTerm) {
+        if (_.isString(searchTerm)) {
+          const trimmedSearchTerm = searchTerm.trim();
+          if (this.supportsILike()) {
+            builder.whereILike('Fk_Transaction.text', `%${trimmedSearchTerm}%`);
+            builder.orWhereILike('Fk_Transaction.notes', `%${trimmedSearchTerm}%`);
+            builder.orWhereILike('Fk_Transaction.EREF', `%${trimmedSearchTerm}%`);
+            builder.orWhereILike('Fk_Transaction.CRED', `%${trimmedSearchTerm}%`);
+            builder.orWhereILike('Fk_Transaction.MREF', `%${trimmedSearchTerm}%`);
+            builder.orWhereILike('Fk_Transaction.payee', `%${trimmedSearchTerm}%`);
+            builder.orWhereILike('Fk_Category.fullName', `%${trimmedSearchTerm}%`);
+          } else {
+            builder.whereLike('Fk_Transaction.text', `%${trimmedSearchTerm}%`);
+            builder.orWhereLike('Fk_Transaction.EREF', `%${trimmedSearchTerm}%`);
+            builder.orWhereLike('Fk_Transaction.CRED', `%${trimmedSearchTerm}%`);
+            builder.orWhereLike('Fk_Transaction.MREF', `%${trimmedSearchTerm}%`);
+            builder.orWhereLike('Fk_Transaction.notes', `%${trimmedSearchTerm}%`);
+            builder.orWhereLike('Fk_Transaction.payee', `%${trimmedSearchTerm}%`);
+            builder.orWhereLike('Fk_Category.fullName', `%${trimmedSearchTerm}%`);
           }
         }
-        if (searchTerm) {
-          if (_.isString(searchTerm)) {
-            const trimmedSearchTerm = searchTerm.trim();
-            if (this.supportsILike()) {
-              builder.whereILike('Fk_Transaction.text', `%${trimmedSearchTerm}%`);
-              builder.orWhereILike('Fk_Transaction.notes', `%${trimmedSearchTerm}%`);
-              builder.orWhereILike('Fk_Transaction.EREF', `%${trimmedSearchTerm}%`);
-              builder.orWhereILike('Fk_Transaction.CRED', `%${trimmedSearchTerm}%`);
-              builder.orWhereILike('Fk_Transaction.MREF', `%${trimmedSearchTerm}%`);
-              builder.orWhereILike('Fk_Transaction.payee', `%${trimmedSearchTerm}%`);
-              builder.orWhereILike('Fk_Category.fullName', `%${trimmedSearchTerm}%`);
-            } else {
-              builder.whereLike('Fk_Transaction.text', `%${trimmedSearchTerm}%`);
-              builder.orWhereLike('Fk_Transaction.EREF', `%${trimmedSearchTerm}%`);
-              builder.orWhereLike('Fk_Transaction.CRED', `%${trimmedSearchTerm}%`);
-              builder.orWhereLike('Fk_Transaction.MREF', `%${trimmedSearchTerm}%`);
-              builder.orWhereLike('Fk_Transaction.notes', `%${trimmedSearchTerm}%`);
-              builder.orWhereLike('Fk_Transaction.payee', `%${trimmedSearchTerm}%`);
-              builder.orWhereLike('Fk_Category.fullName', `%${trimmedSearchTerm}%`);
-            }
-          }
-          const amount = parseFloat(searchTerm);
-          if (amount) {
-            builder.orWhere('Fk_Transaction.amount', amount);
-            builder.orWhere('Fk_Transaction.amount', amount * -1);
-          }
+        const amount = parseFloat(searchTerm);
+        if (amount) {
+          builder.orWhere('Fk_Transaction.amount', amount);
+          builder.orWhere('Fk_Transaction.amount', amount * -1);
         }
-      })
-      .andWhere((builder) => {
-        if (dateFilterFrom) {
-          builder.andWhere('valueDate', '>=', dateFilterFrom);
-        }
-        if (dateFilterTo) {
-          builder.andWhere('valueDate', '<=', dateFilterTo);
-        }
-      })
-      .andWhere((builder) => {
-        if (NumberParser.isNumber(amountMinParsed)) {
-          builder.andWhere('amount', '>=', amountMinParsed);
-        }
-        if (NumberParser.isNumber(amountMaxParsed)) {
-          builder.andWhere('amount', '<=', amountMaxParsed);
-        }
-      })
-      .orderBy('Fk_Transaction.valueDate', 'desc')
-      .select(columnsToSelect);
+      }
+    })
+    .andWhere((builder) => {
+      if (dateFilterFrom) {
+        builder.andWhere('valueDate', '>=', dateFilterFrom);
+      }
+      if (dateFilterTo) {
+        builder.andWhere('valueDate', '<=', dateFilterTo);
+      }
+    })
+    .andWhere((builder) => {
+      if (NumberParser.isNumber(amountMinParsed)) {
+        builder.andWhere('amount', '>=', amountMinParsed);
+      }
+      if (NumberParser.isNumber(amountMaxParsed)) {
+        builder.andWhere('amount', '<=', amountMaxParsed);
+      }
+    })
+    .orderBy('Fk_Transaction.valueDate', 'desc')
+    .select(columnsToSelect);
     if (maxItems) {
       builder.limit(maxItems);
     }
@@ -336,185 +336,90 @@ const DbMixinTransactions = {
   },
 
   _applyRulesInTrx: async function (trx, idRuleSet, includeProcessed, includeTransactionsWithRuleSet, minMatchRate) {
-    /*
-        select t_id,
-             MREF,
-             idRuleSet,
-             RuleSetName,
-             idSetCategory,
-             set_note,
-             sum(matches)                            as sumMatches,
-             sum(RulesPerSet)                        as sumRulesPerSet,
-             (sum(matches) * 100 / sum(RulesPerSet)) as matchRate
-      from (select RS.id             as idRuleSet,
-                   RS.name           as RuleSetName,
-                   RS.idSetCategory,
-                   RS.set_note,
-                   Fk_Transaction.id as t_id,
-                   MREF,
-                   1                 as matches,
-                   1                 as RulesPerSet
-            from Fk_RuleSet as RS
-                     join Fk_Transaction on Fk_Transaction.MREF = RS.is_MREF
-            union
-            select r.idRuleSet as idRuleSet, r.RuleSetName as RuleSetName, r.idSetCategory, r.set_note, r.t_id as t_id, null as MREF, r.matches, RulesPerSet
-            from
-                (SELECT FRS.id as idRuleSet, FRS.name as RuleSetName, FRS.idSetCategory, FRS.set_note, t.id as t_id, null as MREF, count(RT.text) as matches
-                  FROM Fk_transaction t
-                           JOIN Fk_RuleText RT ON t.text LIKE '%' || RT.text || '%'
-                           join Fk_RuleSet FRS on t.idRuleSet = FRS.id
-                  group by RT.idRuleSet, t.id
-                  ) r
-            left join (SELECT count(RT.text) as RulesPerSet, RT.idRuleSet
-                       FROM Fk_RuleText RT
-                       group by RT.idRuleSet)
-                    RTC on RTC.idRuleSet = r.idRuleSet
-      ) u group by u.t_id
-     */
+    const ruleSets = await trx.select(['Fk_RuleSet.id as idRuleSet', 'Fk_RuleSet.name as RuleSetName', 'idSetCategory',
+      'set_note', 'is_MREF', 'is_amount_min', 'is_amount_max']).count({TextRuleCount: 'Fk_RuleText.idRuleSet'})
+    .table('Fk_RuleSet')
+    .leftJoin('Fk_RuleText', function() {
+      this.on('Fk_RuleSet.id', 'Fk_RuleText.idRuleSet');
+    })
+    .where(function() {
+      if (idRuleSet != null) {
+        this.where('Fk_RuleSet.id', idRuleSet);
+      }
+    })
+    .groupBy('Fk_RuleText.idRuleSet');
+
     const joinRaw = this.supportsILike() ? "JOIN Fk_RuleText RT ON Fk_Transaction.text LIKE '%' + RT.text + '%'" : "JOIN Fk_RuleText RT ON Fk_Transaction.text LIKE '%' || RT.text || '%'";
-    const matchingTransactions = await trx.select(['t_id', 'MREF', 'is_amount_min', 'is_amount_max', 'idRuleSet', 'RuleSetName', 'idSetCategory', 'set_note'])
-      .select(trx.raw('sum(matches) as sumMatches, sum(RulesPerSet) as sumRulesPerSet, (sum(matches) * 100 / sum(RulesPerSet)) as matchRate'))
-      .table(
-        // subquery
-        trx.table('Fk_RuleSet as RS')
-            .select(['RS.id as idRuleSet', 'RS.name as RuleSetName', 'RS.idSetCategory', 'RS.set_note', 'Fk_Transaction.id as t_id'])
-            .select(trx.raw('1 as matches, 1 as RulesPerSet'))
-            .select('MREF', 'is_amount_min', 'is_amount_max', 'processed')
-          .join('Fk_Transaction', function () {
-            this.on('Fk_Transaction.MREF', '=', 'RS.is_MREF');
-            this.andOn(function() {
-              this.onNull('RS.is_amount_min')
-              this.orOn('Fk_Transaction.amount', '>=', 'RS.is_amount_min');
-            });
-            this.andOn(function() {
-              this.onNull('RS.is_amount_max')
-              this.orOn('Fk_Transaction.amount', '<=', 'RS.is_amount_max');
-            });
-          })
-          .union(
-            trx.select(['r.idRuleSet as idRuleSet', 'r.RuleSetName as RuleSetName', 'r.idSetCategory', 'r.set_note', 'r.t_id as t_id', 'r.matches', 'RTC.RulesPerSet'])
-              .select(trx.raw('null as MREF, null as is_amount_min, null as is_amount_max')).select('r.processed')
-              .table(
-                // subquery
-                trx.select('FRS.id as idRuleSet', 'FRS.name as RuleSetName', 'FRS.idSetCategory', 'FRS.set_note', 'Fk_Transaction.id as t_id')
-                  .select(trx.raw('null as MREF, null as is_amount_min, null as is_amount_max')).select('processed').count({matches: 'RT.text'})
-                  .table('Fk_Transaction')
-                  .joinRaw(joinRaw).where(function () {
-                  if (idRuleSet !== undefined) {
-                    this.andWhere('RT.idRuleSet', idRuleSet);
-                  }
-                  this.andWhere(function() {
-                    this.whereNull('FRS.is_amount_min')
-                    this.orWhere('Fk_Transaction.amount', '>=', 'FRS.is_amount_min');
-                  });
-                  this.andWhere(function() {
-                    this.whereNull('FRS.is_amount_max')
-                    this.orWhere('Fk_Transaction.amount', '<=', 'FRS.is_amount_max');
-                  });
 
-                })
-                  .join('Fk_RuleSet as FRS', function () {
-                    this.on('RT.idRuleSet', '=', 'FRS.id');
-                  })
-                  .groupBy([' RT.idRuleSet', 'Fk_Transaction.id']).as('r')
-              )
-              .leftJoin(
-                trx.count({RulesPerSet: 'RT.text'}).select('RT.idRuleSet')
-                  .table('Fk_RuleText as RT')
-                  .groupBy('RT.idRuleSet').as('RTC'), function () {
-                  this.on('RTC.idRuleSet', '=', 'r.idRuleSet');
-                }
-              ),
-          ).as('u')
-      )
-      .groupBy(['u.t_id'])
-      .where(function () {
-        if (!includeProcessed) {
-          this.andWhere('u.processed', false);
-        }
-        if (!includeTransactionsWithRuleSet) {
-          this.whereNull('u.idRuleSet');
-        }
-      }).havingRaw('matchRate >= ?', [minMatchRate]);
-
-
-    /*
-      .table('Fk_Transaction as tr')
-        .join(
-          trx.count({matches: 'RT.text'}).select(['RT.idRuleSet', 'RS.idSetCategory', 'RS.set_note', 't.id'])
-          .table('Fk_Transaction as t')
-          .joinRaw(joinRaw).where(function () {
-            if (idRuleSet !== undefined) {
-              this.andWhere('RT.idRuleSet', idRuleSet);
-            }
-          })
-          //          this.on('t.text', 'like', "RT.text");
-          .join('Fk_RuleSet as RS', function () {
-            this.on('RT.idRuleSet', '=', 'RS.id');
-          })
-          .join('Fk_Transaction as tr', function () {
-            this.on('t.id', '=', 'tr.id');
-          })
-          .groupBy([' RT.idRuleSet', 'RS.idSetCategory', 'RS.set_note', 't.id']).as('r'), function () {
-            this.on('tr.id', '=', 'r.id');
-            if (!includeProcessed) {
-              this.andOnVal('tr.processed', false);
-            }
-            if (!includeTransactionsWithRuleSet) {
-              this.andOnNull('tr.idRuleSet');
-            }
-          }
-        )
-        .join(
-          trx.count({RulesPerSet: 'RT.text'}).select('RT.idRuleSet')
-          .table('Fk_RuleText as RT')
-          .groupBy('RT.idRuleSet').as('RTC'), function () {
-            this.on('RTC.idRuleSet', '=', 'r.idRuleSet');
-          }
-        )
-        .join('Fk_RuleSet as FRS', function () {
-          this.on('FRS.id', '=', 'tr.idRuleSet');
-        })
-        .whereRaw('(matches * 100/RulesPerSet) >= ?', [minMatchRate]);
-    */
-
-
-    for (const m of matchingTransactions) {
-      const updateData = {
-        processed: true,
-        idRuleSet: m.idRuleSet,
-      };
-      if (m.set_note) {
-        updateData.notes = m.set_note;
+    console.log(`Checking ${ruleSets.length} rule sets for matches...`);
+    for (const ruleSet of ruleSets) {
+      console.log(`Rule set ${ruleSet.idRuleSet}: '${ruleSet.RuleSetName}'`);
+      const queryBuilder = trx.table('Fk_Transaction')
+      .select(['Fk_Transaction.id as t_id', 'Fk_Transaction.text', 'Fk_Transaction.amount', 'Fk_Transaction.MREF', 'Fk_Transaction.notes', 'Fk_Transaction.idCategory', 'Fk_Transaction.processed', 'Fk_Transaction.idRuleSet']);
+      if (ruleSet.TextRuleCount > 0) {
+        queryBuilder.count({TextRuleMatches: 'Fk_Transaction.id'});
+        queryBuilder.joinRaw(joinRaw + ` and RT.idRuleSet = ${ruleSet.idRuleSet}`);
       }
-      if (m.idSetCategory) {
-        updateData.idCategory = m.idSetCategory;
+      if (ruleSet.is_MREF != null) {
+        queryBuilder.andWhere('Fk_Transaction.MREF', ruleSet.is_MREF);
       }
-      await trx.table('Fk_Transaction').where('id', m.t_id).update(updateData);
-      console.log(`Updated transaction ${m.t_id} with category: ${updateData.idCategory}, notes ${updateData.notes}`);
+      if (ruleSet.is_amount_min != null) {
+        queryBuilder.andWhere('Fk_Transaction.amount', '>=', ruleSet.is_amount_min);
+      }
+      if (ruleSet.is_amount_max != null) {
+        queryBuilder.andWhere('Fk_Transaction.amount', '<=', ruleSet.is_amount_max);
+      }
+      if (!includeProcessed) {
+        queryBuilder.andWhere('Fk_Transaction.processed', false);
+      }
+      if (!includeTransactionsWithRuleSet) {
+        queryBuilder.whereNull('Fk_Transaction.idRuleSet');
+      }
+      if (ruleSet.TextRuleCount > 0) {
+        queryBuilder.groupBy('Fk_Transaction.id');
+      }
+      const matchingTransactions = await queryBuilder;
+      console.log(`Selected ${matchingTransactions.length} matching transactions`);
+      if (matchingTransactions.length > 100 && ruleSet.is_MREF == null && ruleSet.TextRuleCount === 0) {
+        throw new Error(`Can't apply rule, because it would match too many transactions, which might be wrong`);
+      }
+
+      for (const m of matchingTransactions) {
+        const updateData = {
+          processed: true,
+          idRuleSet: ruleSet.idRuleSet,
+        };
+        if (ruleSet.set_note) {
+          updateData.notes = ruleSet.set_note;
+        }
+        if (ruleSet.idSetCategory) {
+          updateData.idCategory = ruleSet.idSetCategory;
+        }
+        await trx.table('Fk_Transaction').where('id', m.t_id).update(updateData);
+        console.log(`Updated transaction ${m.t_id} with category: ${updateData.idCategory}, notes ${updateData.notes}`);
+      }
     }
-    // if (matchingTransactions.length > 0) {
-    //   console.log('Erster Datensatz:')
-    //   for (const key in matchingTransactions[0]) {
-    //     console.log(`${key}: ${matchingTransactions[0][key]}`);
-    //   }
-    // }
-
-    return matchingTransactions;
   },
 
-  async applyRules(options) {
+  async applyRules(trx, options) {
     const o = options ? options : {};
-    const trx = options.trx;
     const idRuleSet = o.idRuleSet;
     const includeProcessed = o.includeProcessed;
     const includeTransactionsWithRuleSet = o.includeTransactionsWithRuleSet;
     const minMatchRate = o.minMatchRate ? o.minMatchRate : 100;
     if (trx) {
-      return await this._applyRulesInTrx(trx, idRuleSet, includeProcessed, includeTransactionsWithRuleSet, minMatchRate);
+      await this._applyRulesInTrx(trx, idRuleSet, includeProcessed, includeTransactionsWithRuleSet, minMatchRate);
     } else {
-      return this.knex.transaction(async (newTrx) => {
-        return await this._applyRulesInTrx(newTrx, idRuleSet, includeProcessed, includeTransactionsWithRuleSet, minMatchRate);
+      const newTrx = await this.knex.transaction();
+      return new Promise(async (resolve, reject) => {
+        this._applyRulesInTrx(newTrx, idRuleSet, includeProcessed, includeTransactionsWithRuleSet, minMatchRate).then(() => {
+          newTrx.commit();
+          resolve();
+        })
+        .catch(reason => {
+          newTrx.rollback();
+          reject(reason);
+        });
       });
     }
   },
@@ -537,7 +442,7 @@ const DbMixinTransactions = {
         }
         inserts = await trx('Fk_Transaction').insert(processedRrToInsert).returning('*');
         console.log(`Inserted ${inserts.length} transactions`);
-        await this.applyRules({trx: trx, includeProcessed: false, includeTransactionsWithRuleSet: false});
+        await this.applyRules(trx, {includeProcessed: false, includeTransactionsWithRuleSet: false});
       }
       return inserts;
     });
@@ -572,10 +477,10 @@ const DbMixinTransactions = {
 
       if (confirmed !== undefined) {
         const result = await trx.table('Fk_TransactionStatus')
-          .where('idTransaction', idTransaction)
-          .andWhere('idUser', idUser)
-          .update({'confirmed': confirmed})
-          .returning('idTransaction');
+        .where('idTransaction', idTransaction)
+        .andWhere('idUser', idUser)
+        .update({'confirmed': confirmed})
+        .returning('idTransaction');
         if (result.length === 0 && confirmed) {
           await trx.table('Fk_TransactionStatus').insert({
             idTransaction: idTransaction,

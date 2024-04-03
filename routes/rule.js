@@ -27,14 +27,17 @@ rc.post(async function (req, res, next) {
   ruleInfo.id = idRuleSet;
   //const includeProcessed = req.body.includeProcessed !== undefined ? req.body.includeProcessed : false;
   const db = req.app.get('database');
+  const trx = await db.startTransaction();
 
   try {
-    await db.updateRuleSet(ruleInfo, true);
+    await db.updateRuleSet(trx, ruleInfo, true);
     console.log(`RuleSet with idRuleSet ${idRuleSet} updated in DB`);
-    await db.applyRules({idRuleSet: idRuleSet, includeProcessed: includeProcessed, includeTransactionsWithRuleSet: true});
+    await db.applyRules(trx, {idRuleSet: idRuleSet, includeProcessed: includeProcessed, includeTransactionsWithRuleSet: true});
+    trx.commit();
     console.log(`RuleSet applied to transactions`);
     res.sendStatus(200);
   } catch (error) {
+    trx.rollback();
     switch (error.cause) {
       case 'exists':
         console.error(error.message);
