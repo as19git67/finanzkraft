@@ -1,5 +1,5 @@
 const schema = {
-  version: 16,
+  version: 17,
   name: 'finanzkraft',
   tables: [
     {
@@ -410,7 +410,6 @@ const schema = {
         {
           "name": "EREF",
           "type": "string",
-          "length": 15,
           "nullable": true,
         },
         {
