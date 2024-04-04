@@ -375,7 +375,7 @@ const DbMixinTransactions = {
 
   _applyRulesInTrx: async function (trx, idRuleSet, includeProcessed, includeTransactionsWithRuleSet, minMatchRate) {
     const ruleSets = await trx.select(['Fk_RuleSet.id as idRuleSet', 'Fk_RuleSet.name as RuleSetName', 'idSetCategory',
-      'set_note', 'is_MREF', 'is_amount_min', 'is_amount_max']).count({TextRuleCount: 'Fk_RuleText.idRuleSet'})
+      'set_note', 'is_MREF', 'is_amount_min', 'is_amount_max']).count({TextRuleCount: 'Fk_RuleSet.id'})
     .table('Fk_RuleSet')
     .leftJoin('Fk_RuleText', function() {
       this.on('Fk_RuleSet.id', 'Fk_RuleText.idRuleSet');
@@ -385,7 +385,7 @@ const DbMixinTransactions = {
         this.where('Fk_RuleSet.id', idRuleSet);
       }
     })
-    .groupBy('Fk_RuleText.idRuleSet');
+    .groupBy(['Fk_RuleSet.id', 'Fk_RuleSet.name', 'idSetCategory', 'set_note', 'is_MREF', 'is_amount_min', 'is_amount_max']);
 
     const joinRaw = this.supportsILike() ? "JOIN Fk_RuleText RT ON Fk_Transaction.text LIKE '%' + RT.text + '%'" : "JOIN Fk_RuleText RT ON Fk_Transaction.text LIKE '%' || RT.text || '%'";
 
@@ -414,7 +414,7 @@ const DbMixinTransactions = {
         queryBuilder.whereNull('Fk_Transaction.idRuleSet');
       }
       if (ruleSet.TextRuleCount > 0) {
-        queryBuilder.groupBy('Fk_Transaction.id');
+        queryBuilder.groupBy(['Fk_Transaction.id', 'Fk_Transaction.text', 'Fk_Transaction.amount', 'Fk_Transaction.MREF', 'Fk_Transaction.notes', 'Fk_Transaction.idCategory', 'Fk_Transaction.processed', 'Fk_Transaction.idRuleSet']);
       }
       const matchingTransactions = await queryBuilder;
       console.log(`Selected ${matchingTransactions.length} matching transactions`);
