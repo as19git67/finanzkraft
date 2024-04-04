@@ -167,7 +167,7 @@ const DbMixinTransactions = {
         this._parseText(parts, tRet.text, ['ABWA:', 'ABWE+', 'A BWA:', 'AB WA:', 'ABW A:', 'ABWA :', ' ABWA '], 'ABWA');
         this._parseText(parts, tRet.text, ['ANAM:', 'A NAM:', 'AN AM:', 'ANA M:', 'ANAM :'], 'ANAM');
         this._parseText(parts, tRet.text, ['BIC:', 'B IC:', 'BI C:', 'BIC :', 'BIC '], 'BIC');
-        this._parseText(parts, tRet.text, ['IBAN:', 'IBAN ', 'I BAN:', 'IB AN:', 'IBA N:', 'IBAN :'], 'IBAN');
+        this._parseText(parts, tRet.text, ['IBAN:', 'I BAN:', 'IB AN:', 'IBA N:', 'IBAN :', 'IBAN '], 'IBAN');
         this._parseText(parts, tRet.text, ['Ref.'], 'REF');
         this._parseText(parts, tRet.text, ['GLÄUBIGER-ID:', 'CRED:', 'C RED:', 'CR ED:', 'CRE D:', 'CRED :', 'CRED' ], 'CRED');
         this._parseText(parts, tRet.text, ['CORE / MANDATSREF.:', 'COR1 / MANDATSREF.:', 'MREF:', 'M REF:', 'MR EF:', 'MRE F:', 'MREF :', 'MREF '], 'MREF');
@@ -186,6 +186,9 @@ const DbMixinTransactions = {
 
           for (const partInfo of sorted) {
             let part = tRet.text.substring(partInfo.pos + partInfo.keyLen).trim();
+            if (partInfo.key === 'IBAN' && part.substring(0, 1) === ':') {
+              console.log('IBAN wrong!');
+            }
             switch (partInfo.key) {
               case 'BIC':
               case 'IBAN':
@@ -198,9 +201,14 @@ const DbMixinTransactions = {
                 // ignore this, because it duplicates payee
                 break;
               case 'EREF':
+                part = part.replace(/\s+/g, '');
+                if (part !== 'NICHT ANGEGEBEN' && part !== 'NOTPROVIDED') {
+                  // store only if not not-provided
+                  tRet[partInfo.key] = part;
+                }
+                break;
               case 'ABWE':
               case 'ABWA':
-                part = part.replace(/\s+/g, '');
                 if (part !== 'NICHT ANGEGEBEN' && part !== 'NOTPROVIDED') {
                   // store only if not not-provided
                   tRet[partInfo.key] = part;
@@ -214,6 +222,12 @@ const DbMixinTransactions = {
             }
 
             tRet.text = tRet.text.substring(0, partInfo.pos);
+          }
+          if (tRet.BIC) {
+            const i = tRet.BIC.indexOf('(');
+            if (i >= 0) {
+              tRet.BIC = tRet.BIC.substring(0, i).trim();
+            }
           }
           if (tRet.SVWZ) {
             tRet.text = tRet.SVWZ + ' ' + tRet.text;  // insert SEPA Verwendungszweck at beginning of text

@@ -427,19 +427,19 @@ const schema = {
         {
           "name": "ABWA",
           "type": "string",
-          "length": 22,
+          "length": 35,
           "nullable": true,
         },
         {
           "name": "ABWE",
           "type": "string",
-          "length": 22,
+          "length": 35,
           "nullable": true,
         },
         {
           "name": "IBAN",
           "type": "string",
-          "length": 22,
+          "length": 35,
           "nullable": true,
         },
         {
