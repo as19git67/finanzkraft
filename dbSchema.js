@@ -415,13 +415,13 @@ const schema = {
         {
           "name": "CRED",
           "type": "string",
-          "length": 22,
+          "length": 28,
           "nullable": true,
         },
         {
           "name": "MREF",
           "type": "string",
-          "length": 22,
+          "length": 35,
           "nullable": true,
         },
         {
@@ -445,7 +445,7 @@ const schema = {
         {
           "name": "BIC",
           "type": "string",
-          "length": 22,
+          "length": 11,
           "nullable": true,
         },
         {
