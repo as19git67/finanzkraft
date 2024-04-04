@@ -415,7 +415,7 @@ const schema = {
         {
           "name": "CRED",
           "type": "string",
-          "length": 28,
+          "length": 35,
           "nullable": true,
         },
         {
@@ -427,13 +427,13 @@ const schema = {
         {
           "name": "ABWA",
           "type": "string",
-          "length": 35,
+          "length": 40,
           "nullable": true,
         },
         {
           "name": "ABWE",
           "type": "string",
-          "length": 35,
+          "length": 40,
           "nullable": true,
         },
         {

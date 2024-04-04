@@ -138,7 +138,17 @@ const DbMixinTransactions = {
     }
   },
 
-  _parseText: function (parsed, text, markers, key) {
+  _parseText: function (parsed, text, markers, key, mustHaveAlreadyParsedKeys = []) {
+    const currentKey = _.find(parsed, { key: key });
+    if (currentKey) {
+      return; // key found in parsed => skip this
+    }
+    for (const mustHaveAlreadyParsedKey of mustHaveAlreadyParsedKeys) {
+      const mustHave = _.find(parsed, { key: mustHaveAlreadyParsedKey });
+      if (!mustHave) {
+        return; // key not found => skip this
+      }
+    }
     for (const marker of markers) {
       let pos = text.lastIndexOf(marker);
       if (pos >= 0) {
@@ -148,6 +158,25 @@ const DbMixinTransactions = {
           keyLen: marker.length,
         });
         break;
+      }
+    }
+  },
+
+  _fixBIC: function (tRet) {
+    if (tRet.BIC) {
+      let i = tRet.BIC.indexOf('(');
+      if (i >= 0) {
+        tRet.BIC = tRet.BIC.substring(0, i).trim();
+      } else {
+        i = tRet.BIC.indexOf(';');
+        if (i >= 0) {
+          tRet.BIC = tRet.BIC.substring(0, i).trim();
+        } else {
+          i = tRet.BIC.indexOf(',');
+          if (i >= 0) {
+            tRet.BIC = tRet.BIC.substring(0, i).trim();
+          }
+        }
       }
     }
   },
@@ -166,8 +195,10 @@ const DbMixinTransactions = {
         this._parseText(parts, tRet.text, ['ABWE:', 'ABWE+', 'A BWE:', 'AB WE:', 'ABW E:', 'ABWE :'], 'ABWE');
         this._parseText(parts, tRet.text, ['ABWA:', 'ABWE+', 'A BWA:', 'AB WA:', 'ABW A:', 'ABWA :', ' ABWA '], 'ABWA');
         this._parseText(parts, tRet.text, ['ANAM:', 'A NAM:', 'AN AM:', 'ANA M:', 'ANAM :'], 'ANAM');
+        this._parseText(parts, tRet.text, ['BNAM:', 'B NAM:', 'BN AM:', 'BNA M:', 'BNAM :'], 'BNAM');
         this._parseText(parts, tRet.text, ['BIC:', 'B IC:', 'BI C:', 'BIC :', 'BIC '], 'BIC');
-        this._parseText(parts, tRet.text, ['IBAN:', 'I BAN:', 'IB AN:', 'IBA N:', 'IBAN :', 'IBAN '], 'IBAN');
+        this._parseText(parts, tRet.text, ['IBAN:', 'I BAN:', 'IB AN:', 'IBA N:', 'IBAN :'], 'IBAN');
+        this._parseText(parts, tRet.text, ['IBAN '], 'IBAN', ['BIC']);
         this._parseText(parts, tRet.text, ['Ref.'], 'REF');
         this._parseText(parts, tRet.text, ['GLÄUBIGER-ID:', 'CRED:', 'C RED:', 'CR ED:', 'CRE D:', 'CRED :', 'CRED' ], 'CRED');
         this._parseText(parts, tRet.text, ['CORE / MANDATSREF.:', 'COR1 / MANDATSREF.:', 'MREF:', 'M REF:', 'MR EF:', 'MRE F:', 'MREF :', 'MREF '], 'MREF');
@@ -186,9 +217,6 @@ const DbMixinTransactions = {
 
           for (const partInfo of sorted) {
             let part = tRet.text.substring(partInfo.pos + partInfo.keyLen).trim();
-            if (partInfo.key === 'IBAN' && part.substring(0, 1) === ':') {
-              console.log('IBAN wrong!');
-            }
             switch (partInfo.key) {
               case 'BIC':
               case 'IBAN':
@@ -198,6 +226,7 @@ const DbMixinTransactions = {
                 tRet[partInfo.key] = part;
                 break;
               case 'ANAM':
+              case 'BNAM':
                 // ignore this, because it duplicates payee
                 break;
               case 'EREF':
@@ -223,12 +252,7 @@ const DbMixinTransactions = {
 
             tRet.text = tRet.text.substring(0, partInfo.pos);
           }
-          if (tRet.BIC) {
-            const i = tRet.BIC.indexOf('(');
-            if (i >= 0) {
-              tRet.BIC = tRet.BIC.substring(0, i).trim();
-            }
-          }
+          this._fixBIC(tRet);
           if (tRet.SVWZ) {
             tRet.text = tRet.SVWZ + ' ' + tRet.text;  // insert SEPA Verwendungszweck at beginning of text
             delete tRet.SVWZ;
