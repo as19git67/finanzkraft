@@ -231,14 +231,14 @@ const DbMixinTransactions = {
                 break;
               case 'EREF':
                 part = part.replace(/\s+/g, '');
-                if (part !== 'NICHT ANGEGEBEN' && part !== 'NOTPROVIDED') {
+                if (part !== 'NICHTANGEGEBEN' && part !== 'NICHT ANGEGEBEN' && part !== 'NOTPROVIDED') {
                   // store only if not not-provided
                   tRet[partInfo.key] = part;
                 }
                 break;
               case 'ABWE':
               case 'ABWA':
-                if (part !== 'NICHT ANGEGEBEN' && part !== 'NOTPROVIDED') {
+                if (part !== 'NICHTANGEGEBEN' && part !== 'NICHT ANGEGEBEN' && part !== 'NOTPROVIDED') {
                   // store only if not not-provided
                   tRet[partInfo.key] = part;
                 }

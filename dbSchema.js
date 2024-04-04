@@ -215,7 +215,7 @@ const schema = {
         {
           "name": "is_MREF",
           "type": "string",
-          "length": 22,
+          "length": 35,
           "nullable": true,
         },
       ],
