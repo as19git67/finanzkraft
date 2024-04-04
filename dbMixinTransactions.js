@@ -163,16 +163,16 @@ const DbMixinTransactions = {
     } else {
       if (_.isString(tRet.text)) {
         const parts = [];
-        this._parseText(parts, tRet.text, ['ABWE:', 'ABWE+'], 'ABWE');
-        this._parseText(parts, tRet.text, ['ABWA:', 'ABWE+', ' ABWA '], 'ABWA');
-        this._parseText(parts, tRet.text, ['ANAM:'], 'ANAM');
-        this._parseText(parts, tRet.text, ['BIC:', 'BIC '], 'BIC');
-        this._parseText(parts, tRet.text, ['IBAN:', 'IBAN '], 'IBAN');
+        this._parseText(parts, tRet.text, ['ABWE:', 'ABWE+', 'A BWE:', 'AB WE:', 'ABW E:', 'ABWE :'], 'ABWE');
+        this._parseText(parts, tRet.text, ['ABWA:', 'ABWE+', 'A BWA:', 'AB WA:', 'ABW A:', 'ABWA :', ' ABWA '], 'ABWA');
+        this._parseText(parts, tRet.text, ['ANAM:', 'A NAM:', 'AN AM:', 'ANA M:', 'ANAM :'], 'ANAM');
+        this._parseText(parts, tRet.text, ['BIC:', 'B IC:', 'BI C:', 'BIC :', 'BIC '], 'BIC');
+        this._parseText(parts, tRet.text, ['IBAN:', 'IBAN ', 'I BAN:', 'IB AN:', 'IBA N:', 'IBAN :'], 'IBAN');
         this._parseText(parts, tRet.text, ['Ref.'], 'REF');
-        this._parseText(parts, tRet.text, ['GLÄUBIGER-ID:', 'CRED:', 'CRED'], 'CRED');
-        this._parseText(parts, tRet.text, ['CORE / MANDATSREF.:', 'COR1 / MANDATSREF.:', 'MREF:', 'MREF '], 'MREF');
-        this._parseText(parts, tRet.text, ['SVWZ:'], 'SVWZ');
-        this._parseText(parts, tRet.text, ['END-TO-END-REF.:', 'EREF:', ' EREF '], 'EREF');
+        this._parseText(parts, tRet.text, ['GLÄUBIGER-ID:', 'CRED:', 'C RED:', 'CR ED:', 'CRE D:', 'CRED :', 'CRED' ], 'CRED');
+        this._parseText(parts, tRet.text, ['CORE / MANDATSREF.:', 'COR1 / MANDATSREF.:', 'MREF:', 'M REF:', 'MR EF:', 'MRE F:', 'MREF :', 'MREF '], 'MREF');
+        this._parseText(parts, tRet.text, ['SVWZ:', 'S VWZ:', 'SV WZ:', 'SVW Z:', 'SVWZ :'], 'SVWZ');
+        this._parseText(parts, tRet.text, ['END-TO-END-REF.:', 'EREF:', 'E REF:', 'ER EF:', 'ERE F:', 'EREF :', ' EREF '], 'EREF');
         if (parts.length > 0) {
           const sorted = parts.toSorted((a, b) => {
             if (a.pos < b.pos) {
