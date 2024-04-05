@@ -23,6 +23,7 @@ import dbMixinCategories from "./dbMixinCategories.js";
 import dbMixinTimespan from "./dbMixinTimespan.js";
 import dbMixinRules from "./dbMixinRules.js";
 import di from './dataImport.js'
+import dataExporter from './dataExport.js'
 
 // workaround for missing __dirname in ES6 modules
 import {URL} from 'url';
@@ -54,6 +55,7 @@ new Promise(async (resolve, reject) => {
     dbSchemas: [dbSchema],
     dbMixins: [dbMixinAccounts, dbMixinTransactions, dbMixinCategories, dbMixinTimespan, dbMixinRules],
     dbImporter: [di],
+    dbExporter: [dataExporter],
     permissions: permissions,
   });
 
