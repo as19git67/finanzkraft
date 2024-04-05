@@ -449,7 +449,7 @@ const schema = {
           "nullable": true,
         },
         {
-          "name": "ref",
+          "name": "REF",
           "type": "string",
           "nullable": true,
         },

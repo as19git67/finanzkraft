@@ -16,7 +16,16 @@ const DbMixinTransactions = {
     const columnsToSelect = [
       'Fk_Account.id as account_id', 'Fk_Account.name as account_name', 'Fk_Transaction.id as t_id',
       'Fk_Transaction.bookingDate as t_booking_date', 'Fk_Transaction.valueDate as t_value_date',
-      'Fk_Transaction.text as t_text', 'Fk_Transaction.EREF as t_EREF', 'Fk_Transaction.CRED as t_CRED', 'Fk_Transaction.MREF as t_MREF', 'Fk_Transaction.entryText as t_entry_text', 'Fk_Transaction.amount as t_amount',
+      'Fk_Transaction.text as t_text',
+      'Fk_Transaction.EREF as t_EREF',
+      'Fk_Transaction.CRED as t_CRED',
+      'Fk_Transaction.MREF as t_MREF',
+      'Fk_Transaction.ABWA as t_ABWA',
+      'Fk_Transaction.ABWE as t_ABWE',
+      'Fk_Transaction.IBAN as t_IBAN',
+      'Fk_Transaction.BIC as t_BIC',
+      'Fk_Transaction.REF as t_REF',
+      'Fk_Transaction.entryText as t_entry_text', 'Fk_Transaction.amount as t_amount',
       'Fk_Transaction.notes as t_notes', 'Fk_Transaction.payee as t_payee', 'Fk_Transaction.primaNotaNo as t_primaNotaNo',
       'Fk_Transaction.payeePayerAcctNo as t_payeePayerAcctNo', 'Fk_Transaction.gvCode as t_gvCode',
       'Fk_Transaction.processed as t_processed', 'Fk_Category.id as category_id',
@@ -73,6 +82,11 @@ const DbMixinTransactions = {
             builder.orWhereILike('Fk_Transaction.EREF', `%${trimmedSearchTerm}%`);
             builder.orWhereILike('Fk_Transaction.CRED', `%${trimmedSearchTerm}%`);
             builder.orWhereILike('Fk_Transaction.MREF', `%${trimmedSearchTerm}%`);
+            builder.orWhereILike('Fk_Transaction.ABWA', `%${trimmedSearchTerm}%`);
+            builder.orWhereILike('Fk_Transaction.ABWE', `%${trimmedSearchTerm}%`);
+            builder.orWhereILike('Fk_Transaction.IBAN', `%${trimmedSearchTerm}%`);
+            builder.orWhereILike('Fk_Transaction.BIC', `%${trimmedSearchTerm}%`);
+            builder.orWhereILike('Fk_Transaction.REF', `%${trimmedSearchTerm}%`);
             builder.orWhereILike('Fk_Transaction.payee', `%${trimmedSearchTerm}%`);
             builder.orWhereILike('Fk_Category.fullName', `%${trimmedSearchTerm}%`);
           } else {
@@ -80,6 +94,11 @@ const DbMixinTransactions = {
             builder.orWhereLike('Fk_Transaction.EREF', `%${trimmedSearchTerm}%`);
             builder.orWhereLike('Fk_Transaction.CRED', `%${trimmedSearchTerm}%`);
             builder.orWhereLike('Fk_Transaction.MREF', `%${trimmedSearchTerm}%`);
+            builder.orWhereLike('Fk_Transaction.ABWA', `%${trimmedSearchTerm}%`);
+            builder.orWhereLike('Fk_Transaction.ABWE', `%${trimmedSearchTerm}%`);
+            builder.orWhereLike('Fk_Transaction.IBAN', `%${trimmedSearchTerm}%`);
+            builder.orWhereLike('Fk_Transaction.BIC', `%${trimmedSearchTerm}%`);
+            builder.orWhereLike('Fk_Transaction.REF', `%${trimmedSearchTerm}%`);
             builder.orWhereLike('Fk_Transaction.notes', `%${trimmedSearchTerm}%`);
             builder.orWhereLike('Fk_Transaction.payee', `%${trimmedSearchTerm}%`);
             builder.orWhereLike('Fk_Category.fullName', `%${trimmedSearchTerm}%`);
@@ -181,7 +200,7 @@ const DbMixinTransactions = {
     }
   },
 
-  // Convert empty values to undefined for having null in DB
+  // Convert empty values to undefined for having null in DB and parse ABWE, ABWA, ANAM, BNAM, BIC, IBAN, Ref, CRED, SVWZ, EREF
   _fixTransactionData: function (t) {
     const tRet = t;
     if (t.processed === undefined) {
