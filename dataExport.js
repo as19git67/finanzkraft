@@ -4,7 +4,20 @@ import {writeFile} from "node:fs/promises";
 
 export default async function exportData(db, exportFilename) {
 
-  const data = yaml.load(fs.readFileSync(exportFilename, 'utf8'));
+  let data = {};
+  try {
+    data = yaml.load(fs.readFileSync(exportFilename, 'utf8'));
+  } catch (ex) {
+    switch (ex.code) {
+      case 'ENOENT':
+        console.log(`Export file ${exportFilename} does not exist. Starting with empty file.`);
+        data = {};
+        break;
+      default:
+        console.log(`Exception while opening export file ${exportFilename}: ${ex.message}`);
+        throw ex;
+    }
+  }
 
   console.log('Exporting rule sets...');
   data.RuleSets = await db.getRuleSets();
