@@ -163,6 +163,10 @@ const DbMixinTransactions = {
     return results.map((t) => {
       let tableName = '';
       for (const tKey in t) {
+        if (_.isArray(t[tKey])) {
+          delete t[tKey];
+          continue;
+        }
         const i = tKey.indexOf(':');
         if (i > 0) {
           const parts = tKey.split(':');
