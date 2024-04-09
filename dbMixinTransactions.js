@@ -145,6 +145,44 @@ const DbMixinTransactions = {
     return this._selectTransactions(undefined, maxItems, searchTerm, accountsWhereIn, dateFilterFrom, dateFilterTo, idUser, amountMin, amountMax, textToken, mRefToken);
   },
 
+  async getTransactionsForExport() {
+    const results = await this.knex.table('Fk_Transaction')
+        .select(['Fk_Transaction.id as Fk_Transaction:id', 'Fk_Transaction.*', 'Fk_Account.id as Fk_Account:id', 'Fk_Account.name as Fk_Account:name', 'Fk_Account.iban as Fk_Account:iban', 'Fk_Account.*', 'Fk_Currency.id as Fk_Currency:id', 'Fk_Currency.name as Fk_Currency:name', 'Fk_Currency.*', 'Fk_Category.id as Fk_Category:id', 'Fk_Category.name as Fk_Category:name', 'Fk_Category.*', 'Fk_RuleSet.id as Fk_RuleSet:id', 'Fk_RuleSet.name as Fk_RuleSet:name', 'Fk_RuleSet.*'])
+        .join('Fk_Account', function () {
+          this.on('Fk_Transaction.idAccount', '=', 'Fk_Account.id');
+        })
+        .join('Fk_Currency', function () {
+          this.on('Fk_Account.idCurrency', '=', 'Fk_Currency.id');
+        })
+        .leftJoin('Fk_Category', function () {
+          this.on('Fk_Transaction.idCategory', '=', 'Fk_Category.id');
+        })
+        .leftJoin('Fk_RuleSet', function () {
+          this.on('Fk_Transaction.idRuleSet', '=', 'Fk_RuleSet.id');
+        });
+    return results.map((t) => {
+      let tableName = '';
+      for (const tKey in t) {
+        const i = tKey.indexOf(':');
+        if (i > 0) {
+          const parts = tKey.split(':');
+          tableName = parts[0];
+          if (t[tKey] == null) {
+            delete t[tKey];
+          }
+        } else {
+          if (t[tKey] === null) {
+            delete t[tKey];
+          } else {
+            t[tableName + ':' + tKey] = t[tKey];
+            delete t[tKey];
+          }
+        }
+      }
+      return t;
+    });
+  },
+
   async getTransaction(idTransaction, idUser) {
     if (!idTransaction) {
       throw new Error('Undefined idTransaction', {cause: 'unknown'});

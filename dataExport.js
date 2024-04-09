@@ -24,7 +24,7 @@ export default async function exportData(db, exportFilename) {
   console.log(`Exported ${data.RuleSets.length} rule sets`);
   data.accounts = await db.getAccounts();
   console.log(`Exported ${data.accounts.length} accounts`);
-  data.transactions = await db.getTransactions();
+  data.transactions = await db.getTransactionsForExport();
   console.log(`Exported ${data.transactions.length} transactions`);
 
   const json = JSON.stringify(data, undefined, 2);
