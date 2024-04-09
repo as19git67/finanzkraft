@@ -22,6 +22,10 @@ export default async function exportData(db, exportFilename) {
   console.log('Exporting rule sets...');
   data.RuleSets = await db.getRuleSets();
   console.log(`Exported ${data.RuleSets.length} rule sets`);
+  data.accounts = await db.getAccounts();
+  console.log(`Exported ${data.accounts.length} accounts`);
+  data.transactions = await db.getTransactions();
+  console.log(`Exported ${data.transactions.length} transactions`);
 
   const json = JSON.stringify(data, undefined, 2);
   const dataBuffer = new Uint8Array(Buffer.from(json));
