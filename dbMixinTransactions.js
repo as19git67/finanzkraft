@@ -500,12 +500,8 @@ const DbMixinTransactions = {
     });
     return this.knex.transaction(async (trx) => {
       let inserts = [];
-      let processedRrToInsert = [];
       if (trToInsert.length > 0) {
-        for (const tr of trToInsert) {
-          processedRrToInsert.push(await this._runRules(trx, tr));
-        }
-        inserts = await trx('Fk_Transaction').insert(processedRrToInsert).returning('*');
+        inserts = await trx('Fk_Transaction').insert(trToInsert).returning('*');
         console.log(`Inserted ${inserts.length} transactions`);
         await this.applyRules(trx, {includeProcessed: false, includeTransactionsWithRuleSet: false});
       }
