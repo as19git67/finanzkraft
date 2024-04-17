@@ -16,6 +16,8 @@ ln -snf /usr/share/zoneinfo/"$TZ" /etc/localtime && echo "$TZ" > /etc/timezone
   echo "dbPassword: \"$DBPASSWORD\""
   echo "importDatafile: \"$IMPORTDATAFILE\""
   echo "exportDatafile: \"$EXPORTDATAFILE\""
+  echo "adminUser: \"$INITIALADMINUSER\""
+  echo "initialAdminPassword: \"$INITIALADMINUSERPASSWORD\""
 } >  /app/settings.yaml
 
 if [ ! -f /data/key.pem ]
