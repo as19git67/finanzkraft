@@ -1,8 +1,8 @@
 {
-  "name": "fk2-server",
-  "version": "1.0.0",
+  "name": "finanzkraft",
+  "version": "1.0.88",
   "main": "app.js",
-  "description": "Finanzkraft 2 server and Docker image",
+  "description": "Finanzkraft server and Docker image",
   "type": "module",
   "scripts": {
     "start": "node app.js",
@@ -16,6 +16,7 @@
     "cors": "^2.8.5",
     "debug": "^4.4.0",
     "express": "^5.1.0",
+    "finanzkraftui": "github:as19git67/finanzkraftui",
     "hat": "^0.0.3",
     "helmet": "^8.1.0",
     "http-errors": "^2.0.0",
