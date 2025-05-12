@@ -1,33 +1,43 @@
 {
-  "name": "finanzkraft",
-  "version": "1.0.88",
-  "description": "Finanzkraft server and Docker image",
+  "name": "fk2-server",
+  "version": "1.0.0",
+  "main": "app.js",
+  "description": "Finanzkraft 2 server and Docker image",
   "type": "module",
   "scripts": {
-    "start": "node server.js",
+    "start": "node app.js",
     "build": "./buildui.sh",
     "export": "node dataExportAsMoney.js"
   },
   "author": "Anton Schegg",
   "license": "ISC",
+  "keywords": [],
   "dependencies": {
-    "as-express": "github:as19git67/as-express",
-    "debug": "^4.3.4",
-    "express": "^4.18.2",
-    "finanzkraftui": "github:as19git67/finanzkraftui",
-    "hbs": "^4.2.0",
-    "helmet": "^7.1.0",
+    "cors": "^2.8.5",
+    "debug": "^4.4.0",
+    "express": "^5.1.0",
+    "hat": "^0.0.3",
+    "helmet": "^8.1.0",
     "http-errors": "^2.0.0",
     "js-yaml": "^4.1.0",
     "knex": "^3.1.0",
-    "luxon": "^3.4.4",
+    "lodash": "^4.17.21",
+    "luxon": "^3.6.1",
     "morgan": "^1.10.0",
-    "mssql": "^10.0.2",
+    "mssql": "^11.0.1",
+    "p-wait-for": "^5.0.2",
+    "passport": "^0.7.0",
+    "passport-http": "^0.3.0",
+    "passport-http-bearer": "^1.0.1",
+    "passport-local": "^1.0.0",
+    "speakeasy": "^2.0.0",
     "sqlite3": "^5.1.7"
   },
   "devDependencies": {
-    "eslint": "^8.56.0",
+    "chai": "^5.2.0",
+    "eslint": "^8.57.1",
     "eslint-config-airbnb-base": "^15.0.0",
-    "eslint-plugin-import": "^2.29.1"
+    "eslint-plugin-import": "^2.31.0",
+    "mocha": "^11.2.2"
   }
 }

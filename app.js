@@ -1,13 +1,10 @@
-import createError from 'http-errors';
 import express from 'express';
 import helmet from 'helmet';
 import path from 'path';
 import logger from 'morgan';
 
-// AS specific modules
-//import AsExpress from './node_modules/as-express/lib/as-express.js';
-import {AsExpress} from 'as-express';
-import permissions from './permissions.js';
+import AsExpress from "./as-express.js";
+import basePermissions from './basePermissions.js';
 import dbSchema from './dbSchema.js';
 import accountsRouter from './routes/accounts.js';
 import transactionRouter from './routes/transaction.js';
@@ -27,6 +24,7 @@ import dataExporter from './dataExport.js'
 
 // workaround for missing __dirname in ES6 modules
 import {URL} from 'url';
+import permissions from './permissions.js';
 
 const __dirname = new URL('.', import.meta.url).pathname;
 
@@ -56,7 +54,7 @@ new Promise(async (resolve, reject) => {
     dbMixins: [dbMixinAccounts, dbMixinTransactions, dbMixinCategories, dbMixinTimespan, dbMixinRules],
     dbImporter: [di],
     dbExporter: [dataExporter],
-    permissions: permissions,
+    permissions: {...basePermissions, ...permissions} ,
   });
 
   app.use(function (req, res, next) {

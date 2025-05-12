@@ -1,4 +1,4 @@
-import { AsRouteConfig } from 'as-express';
+import AsRouteConfig from '../as-router.js';
 
 export default new AsRouteConfig('/').get(function (req, res, next) {
   const db = req.app.get('database');

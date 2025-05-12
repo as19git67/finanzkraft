@@ -28,4 +28,4 @@ then
 fi
 
 npm rebuild node-sass && npm rebuild sqlite3
-node ./server.js
+node ./app.js

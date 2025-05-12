@@ -1,4 +1,4 @@
-import { AsRouteConfig } from 'as-express';
+import AsRouteConfig from '../as-router.js';
 import { DateTime } from "luxon";
 
 const rc = new AsRouteConfig('/:id/transactions');

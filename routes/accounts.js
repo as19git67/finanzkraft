@@ -1,4 +1,4 @@
-import { AsRouteConfig } from 'as-express';
+import AsRouteConfig from '../as-router.js';
 
 const rc = new AsRouteConfig('/');
 
