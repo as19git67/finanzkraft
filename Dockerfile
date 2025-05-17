@@ -7,7 +7,7 @@ FROM node:20-alpine
 RUN apk update && apk add --no-cache openssl tzdata g++ make py3-pip sqlite
 WORKDIR /app
 COPY . .
-RUN npm install && npm install "github:as19git67/finanzkraftui" && npm rebuild node-sass && npm rebuild sqlite3 && npm run build
+RUN npm install && npm rebuild node-sass && npm rebuild sqlite3 && npm run build
 
 VOLUME ["/data"]
 
