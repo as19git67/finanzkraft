@@ -17,7 +17,7 @@ import ruleRouter from './routes/rule.js';
 import rulesRouter from './routes/rules.js';
 import dbMixinAccounts from "./dbMixinAccounts.js";
 import dbMixinTransactions from "./dbMixinTransactions.js";
-import dbMixinPrefsNewTransactionPresets from "./DbMixinPrefsNewTransactionPresets.js";
+import dbMixinPrefsNewTransactionPresets from "./dbMixinPrefsNewTransactionPresets.js";
 import dbMixinCategories from "./dbMixinCategories.js";
 import dbMixinTimespan from "./dbMixinTimespan.js";
 import dbMixinRules from "./dbMixinRules.js";
