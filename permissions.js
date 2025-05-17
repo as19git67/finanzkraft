@@ -89,6 +89,30 @@ const permissions = {
     methods: ["delete"],
     menus: ["admin.timespan"]
   },
+  newtransactionpresets_create: {
+    description: "Preset für neue Buchung anlegen",
+    resources: ["/api/newtransactionpresets"],
+    methods: ["put"],
+    menus: ["admin.newtransactionpresets"]
+  },
+  newtransactionpresets_read: {
+    description: "Preset für neue Buchung anzeigen",
+    resources: ["/api/newtransactionpresets"],
+    methods: ["get"],
+    menus: ["admin.newtransactionpresets"]
+  },
+  newtransactionpresets_update: {
+    description: "Preset für neue Buchung ändern",
+    resources: ["/api/newtransactionpresets"],
+    methods: ["get", "post"],
+    menus: ["admin.newtransactionpresets"]
+  },
+  newtransactionpresets_delete: {
+    description: "Preset für neue Buchung löschen",
+    resources: ["/api/newtransactionpresets"],
+    methods: ["delete"],
+    menus: ["admin.newtransactionpresets"]
+  },
   accounts_list_read: {
     description: "Konten anzeigen",
     resources: ["/api/accounts"],

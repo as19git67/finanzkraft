@@ -10,12 +10,14 @@ import accountsRouter from './routes/accounts.js';
 import transactionRouter from './routes/transaction.js';
 import transactionsRouter from './routes/transactions.js';
 import transactionsOfAccountRouter from './routes/transactionsOfAccount.js';
+import newTransactionPresetsRouter from './routes/newTransactionPresets.js';
 import categoriesRouter from './routes/categories.js';
 import timespanRouter from './routes/timespans.js';
 import ruleRouter from './routes/rule.js';
 import rulesRouter from './routes/rules.js';
 import dbMixinAccounts from "./dbMixinAccounts.js";
 import dbMixinTransactions from "./dbMixinTransactions.js";
+import dbMixinPrefsNewTransactionPresets from "./DbMixinPrefsNewTransactionPresets.js";
 import dbMixinCategories from "./dbMixinCategories.js";
 import dbMixinTimespan from "./dbMixinTimespan.js";
 import dbMixinRules from "./dbMixinRules.js";
@@ -51,7 +53,7 @@ const asExpress = new AsExpress('finanzkraft', app);
 new Promise(async (resolve, reject) => {
   await asExpress.init({
     dbSchemas: [dbSchema],
-    dbMixins: [dbMixinAccounts, dbMixinTransactions, dbMixinCategories, dbMixinTimespan, dbMixinRules],
+    dbMixins: [dbMixinAccounts, dbMixinTransactions, dbMixinPrefsNewTransactionPresets, dbMixinCategories, dbMixinTimespan, dbMixinRules],
     dbImporter: [di],
     dbExporter: [dataExporter],
     permissions: {...basePermissions, ...permissions} ,
@@ -109,6 +111,7 @@ new Promise(async (resolve, reject) => {
   asExpress.addRouter("/api/accounts", accountsRouter);
   asExpress.addRouter("/api/transaction", transactionRouter);
   asExpress.addRouter("/api/transaction", transactionsRouter);
+  asExpress.addRouter("/api/newtransactionpresets", newTransactionPresetsRouter);
   asExpress.addRouter("/api/timespans", timespanRouter);
   asExpress.addRouter("/api/category", categoriesRouter);
   asExpress.addRouter("/api/rules", rulesRouter);
