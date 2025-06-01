@@ -26,6 +26,7 @@ rc.get(function (req, res, next) {
 
 rc.put(async (req, res, next) => {
   const transactionData = req.body;
+  // todo explicitly pick values from body
   const db = req.app.get('database');
   try {
     const result = await db.addTransaction(transactionData);
