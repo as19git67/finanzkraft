@@ -11,7 +11,8 @@ const DbMixinAccounts = {
     .orderBy('closedAt', 'asc')
     .orderBy('name', 'asc')
     .select(['Fk_Account.id as id', 'Fk_Account.name as name', 'Fk_Account.iban as iban',
-      'Fk_Account.number as number', 'Fk_Currency.id as currency_id', 'Fk_Currency.name as currency_name',
+      'Fk_Account.number as number', 'Fk_Account.startBalance as startBalance', 'Fk_Account.idAccountType as account_type_id',
+      'Fk_Currency.id as currency_id', 'Fk_Currency.name as currency_name',
       'Fk_Currency.short as currency_short', 'Fk_Account.closedAt as closedAt']);
   },
 

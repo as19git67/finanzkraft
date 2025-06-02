@@ -17,7 +17,8 @@ export default async function importData(db, importFilename) {
       name: account.name,
       iban: account.iban,
       number: account.number === '0' ? undefined : account.number,
-      idCurrency: account.idCurrency,
+      idCurrency: account.currency_id ? account.currency_id : account.idCurrency,
+      idAccountType: account.account_type_id === undefined ? 'checking' : account.account_type_id,
       startBalance: account.startBalance,
       closedAt: account.closedAt,
     });

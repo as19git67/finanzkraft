@@ -1,5 +1,5 @@
 const schema = {
-  version: 19,
+  version: 20,
   name: 'finanzkraft',
   tables: [
     {
@@ -412,6 +412,43 @@ const schema = {
       ]
     },
     {
+      "tableName": "Fk_AccountType",
+      "columns": [
+        {
+          "name": "id",
+          "type": "string",
+          "length": 10,
+          "primary_key": true,
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "unique": true,
+          "nullable": false,
+        },
+        {
+          "name": "order",
+          "type": "integer",
+          "unique": true,
+          "nullable": false,
+        },
+      ],
+      indexes: [
+        {
+          name: 'IDX_AccountType_order',
+          columns: ['order'],
+          unique: true,
+        },
+      ],
+      "values": [
+        {id: "cash", name: "Bargeld", order: 0},
+        {id: "checking", name: "Girokonto", order: 1},
+        {id: "credit", name: "Kreditkarte", order: 2},
+        {id: "daily", name: "Tagesgeld", order: 3},
+        {id: "savings", name: "Sparkonto", order: 4},
+      ]
+    },
+    {
       "tableName": "Fk_Account",
       "columns": [
         {
@@ -443,6 +480,12 @@ const schema = {
           "nullable": false,
         },
         {
+          "name": "idAccountType",
+          "type": "string",
+          length: 10,
+          "nullable": false,
+        },
+        {
           "name": "startBalance",
           "type": "decimal",
           precision: 12,
@@ -461,7 +504,93 @@ const schema = {
           "columns": ["idCurrency"],
           "foreign_table": "Fk_Currency",
           "foreign_columns": ["id"],
-        }
+        },
+        {
+          "name": "FK_idAccountType__Fk_AccountType_id",
+          "columns": ["idAccountType"],
+          "foreign_table": "Fk_AccountType",
+          "foreign_columns": ["id"],
+        },
+      ],
+    },
+    {
+      "tableName": "Fk_AccountReader",
+      "columns": [
+        {
+          "name": "idAccount",
+          "type": "integer",
+          "nullable": false,
+        },
+        {
+          "name": "idUser",
+          "type": "integer",
+          "nullable": false,
+        },
+      ],
+      indexes: [
+        {
+          name: 'IDX_AccountReader_account',
+          columns: ['idAccount'],
+        },
+        {
+          name: 'IDX_AccountReader_user_account',
+          columns: ['idAccount', 'idUser'],
+          unique: true,
+        },
+      ],
+      "foreign_keys": [
+        {
+          "name": "FK_R_idAccount__Fk_Account_id",
+          "columns": ["idAccount"],
+          "foreign_table": "Fk_Account",
+          "foreign_columns": ["id"],
+        },
+        {
+          "name": "FK_R_idUser__Users_id",
+          "columns": ["idUser"],
+          "foreign_table": "Users",
+          "foreign_columns": ["id"],
+        },
+      ],
+    },
+    {
+      "tableName": "Fk_AccountWriter",
+      "columns": [
+        {
+          "name": "idAccount",
+          "type": "integer",
+          "nullable": false,
+        },
+        {
+          "name": "idUser",
+          "type": "integer",
+          "nullable": false,
+        },
+      ],
+      indexes: [
+        {
+          name: 'IDX_AccountWriter_account',
+          columns: ['idAccount'],
+        },
+        {
+          name: 'IDX_AccountWriter_user_account',
+          columns: ['idAccount', 'idUser'],
+          unique: true,
+        },
+      ],
+      "foreign_keys": [
+        {
+          "name": "FK_W_idAccount__Fk_Account_id",
+          "columns": ["idAccount"],
+          "foreign_table": "Fk_Account",
+          "foreign_columns": ["id"],
+        },
+        {
+          "name": "FK_W_idUser__Users_id",
+          "columns": ["idUser"],
+          "foreign_table": "Users",
+          "foreign_columns": ["id"],
+        },
       ],
     },
     {
