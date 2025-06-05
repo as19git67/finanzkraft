@@ -13,11 +13,13 @@ import transactionsOfAccountRouter from './routes/transactionsOfAccount.js';
 import newTransactionPresetsRouter from './routes/newTransactionPresets.js';
 import categoriesRouter from './routes/categories.js';
 import timespanRouter from './routes/timespans.js';
+import currenciesRouter from './routes/currencies.js';
 import ruleRouter from './routes/rule.js';
 import rulesRouter from './routes/rules.js';
 import dbMixinAccounts from "./dbMixinAccounts.js";
 import dbMixinTransactions from "./dbMixinTransactions.js";
 import dbMixinPrefsNewTransactionPresets from "./dbMixinPrefsNewTransactionPresets.js";
+import DbMixinCurrencies from "./dbMixinCurrencies.js";
 import dbMixinCategories from "./dbMixinCategories.js";
 import dbMixinTimespan from "./dbMixinTimespan.js";
 import dbMixinRules from "./dbMixinRules.js";
@@ -27,6 +29,8 @@ import dataExporter from './dataExport.js'
 // workaround for missing __dirname in ES6 modules
 import {URL} from 'url';
 import permissions from './permissions.js';
+import dbMixinCurrencies from "./dbMixinCurrencies.js";
+import currencies from "./routes/currencies.js";
 
 const __dirname = new URL('.', import.meta.url).pathname;
 
@@ -53,7 +57,15 @@ const asExpress = new AsExpress('finanzkraft', app);
 new Promise(async (resolve, reject) => {
   await asExpress.init({
     dbSchemas: [dbSchema],
-    dbMixins: [dbMixinAccounts, dbMixinTransactions, dbMixinPrefsNewTransactionPresets, dbMixinCategories, dbMixinTimespan, dbMixinRules],
+    dbMixins: [
+      dbMixinAccounts,
+      dbMixinTransactions,
+      dbMixinPrefsNewTransactionPresets,
+      dbMixinCurrencies,
+      dbMixinCategories,
+      dbMixinTimespan,
+      dbMixinRules
+    ],
     dbImporter: [di],
     dbExporter: [dataExporter],
     permissions: {...basePermissions, ...permissions} ,
@@ -112,6 +124,7 @@ new Promise(async (resolve, reject) => {
   asExpress.addRouter("/api/transaction", transactionRouter);
   asExpress.addRouter("/api/transaction", transactionsRouter);
   asExpress.addRouter("/api/newtransactionpresets", newTransactionPresetsRouter);
+  asExpress.addRouter("/api/currencies", currenciesRouter);
   asExpress.addRouter("/api/timespans", timespanRouter);
   asExpress.addRouter("/api/category", categoriesRouter);
   asExpress.addRouter("/api/rules", rulesRouter);

@@ -59,31 +59,31 @@ const permissions = {
     methods: ["delete"],
     menus: ["admin.category"]
   },
-  timesapans_list_read: {
+  timespans_list_read: {
     description: "Zeitspannen (Datumsfilter) anzeigen",
     resources: ["/api/timespans"],
     methods: ["get"],
     menus: ["admin.timespans"]
   },
-  timesapans_create: {
+  timespan_create: {
     description: "Zeitspanne (Datumsfilter) neu anlegen",
     resources: ["/api/timespans"],
     methods: ["put"],
     menus: ["admin.timespans", "admin.timespan"]
   },
-  timesapans_read: {
+  timespan_read: {
     description: "Zeitspanne (Datumsfilter) anzeigen",
     resources: ["/api/timespans/:id"],
     methods: ["get"],
     menus: ["admin.timespan"]
   },
-  timesapans_update: {
+  timespan_update: {
     description: "Zeitspanne (Datumsfilter) ändern",
     resources: ["/api/timespans/:id"],
     methods: ["get", "post"],
     menus: ["admin.timespans"]
   },
-  timesapans_delete: {
+  timespan_delete: {
     description: "Zeitspanne (Datumsfilter) löschen",
     resources: ["/api/timespans/:id"],
     methods: ["delete"],
@@ -112,6 +112,36 @@ const permissions = {
     resources: ["/api/newtransactionpresets"],
     methods: ["delete"],
     menus: ["admin.newtransactionpresets"]
+  },
+  currencies_list_read: {
+    description: "Währungen anzeigen",
+    resources: ["/api/currencies"],
+    methods: ["get"],
+    menus: ["admin.currencies"]
+  },
+  currencies_create: {
+    description: "Währung neu anlegen",
+    resources: ["/api/currencies"],
+    methods: ["put"],
+    menus: ["admin.currencies", "admin.currency"]
+  },
+  currency_read: {
+    description: "Währung anzeigen",
+    resources: ["/api/currencies/:id"],
+    methods: ["get"],
+    menus: ["admin.currency"]
+  },
+  currency_update: {
+    description: "Währung ändern",
+    resources: ["/api/currencies/:id"],
+    methods: ["get", "post"],
+    menus: ["admin.currency"]
+  },
+  currency_delete: {
+    description: "Währung löschen",
+    resources: ["/api/currencies/:id"],
+    methods: ["delete"],
+    menus: ["admin.currency"]
   },
   accounts_list_read: {
     description: "Konten anzeigen",
