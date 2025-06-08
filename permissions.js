@@ -145,31 +145,31 @@ const permissions = {
   },
   accounts_list_read: {
     description: "Konten anzeigen",
-    resources: ["/api/accounts"],
+    resources: ["/api/accounts", "/api/accounttypes"],
     methods: ["get"],
     menus: ["admin.accounts"]
   },
   account_create: {
     description: "Konto neu anlegen",
-    resources: ["/api/accounts"],
+    resources: ["/api/accounts", "/api/accounttypes"],
     methods: ["put"],
     menus: ["admin.accounts", "admin.account"]
   },
   account_read: {
     description: "Konto anzeigen",
-    resources: ["/api/accounts/:id"],
+    resources: ["/api/accounts/:id",  "/api/accounttypes/:id"],
     methods: ["get"],
     menus: ["admin.account"]
   },
   account_update: {
     description: "Konto ändern",
-    resources: ["/api/accounts/:id"],
+    resources: ["/api/accounts/:id", "/api/accounttypes/:id"],
     methods: ["get", "post"],
     menus: ["admin.account"]
   },
   account_delete: {
     description: "Konto löschen",
-    resources: ["/api/accounts/:id"],
+    resources: ["/api/accounts/:id", "/api/accounttypes/:id"],
     methods: ["delete"],
     menus: ["admin.account"]
   },

@@ -5,8 +5,10 @@ import logger from 'morgan';
 
 import AsExpress from "./as-express.js";
 import basePermissions from './basePermissions.js';
+import permissions from './permissions.js';
 import dbSchema from './dbSchema.js';
 import accountsRouter from './routes/accounts.js';
+import accountTypesRouter from './routes/accountTypes.js';
 import transactionRouter from './routes/transaction.js';
 import transactionsRouter from './routes/transactions.js';
 import transactionsOfAccountRouter from './routes/transactionsOfAccount.js';
@@ -19,7 +21,8 @@ import rulesRouter from './routes/rules.js';
 import dbMixinAccounts from "./dbMixinAccounts.js";
 import dbMixinTransactions from "./dbMixinTransactions.js";
 import dbMixinPrefsNewTransactionPresets from "./dbMixinPrefsNewTransactionPresets.js";
-import DbMixinCurrencies from "./dbMixinCurrencies.js";
+import dbMixinCurrencies from "./dbMixinCurrencies.js";
+import dbMixinAccountTypes from "./dbMixinAccountTypes.js";
 import dbMixinCategories from "./dbMixinCategories.js";
 import dbMixinTimespan from "./dbMixinTimespan.js";
 import dbMixinRules from "./dbMixinRules.js";
@@ -28,9 +31,6 @@ import dataExporter from './dataExport.js'
 
 // workaround for missing __dirname in ES6 modules
 import {URL} from 'url';
-import permissions from './permissions.js';
-import dbMixinCurrencies from "./dbMixinCurrencies.js";
-import currencies from "./routes/currencies.js";
 
 const __dirname = new URL('.', import.meta.url).pathname;
 
@@ -62,6 +62,7 @@ new Promise(async (resolve, reject) => {
       dbMixinTransactions,
       dbMixinPrefsNewTransactionPresets,
       dbMixinCurrencies,
+      dbMixinAccountTypes,
       dbMixinCategories,
       dbMixinTimespan,
       dbMixinRules
@@ -121,6 +122,7 @@ new Promise(async (resolve, reject) => {
 
   asExpress.addRouter("/api/accounts", transactionsOfAccountRouter);
   asExpress.addRouter("/api/accounts", accountsRouter);
+  asExpress.addRouter("/api/accounttypes", accountTypesRouter);
   asExpress.addRouter("/api/transaction", transactionRouter);
   asExpress.addRouter("/api/transaction", transactionsRouter);
   asExpress.addRouter("/api/newtransactionpresets", newTransactionPresetsRouter);
@@ -145,8 +147,9 @@ new Promise(async (resolve, reject) => {
 
   // catch 404 and forward to error handler
   app.use(function (req, res, next) {
+    res.send(404);
     //next(createError(404));
-    res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+    //res.sendFile(path.join(__dirname, 'dist', 'index.html'));
   });
 
   // error handler
