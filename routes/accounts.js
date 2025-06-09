@@ -4,7 +4,7 @@ const rc = new AsRouteConfig('/');
 
 rc.get(function (req, res, next) {
   const db = req.app.get('database');
-  db.getAccounts().then((accounts) =>{
+  db.getAccounts().then((accounts) => {
     res.json(accounts);
   }).catch((reason) => {
     console.log(reason);
@@ -14,7 +14,7 @@ rc.get(function (req, res, next) {
 
 rc.post(function (req, res, next) {
   const db = req.app.get('database');
-  db.getAccounts().then((accounts) =>{
+  db.getAccounts().then((accounts) => {
     res.json(accounts);
   }).catch((reason) => {
     console.log(reason);

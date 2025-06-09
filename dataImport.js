@@ -10,9 +10,10 @@ export default async function importData(db, importFilename) {
 
   const data = yaml.load(fs.readFileSync(importFilename, 'utf8'));
 
-  console.log('Importing accounts...');
+  console.log(`Importing accounts from ${importFilename}...`);
   const accountIdByName = {};
   for (const account of data.accounts) {
+    console.log(`Importing account ${account.name}...`);
     const id = await db.addAccount({
       name: account.name,
       iban: account.iban,
