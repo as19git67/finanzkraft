@@ -7,6 +7,7 @@ import AsExpress from "./as-express.js";
 import basePermissions from './basePermissions.js';
 import permissions from './permissions.js';
 import dbSchema from './dbSchema.js';
+import accountRouter from './routes/account.js';
 import accountsRouter from './routes/accounts.js';
 import accountTypesRouter from './routes/accountTypes.js';
 import transactionRouter from './routes/transaction.js';
@@ -122,6 +123,7 @@ new Promise(async (resolve, reject) => {
 
   asExpress.addRouter("/api/accounts", transactionsOfAccountRouter);
   asExpress.addRouter("/api/accounts", accountsRouter);
+  asExpress.addRouter("/api/accounts", accountRouter);
   asExpress.addRouter("/api/accounttypes", accountTypesRouter);
   asExpress.addRouter("/api/transaction", transactionRouter);
   asExpress.addRouter("/api/transaction", transactionsRouter);
@@ -147,7 +149,7 @@ new Promise(async (resolve, reject) => {
 
   // catch 404 and forward to error handler
   app.use(function (req, res, next) {
-    res.send(404);
+    res.status(404).send();
     //next(createError(404));
     //res.sendFile(path.join(__dirname, 'dist', 'index.html'));
   });

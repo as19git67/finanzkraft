@@ -1,3 +1,5 @@
+import _ from "lodash";
+
 const DbMixinAccounts = {
   getMixinName() {
     return 'DbMixinAccounts';
@@ -45,16 +47,30 @@ const DbMixinAccounts = {
   async updateAccount(idAccount, data) {
     const result = await this.knex.select().table('Fk_Account').where({id: idAccount});
     if (result.length !== 1) {
-      throw new Error(`Account with id ${idAccount} does not exist`, { cause: 'unknown' });
+      throw new Error(`Account with id ${idAccount} does not exist`, {cause: 'unknown'});
     }
-    const updateData = {};
-    if (data.name) {
-      updateData.name = data.name;
-    }
-    if (data.iban) {
-      updateData.iban = data.iban;
-    }
-    return this.knex.table('Fk_Account').where('id', idAccount).update(updateData);
+    const updateData = _.pick(data, 'name', 'iban', 'idAccountType', 'idCurrency', 'startBalance', 'closedAt');
+    return this.knex.transaction(async (trx) => {
+      let result;
+      if (Object.keys(updateData).length > 0) {
+        result = await trx.table('Fk_Account').where('id', idAccount).update(updateData);
+        if (result !== 1) {
+          throw new Error(`Account with id ${idAccount} was not updated`, {cause: 'unknown'});
+        }
+      }
+      if (data.readers) {
+        result = await trx.table('Fk_AccountReader').where('idAccount', idAccount).delete();
+        for (const idUser of data.readers) {
+          result = await trx.table('Fk_AccountReader').insert({idAccount: idAccount, idUser: idUser});
+        }
+      }
+      if (data.writers) {
+        result = await trx.table('Fk_AccountWriter').where('idAccount', idAccount).delete();
+        for (const idUser of data.writers) {
+          result = await trx.table('Fk_AccountWriter').insert({idAccount: idAccount, idUser: idUser});
+        }
+      }
+    });
   },
 
   async deleteAccount(idAccount) {
