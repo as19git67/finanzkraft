@@ -156,9 +156,15 @@ new Promise(async (resolve, reject) => {
 
   // error handler
   app.use(function (err, req, res, next) {
+    console.log(err.message);
     let status = err.status;
     if (!status) {
       switch (err.cause) {
+        case 'unknown':  // unknown user...
+        case 'invalid':  // wrong password...
+          status = 401; // unauthorized
+          err.message = 'Anmeldedaten ungültig';
+          break;
         case 'expired':
           status = 403;
           break;
@@ -166,7 +172,6 @@ new Promise(async (resolve, reject) => {
           status = 500;
       }
     }
-    console.log(err.message);
     // set locals, only providing error in development
     res.status(status).send(err.message);
     // res.locals.message = err.message;

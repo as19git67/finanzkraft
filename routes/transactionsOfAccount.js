@@ -31,13 +31,13 @@ rc.post(async function (req, res, next) {
   const db = req.app.get('database');
   const accountId = req.params.id;
   const transactionsData = req.body.transactions ? req.body.transactions : [];
-  let balance;
-  let balanceDate;
-  let balanceValid = false;
+  let balance = {};
   if (req.body.balance && req.body.balance.valid) {
-    balanceValid = req.body.balance.valid;
-    balance = req.body.balance.balance;
-    balanceDate = req.body.balance.balanceDate;
+    balance = {
+      idAccount: accountId,
+      balance: req.body.balance.balance,
+      balanceDate: req.body.balance.balanceDate,
+    };
   }
   const transactions = transactionsData.map((tr) => {
     if (tr.t_valueDate) {
@@ -116,7 +116,7 @@ rc.post(async function (req, res, next) {
     }
   }
   if (transactionsToSave.length > 0) {
-    db.addTransactions(transactionsToSave).then((storedTransactions) => {
+    db.addTransactions(transactionsToSave, balance).then((storedTransactions) => {
       res.send(storedTransactions);
     }).catch((reason) => {
       console.log(reason);

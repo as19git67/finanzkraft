@@ -536,7 +536,7 @@ const DbMixinTransactions = {
     return this.knex('Fk_Transaction').insert(fixedTransactionData).returning('id');
   },
 
-  async addTransactions(transactions) {
+  async addTransactions(transactions, balance) {
     const trToInsert = transactions.map((t) => {
       return this._fixTransactionData(t);
     });
@@ -546,6 +546,10 @@ const DbMixinTransactions = {
         inserts = await trx('Fk_Transaction').insert(trToInsert).returning('*');
         console.log(`Inserted ${inserts.length} transactions`);
         await this.applyRules(trx, {includeProcessed: false, includeTransactionsWithRuleSet: false});
+        if (balance.idAccount) {
+          inserts = await trx('Fk_AccountBalance').insert(balance);
+          console.log(`Inserted ${inserts.length} account balances`);
+        }
       }
       return inserts;
     });
