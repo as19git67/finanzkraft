@@ -147,7 +147,7 @@ const permissions = {
     description: "Konten anzeigen",
     resources: ["/api/accounts", "/api/accounttypes"],
     methods: ["get"],
-    menus: ["admin.accounts"]
+    menus: ["admin.accounts", "user.accounts"]
   },
   account_create: {
     description: "Konto neu anlegen",
@@ -159,7 +159,7 @@ const permissions = {
     description: "Konto anzeigen",
     resources: ["/api/accounts/:id",  "/api/accounttypes/:id"],
     methods: ["get"],
-    menus: ["admin.account"]
+    menus: ["admin.account", "user.accounts"]
   },
   account_update: {
     description: "Konto ändern",
