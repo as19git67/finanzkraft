@@ -446,6 +446,8 @@ const schema = {
         {id: "credit", name: "Kreditkarte", order: 2},
         {id: "daily", name: "Tagesgeld", order: 3},
         {id: "savings", name: "Sparkonto", order: 4},
+        {id: "security", name: "Wertpapier", order: 5},
+        {id: "other", name: "Sonstiges", order: 6},
       ]
     },
     {
