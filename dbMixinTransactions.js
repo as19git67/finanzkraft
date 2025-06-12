@@ -531,12 +531,21 @@ const DbMixinTransactions = {
     }
   },
 
-  async addTransaction(transactionData) {
+  async addTransaction(transactionData, options) {
     const fixedTransactionData = this._fixTransactionData(transactionData);
-    return this.knex('Fk_Transaction').insert(fixedTransactionData).returning('id');
+    return this.knex.transaction(async (trx) => {
+      let inserts = await trx('Fk_Transaction').insert(fixedTransactionData).returning('id');
+      if (!options || !options.ignoreRules) {
+        await this.applyRules(trx, {includeProcessed: false, includeTransactionsWithRuleSet: false});
+      }
+      if (options && options.balance) {
+        const balanceInserts = await trx('Fk_AccountBalance').insert(options.balance);
+      }
+      return inserts;
+    });
   },
 
-  async addTransactions(transactions, balance) {
+  async addTransactions(transactions, options) {
     const trToInsert = transactions.map((t) => {
       return this._fixTransactionData(t);
     });
@@ -545,10 +554,12 @@ const DbMixinTransactions = {
       if (trToInsert.length > 0) {
         inserts = await trx('Fk_Transaction').insert(trToInsert).returning('*');
         console.log(`Inserted ${inserts.length} transactions`);
-        await this.applyRules(trx, {includeProcessed: false, includeTransactionsWithRuleSet: false});
-        if (balance.idAccount) {
-          inserts = await trx('Fk_AccountBalance').insert(balance);
-          console.log(`Inserted ${inserts.length} account balances`);
+        if (!options || !options.ignoreRules) {
+          await this.applyRules(trx, {includeProcessed: false, includeTransactionsWithRuleSet: false});
+        }
+        if (options && options.balance) {
+          let balanceInserts = await trx('Fk_AccountBalance').insert(options.balance);
+          console.log(`Inserted ${balanceInserts.length} account balances`);
         }
       }
       return inserts;

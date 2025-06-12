@@ -10,7 +10,6 @@ rc.post(function (req, res, next) {
     return;
   }
   const db = req.app.get('database');
-  console.log(req.body);
   const updateData = _.pick(req.body, 'name', 'iban', 'idAccountType', 'idCurrency', 'startBalance', 'closedAt', 'readers', 'writers');
   if (Object.keys(updateData).length === 0) {
     console.log('Ignoring empty update of account');

@@ -28,12 +28,34 @@ export default async function importData(db, importFilename) {
   console.log(`Imported ${Object.keys(data.accounts).length} accounts`);
 
   console.log(`Importing ${Object.keys(data.transactions).length} transactions...`);
+  const balanceByDate = {};
   const maxTr = 70000;
   let cnt = 0;
+
+  // first round: fix duplicate balances
+  for (const tr of data.transactions) {
+    if (cnt > maxTr) break;
+    const idAccount = accountIdByName[tr.account_name];
+    const balance = {};
+    if (tr.bal_saldo !== null) {
+      balance.idAccount = idAccount;
+      balance.balance = tr.bal_saldo;
+      balance.balanceDate = tr.t_valueDate;
+      balanceByDate[`${idAccount}:${tr.t_valueDate}`] = {balance, idTr: tr.t_id};
+    }
+  }
+
   for (const tr of data.transactions) {
     if (cnt > maxTr) break;
     const idAccount = accountIdByName[tr.account_name];
     const idCategory = tr.category === null ? undefined : await db.getOrCreateCategory(tr.category);
+    let cachedBalance = balanceByDate[`${idAccount}:${tr.t_valueDate}`];
+    if (cachedBalance && cachedBalance.idTr === tr.t_id) {
+      cachedBalance = cachedBalance.balance;
+      // console.log(`Have balance of ${balance.balance} from transaction ${tr.t_id}`);
+    } else {
+      cachedBalance = undefined;
+    }
     const id = await db.addTransaction({
       idAccount: idAccount,
       valueDate: tr.t_valueDate,
@@ -45,9 +67,13 @@ export default async function importData(db, importFilename) {
       gvCode: tr.t_zka_tr_code,
       processed: true,
       idCategory: idCategory,
-    });
+    },
+      {
+        balance: cachedBalance,
+        ignoreRules: true,
+      }
+    );
     cnt++;
   }
   console.log(`Imported ${Object.keys(data.transactions).length} transactions`);
-
 }
