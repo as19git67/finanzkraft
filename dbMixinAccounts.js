@@ -35,9 +35,9 @@ const DbMixinAccounts = {
       'latestBalances.balanceDate', 'latestBalances.balance',
       'Fk_Currency.id as currency_id', 'Fk_Currency.name as currency_name',
       'Fk_Currency.short as currency_short', 'Fk_Account.closedAt as closedAt',
-      this.knex.raw("GROUP_CONCAT(distinct FK_AccountReader.idUser) as reader"),
-      this.knex.raw("GROUP_CONCAT(distinct FK_AccountWriter.idUser) as writer"),
-    ]);
+      this.supportsGroupConcat() ? this.knex.raw('GROUP_CONCAT(distinct FK_AccountReader.idUser) as reader') : this.knex.raw("STRING_AGG(FK_AccountReader.idUser, ',') as reader"),
+      this.supportsGroupConcat() ? this.knex.raw('GROUP_CONCAT(distinct FK_AccountWriter.idUser) as writer') : this.knex.raw("STRING_AGG(FK_AccountWriter.idUser, ',') as writer"),
+    ])
   },
 
   async addAccount(accountData) {

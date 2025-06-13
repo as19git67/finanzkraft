@@ -77,6 +77,10 @@ export default class DB {
     return this.#dbClient !== 'sqlite3';
   }
 
+  supportsGroupConcat() {
+    return this.#dbClient === 'sqlite3';
+  }
+
   async startTransaction() {
     return this.knex.transaction();
   }
