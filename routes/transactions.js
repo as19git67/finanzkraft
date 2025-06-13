@@ -6,7 +6,10 @@ rc.get(function (req, res, next) {
   const db = req.app.get('database');
   const maxItems = req.query.maxItems;
   const searchTerm = req.query.searchTerm;
-  const accountsWhereIn = req.query.accountsWhereIn;
+  let accountsWhereIn = req.query.accountsWhereIn;
+  if (accountsWhereIn) {
+    accountsWhereIn = accountsWhereIn.split(',');
+  }
   const dateFilterFrom = req.query.dateFilterFrom;
   const dateFilterTo = req.query.dateFilterTo;
   const idUser = req.user.id;
@@ -31,9 +34,10 @@ rc.put(async (req, res, next) => {
   try {
     const result = await db.addTransaction(transactionData);
     if (result.length > 0) {
-      const id = result[0];
-      console.log(`transaction created with id ${id}`);
-      res.sendStatus(200, id);
+      const resRow = result[0];
+      console.log(`transaction created with id ${resRow.id}`);
+      res.send(resRow.id, 200);
+      res.status(200).send({id: resRow.id});
     } else {
       throw new Error('Unable to create transaction');
     }
