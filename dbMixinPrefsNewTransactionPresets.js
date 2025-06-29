@@ -7,15 +7,14 @@ const DbMixinPrefsNewTransactionPresets = {
     return 'DbMixinPrefsNewTransactionPresets';
   },
 
-  _selectNewTransactionPresets: async function (userId, idPreset) {
-    const presets = await this.knex.table('Preferences')
+  _selectNewTransactionPresets: async function (userId) {
+    const result = await this.knex.table('Preferences')
       .where('key', this.key)
       .andWhere('idUser', userId);
-    if (idPreset) {
-      const preset = presets.find((p) => p.id === idPreset);
-      return [preset];
+    if (result.length !== 1) {
+      return '[]';
     }
-    return presets;
+    return result[0].value;
   },
 
   async getNewTransactionPresets(userId) {
@@ -26,7 +25,7 @@ const DbMixinPrefsNewTransactionPresets = {
     const result = await this.knex('Preferences').insert({
       idUser: userId,
       key: this.key,
-      value: presets,
+      value: JSON.stringify(presets),
       description: 'Array of new-transaction presets',
     }).returning('id');
     if (result.length > 0) {
@@ -36,18 +35,17 @@ const DbMixinPrefsNewTransactionPresets = {
     }
   },
 
-  async updateNewTransactionPresets(userId, updateData) {
+  async updateNewTransactionPresets(userId, presets) {
     const result = await this.knex.select().table('Preferences')
       .where('key', this.key)
       .andWhere('idUser', userId);
     if (result.length !== 1) {
-      throw new Error(`Preference with key ${this.key} does not exist`);
+      return this.addNewTransactionPresets(userId, presets);
     }
     const idPreset = result[0].id;
-    const data = _.pick(updateData, 'value', 'description');
     return this.knex.table('Preferences')
       .where('id', idPreset)
-      .update(data);
+      .update({value: JSON.stringify(presets)});
   },
 
   async deleteNewTransactionPresets(userId) {
