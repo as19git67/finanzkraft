@@ -50,5 +50,16 @@ rc.post((req, res, next) => {
   });
 });
 
+rc.delete(function (req, res, next) {
+  const transactionId = parseInt(req.params.id);
+  const db = req.app.get('database');
+  db.deleteTransaction(transactionId).then(() => {
+    res.sendStatus(200);
+  }).catch((reason) => {
+    console.log(reason);
+    res.sendStatus(500);
+  });
+});
+
 
 export default rc;

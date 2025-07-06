@@ -615,10 +615,16 @@ const DbMixinTransactions = {
     });
   },
 
-  async deleteTransaction(idTransaction) {
-    return this.knex.table('Fk_Transaction').where('id', idTransaction).delete();
+  deleteTransaction(idTransaction) {
+    return this.knex.transaction(async (trx) => {
+      await trx.table('Fk_TransactionStatus').
+          where('idTransaction', idTransaction).
+          delete();
+      await trx.table('Fk_Transaction').
+          where('id', idTransaction).
+          delete();
+    });
   },
-
 };
 
 export default DbMixinTransactions;
