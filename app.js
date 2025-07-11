@@ -147,11 +147,14 @@ new Promise(async (resolve, reject) => {
   //   CORS(corsOptions)(req, res, next); // enable pre-flight
   // });
 
-  // catch 404 and forward to error handler
+  // Always return index.html for any unknown paths (for SPA routing) if not /api/*
+  // If url is a api call but not handled catch it and send 404 as response
   app.use(function (req, res, next) {
-    res.status(404).send();
-    //next(createError(404));
-    //res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+    if (req.url.startsWith('/api')) {
+      res.status(404).send();
+    } else {
+      res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+    }
   });
 
   // error handler
