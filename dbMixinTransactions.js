@@ -249,7 +249,7 @@ const DbMixinTransactions = {
       tRet.processed = false;
     }
     if (_.isString(t.text) && t.text.trim().length === 0) {
-      tRet.text = undefined;
+      tRet.text = null;
     } else {
       if (_.isString(tRet.text)) {
         const parts = [];
