@@ -323,7 +323,7 @@ const DbMixinTransactions = {
       }
     }
     if (_.isString(t.payee) && t.payee.trim().length === 0) {
-      tRet.payee = undefined;
+      tRet.payee = null;
     }
     if (_.isString(t.payeePayerAcctNo) && t.payeePayerAcctNo.trim().length === 0) {
       tRet.payeePayerAcctNo = undefined;
