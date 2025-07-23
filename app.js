@@ -15,6 +15,7 @@ import transactionsRouter from './routes/transactions.js';
 import transactionsOfAccountRouter from './routes/transactionsOfAccount.js';
 import newTransactionPresetsRouter from './routes/newTransactionPresets.js';
 import categoriesRouter from './routes/categories.js';
+import tagsRouter from './routes/tags.js';
 import timespanRouter from './routes/timespans.js';
 import currenciesRouter from './routes/currencies.js';
 import ruleRouter from './routes/rule.js';
@@ -132,6 +133,7 @@ new Promise(async (resolve, reject) => {
   asExpress.addRouter("/api/newtransactionpresets", newTransactionPresetsRouter);
   asExpress.addRouter("/api/currencies", currenciesRouter);
   asExpress.addRouter("/api/timespans", timespanRouter);
+  asExpress.addRouter("/api/tags", tagsRouter);
   asExpress.addRouter("/api/category", categoriesRouter);
   asExpress.addRouter("/api/rules", rulesRouter);
   asExpress.addRouter("/api/rules", ruleRouter);

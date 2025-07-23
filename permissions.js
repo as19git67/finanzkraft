@@ -113,6 +113,36 @@ const permissions = {
     methods: ["delete"],
     menus: ["admin.newtransactionpresets"]
   },
+  tags_list_read: {
+    description: "Tags anzeigen",
+    resources: ["/api/tags"],
+    methods: ["get"],
+    menus: ["admin.tags"]
+  },
+  tag_create: {
+    description: "Tag neu anlegen",
+    resources: ["/api/tags"],
+    methods: ["put"],
+    menus: ["admin.tags", "admin.tag"]
+  },
+  tag_read: {
+    description: "Tag anzeigen",
+    resources: ["/api/tags/:id"],
+    methods: ["get"],
+    menus: ["admin.tag"]
+  },
+  tag_update: {
+    description: "Tag ändern",
+    resources: ["/api/tags/:id"],
+    methods: ["get", "post"],
+    menus: ["admin.tag"]
+  },
+  tag_delete: {
+    description: "Tag löschen",
+    resources: ["/api/tags/:id"],
+    methods: ["delete"],
+    menus: ["admin.tag"]
+  },
   currencies_list_read: {
     description: "Währungen anzeigen",
     resources: ["/api/currencies"],

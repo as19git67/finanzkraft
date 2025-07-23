@@ -18,6 +18,10 @@ const DbMixinTags = {
     return this._selectTagsByIds(tagIds);
   },
 
+  async getTags() {
+    return this.knex.table('Fk_Tag').orderBy('tag', 'asc');
+  },
+
   async addTag(name) {
     const result = await this.knex('Fk_Tag').insert({
       name: name,
