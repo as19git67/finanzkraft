@@ -25,6 +25,7 @@ import dbMixinPrefsNewTransactionPresets from "./dbMixinPrefsNewTransactionPrese
 import dbMixinCurrencies from "./dbMixinCurrencies.js";
 import dbMixinAccountTypes from "./dbMixinAccountTypes.js";
 import dbMixinCategories from "./dbMixinCategories.js";
+import dbMixinTags from "./dbMixinTags.js";
 import dbMixinTimespan from "./dbMixinTimespan.js";
 import dbMixinRules from "./dbMixinRules.js";
 import di from './dataImport.js'
@@ -65,6 +66,7 @@ new Promise(async (resolve, reject) => {
       dbMixinCurrencies,
       dbMixinAccountTypes,
       dbMixinCategories,
+      dbMixinTags,
       dbMixinTimespan,
       dbMixinRules
     ],

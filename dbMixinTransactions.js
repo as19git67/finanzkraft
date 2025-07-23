@@ -31,7 +31,7 @@ const DbMixinTransactions = {
       'Fk_Transaction.processed as t_processed', 'Fk_Category.id as category_id',
       'Fk_Category.fullName as category_name', 'Fk_Currency.id as currency_id',
       'Fk_Transaction.idRuleSet as rule_set_id', 'Fk_RuleSet.name as rule_set_name',
-      'Fk_Currency.name as currency_name', 'Fk_Currency.short as currency_short'];
+      'Fk_Currency.name as currency_name', 'Fk_Currency.short as currency_short', 'tags'];
     if (idUser) {
       columnsToSelect.push('Fk_TransactionStatus.confirmed as confirmed');
     }
@@ -51,6 +51,7 @@ const DbMixinTransactions = {
     .leftJoin('Fk_RuleSet', function () {
       this.on('Fk_Transaction.idRuleSet', '=', 'Fk_RuleSet.id');
     })
+    .leftJoin(this.knex.raw("(SELECT Fk_TagTransaction.idTransaction, STRING_AGG(Fk_Tag.tag, '|') as 'tags' FROM Fk_TagTransaction JOIN Fk_Tag ON Fk_TagTransaction.idTag = Fk_Tag.id GROUP BY Fk_TagTransaction.idTransaction) AS Fk_Tag_agg ON Fk_Transaction.id = Fk_Tag_agg.idTransaction"))
     .where((builder) => {
       if (idTransaction !== undefined) {
         builder.where({'Fk_Transaction.id': idTransaction});
@@ -89,6 +90,7 @@ const DbMixinTransactions = {
             builder.orWhereILike('Fk_Transaction.REF', `%${trimmedSearchTerm}%`);
             builder.orWhereILike('Fk_Transaction.payee', `%${trimmedSearchTerm}%`);
             builder.orWhereILike('Fk_Category.fullName', `%${trimmedSearchTerm}%`);
+            builder.orWhereILike('tags', `%${trimmedSearchTerm}%`);
           } else {
             builder.whereLike('Fk_Transaction.text', `%${trimmedSearchTerm}%`);
             builder.orWhereLike('Fk_Transaction.EREF', `%${trimmedSearchTerm}%`);
@@ -102,6 +104,7 @@ const DbMixinTransactions = {
             builder.orWhereLike('Fk_Transaction.notes', `%${trimmedSearchTerm}%`);
             builder.orWhereLike('Fk_Transaction.payee', `%${trimmedSearchTerm}%`);
             builder.orWhereLike('Fk_Category.fullName', `%${trimmedSearchTerm}%`);
+            builder.orWhereLike('tags', `%${trimmedSearchTerm}%`);
           }
         }
         const amount = parseFloat(searchTerm);
@@ -146,8 +149,9 @@ const DbMixinTransactions = {
   },
 
   async getTransactionsForExport() {
-    const results = await this.knex.table('Fk_Transaction')
-        .select(['Fk_Transaction.id as Fk_Transaction:id', 'Fk_Transaction.*', 'Fk_Account.id as Fk_Account:id', 'Fk_Account.name as Fk_Account:name', 'Fk_Account.iban as Fk_Account:iban', 'Fk_Account.*', 'Fk_Currency.id as Fk_Currency:id', 'Fk_Currency.name as Fk_Currency:name', 'Fk_Currency.*', 'Fk_Category.id as Fk_Category:id', 'Fk_Category.name as Fk_Category:name', 'Fk_Category.*', 'Fk_RuleSet.id as Fk_RuleSet:id', 'Fk_RuleSet.name as Fk_RuleSet:name', 'Fk_RuleSet.*'])
+    try {
+      const results = await this.knex.table('Fk_Transaction')
+        .select(['Fk_Transaction.id as Fk_Transaction:id', 'Fk_Transaction.*', 'Fk_Account.id as Fk_Account:id', 'Fk_Account.name as Fk_Account:name', 'Fk_Account.iban as Fk_Account:iban', 'Fk_Account.*', 'Fk_Currency.id as Fk_Currency:id', 'Fk_Currency.name as Fk_Currency:name', 'Fk_Currency.*', 'Fk_Category.id as Fk_Category:id', 'Fk_Category.name as Fk_Category:name', 'Fk_Category.*', 'Fk_RuleSet.id as Fk_RuleSet:id', 'Fk_RuleSet.name as Fk_RuleSet:name', 'Fk_RuleSet.*', 'Fk_Tags:tags'])
         .join('Fk_Account', function () {
           this.on('Fk_Transaction.idAccount', '=', 'Fk_Account.id');
         })
@@ -159,32 +163,37 @@ const DbMixinTransactions = {
         })
         .leftJoin('Fk_RuleSet', function () {
           this.on('Fk_Transaction.idRuleSet', '=', 'Fk_RuleSet.id');
-        });
-    return results.map((t) => {
-      let tableName = '';
-      for (const tKey in t) {
-        if (_.isArray(t[tKey])) {
-          delete t[tKey];
-          continue;
-        }
-        const i = tKey.indexOf(':');
-        if (i > 0) {
-          const parts = tKey.split(':');
-          tableName = parts[0];
-          if (t[tKey] == null) {
+        })
+        .leftJoin(this.knex.raw("(SELECT Fk_TagTransaction.idTransaction, STRING_AGG(Fk_Tag.tag, '|') as 'Fk_Tags:tags' FROM Fk_TagTransaction JOIN Fk_Tag ON Fk_TagTransaction.idTag = Fk_Tag.id GROUP BY Fk_TagTransaction.idTransaction) AS Fk_Tag_agg ON Fk_Transaction.id = Fk_Tag_agg.idTransaction"))
+      return results.map((t) => {
+        let tableName = '';
+        for (const tKey in t) {
+          if (_.isArray(t[tKey])) {
             delete t[tKey];
+            continue;
           }
-        } else {
-          if (t[tKey] === null) {
-            delete t[tKey];
+          const i = tKey.indexOf(':');
+          if (i > 0) {
+            const parts = tKey.split(':');
+            tableName = parts[0];
+            if (t[tKey] == null) {
+              delete t[tKey];
+            }
           } else {
-            t[tableName + ':' + tKey] = t[tKey];
-            delete t[tKey];
+            if (t[tKey] === null) {
+              delete t[tKey];
+            } else {
+              t[tableName + ':' + tKey] = t[tKey];
+              delete t[tKey];
+            }
           }
         }
-      }
-      return t;
-    });
+        return t;
+      });
+    } catch(ex) {
+      console.log(ex);
+      throw ex;
+    }
   },
 
   async getTransaction(idTransaction, idUser) {
@@ -535,11 +544,24 @@ const DbMixinTransactions = {
     const fixedTransactionData = this._fixTransactionData(transactionData);
     return this.knex.transaction(async (trx) => {
       let inserts = await trx('Fk_Transaction').insert(fixedTransactionData).returning('id');
+      if (inserts.length !== 1) {
+        throw new Error(`Unexpected number of inserted transactions: ${inserts.length}. Should be 1.`);
+      }
+      const idTransaction = inserts[0].id;
       if (!options || !options.ignoreRules) {
         await this.applyRules(trx, {includeProcessed: false, includeTransactionsWithRuleSet: false});
       }
       if (options && options.balance) {
         const balanceInserts = await trx('Fk_AccountBalance').insert(options.balance);
+      }
+      if (options && options.tags && options.tags.length > 0) {
+        const transactionTagsToInsert = options.tags.map((idTag) => {
+          return {
+            idTransaction: idTransaction,
+            idTag: idTag,
+          }
+        });
+        const tagInserts = await trx('Fk_TagTransaction').insert(transactionTagsToInsert);
       }
       return inserts;
     });

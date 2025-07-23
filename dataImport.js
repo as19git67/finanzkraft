@@ -48,6 +48,7 @@ export default async function importData(db, importFilename) {
   for (const tr of data.transactions) {
     if (cnt > maxTr) break;
     const idAccount = accountIdByName[tr.account_name];
+    const isCash = tr.account_name.indexOf('Bargeld') >= 0;
     const idCategory = tr.category === null ? undefined : await db.getOrCreateCategory(tr.category);
     let cachedBalance = balanceByDate[`${idAccount}:${tr.t_valueDate}`];
     if (cachedBalance && cachedBalance.idTr === tr.t_id) {
@@ -56,19 +57,23 @@ export default async function importData(db, importFilename) {
     } else {
       cachedBalance = undefined;
     }
+    const tagIds = tr.tags ? await db.getOrCreateTags(tr.tags) : undefined;
     const id = await db.addTransaction({
-      idAccount: idAccount,
-      valueDate: tr.t_valueDate,
-      amount: tr.t_amount,
-      text: tr.t_text,
-      payee: tr.payee,
-      entryText: tr.t_type,
-      primaNotaNo: tr.t_prima_nota_no,
-      gvCode: tr.t_zka_tr_code,
-      processed: true,
-      idCategory: idCategory,
-    },
+        idAccount: idAccount,
+        valueDate: tr.t_valueDate,
+        amount: tr.t_amount,
+        text: isCash ? null : tr.t_text,
+        payee: tr.payee,
+        entryText: tr.t_type,
+        primaNotaNo: tr.t_prima_nota_no,
+        gvCode: tr.t_zka_tr_code,
+        processed: true,
+        idCategory: idCategory,
+        oldCategory: tr.orig_category,
+        notes: isCash ? tr.t_text : null,
+      },
       {
+        tags: tagIds,
         balance: cachedBalance,
         ignoreRules: true,
       }

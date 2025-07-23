@@ -19,12 +19,106 @@ export default async function exportData(db, exportFilename) {
     }
   }
 
+  console.log('Exporting roles...');
+  data.Roles = await db.getRoles();
+  const rolesById = {};
+  data.Roles.forEach(role => {
+    rolesById[role.id] = role;
+  });
+  console.log(`Exported ${data.Roles.length} roles`);
+
+  console.log('Exporting role permission profiles...');
+  data.RolePermissionProfiles = await Promise.all(data.Roles.map(async role => {
+    const permissionProfiles = await db.getPermissionProfilesForRole(role.id);
+    return {
+      role: role.Name,
+      permissionProfiles: permissionProfiles.map(permissionProfile => {
+        return permissionProfile.idPermissionProfile;
+      }),
+    };
+  }));
+  console.log(`Exported ${data.RolePermissionProfiles.length} role permission profiles`);
+
+  console.log('Exporting users...');
+  const users = await db.getUserForBackup();
+  const usersById = {};
+  data.Users = users.map(user => {
+    usersById[user.id] = user.Email;
+    const u = {...user};
+    delete u.id;
+    return u;
+  });
+  console.log(`Exported ${data.Users.length} users`);
+
+  console.log('Exporting user roles...');
+  data.UserRoles = await Promise.all(users.map(async user => {
+    const rolesOfUser = await db.getRolesOfUser(user.id);
+    return {
+      userEmail: user.Email,
+      roles: rolesOfUser.map(role => {
+        return rolesById[role.idRole];
+      }),
+    };
+  }));
+  console.log(`Exported ${data.UserRoles.length} user roles`);
+
+  console.log('Exporting categories...');
+  const categories = await db.getCategories();
+  const categoriesById = {};
+  categories.forEach(category => {
+    categoriesById[category.id] = {
+      parent_name: category.parent_name,
+      name: category.name,
+      full_name: category.full_name,
+    };
+  });
+  data.Categories = categories.map(category => {
+    delete category.id;
+    return category;
+  });
+  console.log(`Exported ${data.Categories.length} categories`);
+
+  console.log('Exporting transaction presets...');
+  data.NewTransactionPresets = await Promise.all(users.map(async user => {
+    const newTransactionPresets = await db.getNewTransactionPresets(user.id);
+    const presetObj = JSON.parse(newTransactionPresets);
+    return {
+      userEmail: user.Email,
+      newTransactionPresets: presetObj.map(preset => {
+        preset.category = categoriesById[preset.categoryId].full_name;
+        delete preset.categoryId;
+        return preset;
+      }),
+    };
+  }));
+  console.log(`Exported ${data.NewTransactionPresets.length} transaction presets`);
+
   console.log('Exporting rule sets...');
   data.RuleSets = await db.getRuleSets();
   console.log(`Exported ${data.RuleSets.length} rule sets`);
-  data.accounts = await db.getAccounts();
+
+  console.log('Exporting accounts...');
+  const accounts = await db.getAccounts();
+  data.accounts = accounts.map(account => {
+    if (account.writer) {
+      account.writer = account.writer.split(',').map(writer => {
+        return usersById[writer];
+      });
+    } else {
+      account.writer = [];
+    }
+    if (account.reader) {
+      account.reader = account.reader.split(',').map(reader => {
+        return usersById[reader];
+      });
+    } else {
+      account.reader = [];
+    }
+    return account;
+  });
   console.log(`Exported ${data.accounts.length} accounts`);
-  data.transactions = await db.getTransactionsForExport();
+
+  data.transactions = await db.getTransactionsForExport();  // todo: incl. status?, tags
   console.log(`Exported ${data.transactions.length} transactions`);
 
   const json = JSON.stringify(data, undefined, 2);

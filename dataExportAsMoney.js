@@ -150,6 +150,7 @@ async function exportData() {
             'zahlungsempfaenger.id_zahlungsempfaenger');
       });
 
+  const missingMappings = {};
   const catMappings = getCatMappings();
   // const catCache = {};
   for (const resultElement of result) {
@@ -171,6 +172,13 @@ async function exportData() {
     if (payee === 'Unbekannt') {
       payee = null;
     }
+    if (!catMappings[category]) {
+      if (category && !missingMappings[category]) {
+        console.log(`WARNING: Unknown category ${category}`);
+        missingMappings[category] = category;
+      }
+      continue;
+    }
     data.transactions.push({
       ts_sequence: resultElement.ts_sequence,
       ts_id_tr_original: resultElement.ts_id_tr_original,
@@ -184,12 +192,20 @@ async function exportData() {
       t_type: resultElement.t_type?.trim(),
       t_prima_nota_no: resultElement.t_prima_nota_no,
       t_zka_tr_code: resultElement?.t_zka_tr_code?.trim(),
-      category: catMappings[category],
+      category: category ? catMappings[category].category : null,
+      transferAccount: category ? catMappings[category].transferAccount : null,
+      tags: category ? catMappings[category].tags : [],
       orig_category: category,
       payee: payee,
       bal_saldo: resultElement.bal_saldo,
     });
   }
+
+  const missingCategories = _.values(missingMappings).sort();
+  missingCategories.forEach((cat) => {
+    console.log(`{'old': '${cat}', 'new': '', 'tags': []},`);
+  });
+
   // data.categories = [];
   // const c = _.values(catCache).sort();
   // c.forEach((cat) => {
@@ -211,10 +227,137 @@ async function exportData() {
 }
 
 function getCatMappings() {
-  const sonstigeAusgaben = 'Sonstige Ausgaben';
-  const Ausbildung = 'Ausbildung';
-  const Bankgebuehren = 'Bankgebühren';
-  const aiCats = [
+  const catMappings = [
+    {'old': 'AUSGABEN:Isabella', 'new': 'Kinder allgemein', 'tags': ['Isabella']},
+    {'old': 'AUSGABEN:Manuel', 'new': 'Kinder allgemein', 'tags': ['Manuel']},
+    {'old': 'AUSGABEN:USA', 'new': 'Sonstiges', 'tags': ['USA-Aufenthalt']},
+    {'old': 'AUSGABEN:Umb. auf gelöschtes Konto', 'new': 'Umbuchungen', 'tags': []},
+    {'old': 'AUSGABEN:Verschiedenes Martina', 'new': 'Sonstiges', 'tags': ['Martina']},
+    {'old': 'AUSGABEN:Verzichtbar', 'new': 'Sonstiges', 'tags': ['verzichtbar']},
+    {'old': 'AUSGABEN:Werbungskosten', 'new': 'Sonstiges', 'tags': ['Werbungskosten']},
+    {'old': 'Ausg. für Kap.-Anlagen:Bausparvertrag', 'new': 'Bank & Finanzen', 'tags': ['Kapital', 'Bausparvertrag']},
+    {'old': 'Ausg. für Kap.-Anlagen:Crypto', 'new': 'Bank & Finanzen', 'tags': ['Kapital', 'Crypto']},
+    {'old': 'Ausg. für Kap.-Anlagen:Eutin', 'new': 'Bank & Finanzen', 'tags': ['Kapital', 'Eutin']},
+    {'old': 'Ausg. für Kap.-Anlagen:Eutin (Darlehen)', 'new': 'Bank & Finanzen', 'tags': ['Kapital', 'Eutin', 'Darlehen']},
+    {'old': 'Ausg. für Kap.-Anlagen:Eutin (Grundsteuer)', 'new': 'Steuern', tags: ['Kapital', 'Grundsteuer B', 'Eutin']},
+    {'old': 'Ausg. für Kap.-Anlagen:Festgeldanlage', 'new': 'Bank & Finanzen', 'tags': ['Kapital', 'Festgeld']},
+    {'old': 'Ausg. für Kap.-Anlagen:Timber 2', 'new': 'Bank & Finanzen', 'tags': ['Kapital', 'Timber 2']},
+    {'old': 'Ausg. für Kap.-Anlagen:Wertpapier Order Gebühren', 'new': 'Bank & Finanzen', 'tags': ['Gebühren']},
+    {'old': 'Ausg. für Kap.-Anlagen:Wertpapierkauf', 'new': 'Bank & Finanzen', 'tags': ['Kapital', 'Wertpapierkauf']},
+    {'old': 'EINNAHMEN', 'new': 'Sonstige Einnahmen', 'tags': []},
+    {'old': 'EINNAHMEN:Eink. aus Kap.-Anlagen', 'new': 'Erträge', 'tags': ['Kapital']},
+    {'old': 'EINNAHMEN:Geschenke - Einnahmen', 'new': 'Sonstige Einnahmen', 'tags': ['Geschenke']},
+    {'old': 'EINNAHMEN:Lohn und Gehalt', 'new': 'Lohn & Gehalt', 'tags': []},
+    {'old': 'EINNAHMEN:Pacht', 'new': 'Erträge', 'tags': ['Pacht', 'Landwirtschaft']},
+    {'old': 'EINNAHMEN:Sonstige Einkünfte', 'new': 'Erträge', 'tags': []},
+    {'old': 'EINNAHMEN:Verkauf Kindersachen', 'new': 'Erträge', 'tags': ['Gebrauchtwarenverkauf']},
+    {'old': 'Eink. aus Kap.-Anlagen:Dividenden', 'new': 'Erträge', 'tags': ['Kapital', 'Dividenden']},
+    {'old': 'Eink. aus Kap.-Anlagen:Festgeld Ablauf', 'new': 'Erträge', 'tags': ['Kapital', 'Festgeld']},
+    {'old': 'Eink. aus Kap.-Anlagen:Kapitalgewinne', 'new': 'Erträge', 'tags': ['Kapital']},
+    {'old': 'Eink. aus Kap.-Anlagen:Langfr. Kursgewinne', 'new': 'Erträge', 'tags': ['Kapital', 'Kursgewinn']},
+    {'old': 'Eink. aus Kap.-Anlagen:Miete Immobilie Eutin', 'new': 'Erträge', 'tags': ['Kapital', 'Miete', 'Eutin']},
+    {'old': 'Eink. aus Kap.-Anlagen:Sparbrief Ablauf', 'new': 'Erträge', 'tags': ['Kapital', 'Sparbrief']},
+    {'old': 'Eink. aus Kap.-Anlagen:Wertpapierverkauf', 'new': 'Erträge', 'tags': ['Kapital', 'Wertpapierkauf']},
+    {'old': 'Eink. aus Kap.-Anlagen:Zinsen', 'new': 'Erträge', 'tags': ['Kapital', 'Zinsen']},
+    {'old': 'Eink. aus Kap.-Anlagen:Zinsen Isabella', 'new': 'Erträge', 'tags': ['Isabella', 'Zinsen']},
+    {'old': 'Eink. aus Kap.-Anlagen:Zinsen Manuel', 'new': 'Erträge', 'tags': ['Manuel', 'Zinsen']},
+    {'old': 'Hausbau - Einnahmen:Eigenheimzulage', 'new': 'Staatliche Zuschüsse', 'tags': ['Hausbau', 'Eigenheimzulage']},
+    {'old': 'Isabella:Arztkosten Isabella', 'new': 'Gesundheit & Pflege', 'tags': ['Isabella']},
+    {'old': 'Isabella:Freizeit', 'new': 'Freizeit & Hobby', 'tags': ['Isabella']},
+    {'old': 'Isabella:Führerschein', 'new': 'Bildung & Weiterbildung', 'tags': ['Isabella', 'Führerschein']},
+    {'old': 'Isabella:Geschenke', 'new': 'Geschenke', 'tags': ['Isabella', 'Geschenke']},
+    {'old': 'Isabella:Hort Isabella', 'new': 'Bildung & Weiterbildung', 'tags': ['Isabella', 'Hort']},
+    {'old': 'Isabella:Kindergarten Isabella', 'new': 'Kinder allgemein', 'tags': ['Isabella', 'Kindergarten']},
+    {'old': 'Isabella:Kleidung', 'new': 'Kleidung & Mode', 'tags': ['Isabella']},
+    {'old': 'Isabella:Mittagsbetreuung Isabella', 'new': 'Bildung & Weiterbildung', 'tags': ['Isabella', 'Mittagsbetreuung']},
+    {'old': 'Isabella:Reiten', 'new': 'Freizeit & Hobby', 'tags': ['Isabella', 'Reiten']},
+    {'old': 'Isabella:Schule Isabella', 'new': 'Bildung & Weiterbildung', 'tags': ['Isabella', 'Schule']},
+    {'old': 'Isabella:Sonstiges', 'new': 'Sonstiges', 'tags': ['Isabella']},
+    {'old': 'Isabella:Sparen', 'new': 'Bank & Finanzen', 'tags': ['Isabella', 'Sparen']},
+    {'old': 'Isabella:Taschengeld', 'new': 'Bank & Finanzen', 'tags': ['Isabella', 'Taschengeld']},
+    {'old': 'Isabella:Verbrauchsmaterial', 'new': 'Sonstiges', 'tags': ['Isabella']},
+    {'old': 'Isabella:Versicherung_KinderPolice', 'new': 'Versicherungen', 'tags': ['Kinderpolice', 'Isabella']},
+    {'old': 'Isabella:Versicherung_KÄNGURU.invest', 'new': 'Versicherungen', 'tags': ['KÄNGURU.invest', 'Isabella']},
+    {'old': 'Kinder:Spiel- und Bastelzeug', 'new': 'Freizeit & Hobby', 'tags': ['Kinder', 'Spiel- und Bastelzeug']},
+    {'old': 'Lohn und Gehalt:Gehalt Martina', 'new': 'Lohn & Gehalt', 'tags': ['Martina']},
+    {'old': 'Lohn und Gehalt:Nettovergütung', 'new': 'Lohn & Gehalt', 'tags': ['Martina']},
+    {'old': 'Lohn und Gehalt:Steuerfreie Einkünfte', 'new': 'Lohn & Gehalt', 'tags': ['Martina', 'steuerfrei']},
+    {'old': 'Lohn und Gehalt:Steuernachzahlung', 'new': 'Steuern', 'tags': ['Steuernachzahlung']},
+    {'old': 'Lohn und Gehalt:Steuerrückerstattung', 'new': 'Lohn & Gehalt', 'tags': ['Steuerrückerstattung']},
+    {'old': 'Lohn und Gehalt:VWL', 'new': 'Lohn & Gehalt', 'tags': ['Vermögenswirksame Leistungen']},
+    {'old': 'Manuel:Arztkosten Manuel', 'new': 'Gesundheit & Pflege', 'tags': ['Manuel']},
+    {'old': 'Manuel:Freizeit', 'new': 'Freizeit & Hobby', 'tags': ['Manuel']},
+    {'old': 'Manuel:Friseur', 'new': 'Kleidung & Mode', 'tags': ['Manuel', 'Friseur']},
+    {'old': 'Manuel:Gaming', 'new': 'Freizeit & Hobby', 'tags': ['Manuel', 'Gaming']},
+    {'old': 'Manuel:Geschenke', 'new': 'Geschenke', 'tags': ['Manuel']},
+    {'old': 'Manuel:Kindergarten Manuel', 'new': 'Kinder allgemein', 'tags': ['Manuel', 'Kindergarten']},
+    {'old': 'Manuel:Kleidung', 'new': 'Kleidung & Mode', 'tags': ['Manuel']},
+    {'old': 'Manuel:Mittagsbetreuung Manuel', 'new': 'Bildung & Weiterbildung', 'tags': ['Manuel', 'Mittagsbetreuung']},
+    {'old': 'Manuel:Schule Manuel', 'new': 'Bildung & Weiterbildung', 'tags': ['Manuel', 'Schule']},
+    {'old': 'Manuel:Sonstiges', 'new': 'Sonstiges', 'tags': ['Manuel']},
+    {'old': 'Manuel:Sparen', 'new': 'Bank & Finanzen', 'tags': ['Manuel', 'Sparen']},
+    {'old': 'Manuel:Taschengeld', 'new': 'Bank & Finanzen', 'tags': ['Manuel', 'Taschengeld']},
+    {'old': 'Manuel:Taschengeldt', 'new': 'Kinder allgemein', 'tags': ['Manuel']},
+    {'old': 'Manuel:Verbrauchsmaterial', 'new': 'Sonstiges', 'tags': ['Manuel']},
+    {'old': 'Manuel:Versicherung_KinderPolice', 'new': 'Versicherungen', 'tags': ['Manuel', 'Kinderpolice']},
+    {'old': 'Manuel:Versicherung_KÄNGURU.invest', 'new': 'Versicherungen', 'tags': ['Manuel', 'KÄNGURU.invest']},
+    {'old': 'PKV:Apotheke', 'new': 'Gesundheit & Pflege', 'tags': ['PKV', 'Apotheke']},
+    {'old': 'PKV:Leistungsabrechnung', 'new': 'Gesundheit & Pflege – Erstattungen', 'tags': ['PKV', 'Leistungsabrechnung']},
+    {'old': 'PKV:Rechnung PKV', 'new': 'Gesundheit & Pflege', 'tags': ['PKV', 'Rechnung']},
+    {'old': 'Photovolataik:Einspeisevergütung', 'new': 'Erträge', 'tags': ['PV', 'Einspeisevergütung']},
+    {'old': 'Photovolataik:Installation und Wartung', 'new': 'Reparaturen, Renovierung & Hausbau', 'tags': ['PV', 'Installation']},
+    {'old': 'Versicherung:BU Versicherung (Basler) Anton', 'new': 'Versicherungen', 'tags': ['Anton', 'Basler', 'BU']},
+    {'old': 'Versicherung:BU Versicherung Martina', 'new': 'Versicherungen', 'tags': ['Martina', 'BU']},
+    {'old': 'Versicherung:Brandversicherung', 'new': 'Versicherungen', 'tags': ['Brandversicherung']},
+    {'old': 'Versicherung:Generali 3-Phasen-Rente 1-34.952.273-0', 'new': 'Versicherungen', 'tags': ['Martina','Generali 3-Phasen-Rente 1-34.952.273-0']},
+    {'old': 'Versicherung:Generali 3D Pflegev. 1-34.952.204-4', 'new': 'Versicherungen', 'tags': ['Martina','Generali 3D Pflegev. 1-34.952.204-4']},
+    {'old': 'Versicherung:Haftpflichtversicherung', 'new': 'Versicherungen', 'tags': ['Haftpflichtversicherung']},
+    {'old': 'Versicherung:Hausrat', 'new': 'Versicherungen', 'tags': ['Hausrat']},
+    {'old': 'Versicherung:Krankenversicherung', 'new': 'Versicherungen', 'tags': ['Krankenversicherung']},
+    {'old': 'Versicherung:Krankenversicherung Anton', 'new': 'Versicherungen', 'tags': ['Anton', 'Krankenversicherung']},
+    {'old': 'Versicherung:Krankenversicherung Isabella', 'new': 'Versicherungen', 'tags': ['Isabella', 'Krankenversicherung']},
+    {'old': 'Versicherung:Krankenversicherung Martina', 'new': 'Versicherungen', 'tags': ['Martina', 'Krankenversicherung']},
+    {'old': 'Versicherung:Lebensversicherung', 'new': 'Versicherungen', 'tags': ['Lebensversicherung']},
+    {'old': 'Versicherung:Lebensversicherung 5000127', 'new': 'Versicherungen', 'tags': ['Anton', 'LV 5000127']},
+    {'old': 'Versicherung:Lebensversicherung 5000127-01', 'new': 'Versicherungen', 'tags': ['Anton', 'LV','MLP 5000127-01']},
+    {'old': 'Versicherung:Lebensversicherung 5000127-03', 'new': 'Versicherungen', 'tags': ['Anton', 'LV','MLP 5000127-03']},
+    {'old': 'Versicherung:Lebensversicherung 5000127-04', 'new': 'Versicherungen', 'tags': ['Anton', 'LV','MLP 5000127-04']},
+    {'old': 'Versicherung:Lebensversicherung HDI 504309', 'new': 'Versicherungen', 'tags': ['Anton', 'LV','HDI 504309']},
+    {'old': 'Versicherung:Lebensversicherung S-01225520-01', 'new': 'Versicherungen', 'tags': ['Anton', 'LV','S-01225520-01']},
+    {'old': 'Versicherung:Lebensversicherung S-01323071-01', 'new': 'Versicherungen', 'tags': ['Anton', 'LV','S-01323071-01']},
+    {'old': 'Versicherung:Lebensversicherung_AXA_26218145001', 'new': 'Versicherungen', 'tags': ['Anton', 'LV','AXA_26218145001']},
+    {'old': 'Versicherung:Rechtsschutzversicherung', 'new': 'Versicherungen', 'tags': ['Rechtsschutzversicherung']},
+    {'old': 'Versicherung:Reisekrankenversicherung Martina', 'new': 'Versicherungen', 'tags': ['Martina', 'Reisekrankenversicherung']},
+    {'old': 'Versicherung:Reiseversicherung', 'new': 'Versicherungen', 'tags': ['Reiseversicherung']},
+    {'old': 'Versicherung:Rentenversicherung', 'new': 'Versicherungen', 'tags': ['Rentenversicherung']},
+    {'old': 'Versicherung:Riester_1_Anton', 'new': 'Versicherungen', 'tags': ['Anton', 'Riester 1']},
+    {'old': 'Versicherung:Riester_2_Anton', 'new': 'Versicherungen', 'tags': ['Anton', 'Riester 2']},
+    {'old': 'Versicherung:Riester_Martina', 'new': 'Versicherungen', 'tags': ['Martina', 'Riester']},
+    {'old': 'Versicherung:Traktor', 'new': 'Versicherungen', 'tags': ['Landwirtschaft', 'Traktor']},
+    {'old': 'Versicherung:Wohngebäudeversicherung', 'new': 'Versicherungen', 'tags': ['Wohngebäudeversicherung']},
+    {'old': 'Versicherung:Zahnzusatzversicherung Martina', 'new': 'Versicherungen', 'tags': ['Martina', 'Zahnzusatzversicherung']},
+    {'old': 'Verzichtbar:Informatik eBooks', 'new': 'Bildung & Weiterbildung', 'tags': ['Buch']},
+    {'old': 'Verzichtbar:Mac Apps', 'new': 'Computer', 'tags': ['Software', 'Mac']},
+    {'old': 'Verzichtbar:Medien', 'new': 'Freizeit & Hobby', 'tags': ['Medien']},
+    {'old': 'Verzichtbar:Mobilfunk Gebühren', 'new': 'Fixkosten & Verträge', 'tags': ['Mobilfunk']},
+    {'old': 'Verzichtbar:PC Apps', 'new': 'Computer', 'tags': ['Software', 'PC']},
+    {'old': 'Verzichtbar:Spenden', 'new': 'Geschenke', 'tags': ['Spenden']},
+    {'old': 'Verzichtbar:Sport', 'new': 'Freizeit & Hobby', 'tags': ['Sport']},
+    {'old': 'Verzichtbar:TMow Entwicklung', 'new': 'Freizeit & Hobby', 'tags': ['TMow']},
+    {'old': 'Verzichtbar:Vereinsbeitrag', 'new': 'Freizeit & Hobby', 'tags': ['Vereinsbeitrag']},
+    {'old': 'Verzichtbar:Werkstatt', 'new': 'Freizeit & Hobby', 'tags': ['Werkstatt']},
+    {'old': 'Verzichtbar:eBay - Allgemein', 'new': 'Sonstiges', 'tags': ['eBay']},
+    {'old': 'Verzichtbar:iPhone Apps', 'new': 'Software', 'tags': ['iPhone']},
+    {'old': 'Verzichtbar:iPhone Apps (Spiele)', 'new': 'Software', 'tags': ['iPhone', 'Spiele']},
+    {'old': 'Verzögern', 'new': 'Bildung & Weiterbildung', 'tags': ['Fachliteratur', 'Werbungskosten']},
+    {'old': 'Werbungskosten:Arbeitsmittel', 'new': 'Sonstiges', 'tags': ['Arbeitsmittel', 'Werbungskosten']},
+    {'old': 'Werbungskosten:Bahnrad', 'new': 'Sonstiges', 'tags': ['Arbeitsweg', 'Werbungskosten']},
+    {'old': 'Werbungskosten:Fachliteratur', 'new': 'Bildung & Weiterbildung', 'tags': ['Fachliteratur', 'Werbungskosten']},
+    {'old': 'Werbungskosten:Fahrtkosten Martina', 'new': 'Mobilität & Transport', 'tags': ['Fahrtkosten', 'Martina', 'Werbungskosten']},
+    {'old': 'Werbungskosten:Reisekosten', 'new': 'Sonstiges', 'tags': ['Reisekosten', 'Werbungskosten']},
+    {'old': 'Werbungskosten:Steuerberatungskosten', 'new': 'Steuern', 'tags': ['Steuerberatungskosten', 'Werbungskosten']},
+    {'old': 'Werbungskosten:Steuerprogramm', 'new': 'Software', 'tags': ['Steuerprogramm', 'Werbungskosten']},
+    {'old': 'eBay', 'new': 'Sonstiges', 'tags': ['eBay']},
     {'old': 'AUSGABEN', 'new': 'Sonstiges'},
     {'old': 'AUSGABEN:Ausbildung', 'new': 'Bildung & Weiterbildung'},
     {'old': 'Ausbildung:Bafög', 'new': 'Bildung & Weiterbildung'},
@@ -311,7 +454,7 @@ function getCatMappings() {
     },
     {'old': 'AUSGABEN:Kleidung', 'new': 'Kleidung & Mode'},
     {'old': 'Isabella Kleidung', 'new': 'Kleidung & Mode', tags: ['Isabella']},
-    {'old': 'Kleidung:Anton Friseur', 'new': 'Kleidung & Mode', tags: ['Anton']},
+    {'old': 'Kleidung:Anton Friseur', 'new': 'Kleidung & Mode', tags: ['Anton', 'Friseur']},
     {'old': 'Kleidung:Anton Kleidung', 'new': 'Kleidung & Mode', tags: ['Anton']},
     {'old': 'Kleidung:Martina Kleidung', 'new': 'Kleidung & Mode', tags: ['Martina']},
     {'old': 'AUSGABEN:Laufende Ausgaben', 'new': 'Fixkosten & Verträge'},
@@ -404,23 +547,23 @@ function getCatMappings() {
       'old': 'Sonstige Einkünfte:Durchlaufende Posten',
       'new': 'Sonstige Einnahmen',
     },
-    {'old': 'Sonstige Einkünfte:Elterngeld', 'new': 'Sonstige Einnahmen', tags: ['Elterngeld']},
+    {'old': 'Sonstige Einkünfte:Elterngeld', 'new': 'Staatliche Zuschüsse', tags: ['Elterngeld']},
     {'old': 'Sonstige Einkünfte:Erhaltene Geschenke', 'new': 'Geschenke'},
     {
       'old': 'Sonstige Einkünfte:Erstattung Arztkosten',
-      'new': 'Gesundheit & Pflege', tags: ['Erstattung Arztkosten'],
+      'new': 'Gesundheit & Pflege – Erstattungen', tags: [],
     },
-    {'old': 'Sonstige Einkünfte:Erstattung Reisekosten', 'new': 'Reisen & Urlaub', tags: ['Dienstreise']},
+    {'old': 'Sonstige Einkünfte:Erstattung Reisekosten', 'new': 'Lohn & Gehalt', tags: ['Reisekostenerstattung']},
     {
       'old': 'Sonstige Einkünfte:Erstattung ausgelegt für Kids',
       'new': 'Kinder allgemein',
     },
-    {'old': 'Sonstige Einkünfte:Kindergeld', 'new': 'Kinder allgemein'},
+    {'old': 'Sonstige Einkünfte:Kindergeld', 'new': 'Staatliche Zuschüsse', tags: ['Kindergeld']},
     {'old': 'AUSGABEN:Steuern', 'new': 'Steuern'},
     {'old': 'Steuern:Abgeltungssteuer', 'new': 'Steuern', tags: ['Abgeltungssteuer', 'Kapital']},
-    {'old': 'Steuern:Grundsteuer', 'new': 'Steuern', tags: ['Grundsteuer B (Bahnhofstr. 10a)']},
-    {'old': 'Steuern:Grundsteuer A (Landw.)', 'new': 'Steuern', tags: ['Grundsteuer A (Landw.)', 'Landwirtschaft']},
-    {'old': 'Steuern:Grundsteuer B (Bahnhofstr. 10)', 'new': 'Steuern', tags: ['Grundsteuer B (Bahnhofstr. 10)']},
+    {'old': 'Steuern:Grundsteuer', 'new': 'Steuern', tags: ['Grundsteuer B', 'Bahnhofstr. 10a']},
+    {'old': 'Steuern:Grundsteuer A (Landw.)', 'new': 'Steuern', tags: ['Grundsteuer A', 'Landwirtschaft']},
+    {'old': 'Steuern:Grundsteuer B (Bahnhofstr. 10)', 'new': 'Steuern', tags: ['Grundsteuer B', 'Bahnhofstr. 10']},
     {'old': 'Steuern:Kapitalertragsteuer', 'new': 'Steuern', tags: ['Kapital']},
     {'old': 'Steuern:Kapitalertragsteuer Isabella', 'new': 'Steuern', tags: ['Kapital', 'Isabella']},
     {'old': 'Steuern:Kapitalertragsteuer Manuel', 'new': 'Steuern', tags: ['Kapital', 'Manuel']},
@@ -488,799 +631,49 @@ function getCatMappings() {
       'new': 'Umbuchungen', transferAccount: 'comdirect Martina Kreditkarte',
     },
     {'old': 'Umbuchung:auf comdirect Tagesgeld', 'new': 'Umbuchungen', transferAccount: 'comdirect Tagesgeld'},
-    {'old': 'Umbuchung:von Bargeld Martina', 'new': 'Umbuchungen'},
-    {'old': 'Umbuchung:von Girokonto Anton', 'new': 'Umbuchungen'},
-    {'old': 'Umbuchung:von IngDiba Extrakonto Isabella', 'new': 'Umbuchungen'},
-    {'old': 'Umbuchung:von IngDiba Extrakonto Manuel', 'new': 'Umbuchungen'},
-    {'old': 'Umbuchung:von IngDiba Martina', 'new': 'Umbuchungen'},
-    {'old': 'Umbuchung:von IngDiba Martina Festgeld', 'new': 'Umbuchungen'},
-    {'old': 'Umbuchung:von Targobank', 'new': 'Umbuchungen'},
-    {'old': 'Umbuchung:von comdirect Anton Giro', 'new': 'Umbuchungen'},
-    {'old': 'Umbuchung:von comdirect Giro', 'new': 'Umbuchungen'},
-    {'old': 'Umbuchung:von comdirect Tagesgeld', 'new': 'Umbuchungen'},
-    {'old': 'Verschiedenes Anton:Druchlaufende Posten', 'new': 'Sonstiges'},
-    {'old': 'Verschiedenes Martina:Sonstiges', 'new': 'Sonstiges'},
+    {'old': 'Umbuchung:von Bargeld Martina', 'new': 'Umbuchungen', transferAccount: 'Bargeld Martina'},
+    {'old': 'Umbuchung:von Girokonto Anton', 'new': 'Umbuchungen', transferAccount: 'Girokonto Anton'},
+    {'old': 'Umbuchung:von IngDiba Extrakonto Isabella', 'new': 'Umbuchungen', transferAccount: 'IngDiba Extrakonto Isabella'},
+    {'old': 'Umbuchung:von IngDiba Extrakonto Manuel', 'new': 'Umbuchungen', transferAccount: 'IngDiba Extrakonto Manuel'},
+    {'old': 'Umbuchung:von IngDiba Martina', 'new': 'Umbuchungen', transferAccount: 'IngDiba Martina'},
+    {'old': 'Umbuchung:von IngDiba Martina Festgeld', 'new': 'Umbuchungen', transferAccount: 'IngDiba Martina Festgeld'},
+    {'old': 'Umbuchung:von Targobank', 'new': 'Umbuchungen', transferAccount: 'Targobank'},
+    {'old': 'Umbuchung:von comdirect Anton Giro', 'new': 'Umbuchungen', transferAccount: 'comdirect Anton Giro'},
+    {'old': 'Umbuchung:von comdirect Giro', 'new': 'Umbuchungen', transferAccount: 'comdirect Anton Giro'},
+    {'old': 'Umbuchung:von comdirect Tagesgeld', 'new': 'Umbuchungen', transferAccount: 'comdirect Tagesgeld'},
+    {'old': 'Verschiedenes Anton:Druchlaufende Posten', 'new': 'Sonstiges', tags: ['Anton']},
+    {'old': 'Verschiedenes Martina:Sonstiges', 'new': 'Sonstiges', tags: ['Martina']},
     {
       'old': 'Verschiedenes Martina:Verzichtbar',
-      'new': 'Verzichtbare Ausgaben',
+      'new': 'Verzichtbare Ausgaben', tags: ['Martina', 'verzichtbar'],
     },
-    {'old': 'Verzichtbar:Android Apps', 'new': 'Verzichtbare Ausgaben'},
-    {'old': 'Verzichtbar:Computer', 'new': 'Verzichtbare Ausgaben'},
-    {'old': 'Verzichtbar:Computer - NAS', 'new': 'Verzichtbare Ausgaben'},
+    {'old': 'Verzichtbar:Android Apps', 'new': 'Computer', tags: ['verzichtbar', 'Android Apps']},
+    {'old': 'Verzichtbar:Computer', 'new': 'Computer', tags: ['verzichtbar']},
+    {'old': 'Verzichtbar:Computer - NAS', 'new': 'Computer', tags: ['verzichtbar', 'NAS']},
     {
       'old': 'Verzichtbar:Computer Cloud Dienste',
-      'new': 'Verzichtbare Ausgaben',
+      'new': 'Computer', tags: ['verzichtbar', 'Cloud Dienste'],
     },
     {
       'old': 'Verzichtbar:Computer Development Tools',
-      'new': 'Verzichtbare Ausgaben',
+      'new': 'Computer', tags: ['verzichtbar', 'Development Tools'],
     },
     {
       'old': 'Verzichtbar:Computer Verbrauchsmaterial',
-      'new': 'Verzichtbare Ausgaben',
+      'new': 'Computer', tags: ['verzichtbar', 'Verbrauchsmaterial'],
     },
-    {'old': 'Verzichtbar:Elektronik', 'new': 'Verzichtbare Ausgaben'},
-    {'old': 'Verzichtbar:Glücksspiel', 'new': 'Verzichtbare Ausgaben'},
-    {'old': 'Verzichtbar:Hobbies', 'new': 'Freizeit & Hobby'}];
-}
+    {'old': 'Verzichtbar:Elektronik', 'new': 'Freizeit & Hobby', tags: ['verzichtbar', 'Elektronik']},
+    {'old': 'Verzichtbar:Glücksspiel', 'new': 'Freizeit & Hobby', tags: ['verzichtbar', 'Glücksspiel']},
+    {'old': 'Verzichtbar:Hobbies', 'new': 'Freizeit & Hobby'},
+    {'old': 'Versicherung:Auto', 'new': 'Mobilität & Transport', tags: ['KFZ', 'Versicherung']},
+    {'old': 'AUSGABEN:Verschiedenes Anton', 'new': 'Sonstiges', tags: ['Anton']},
+  ];
 
-const catMappings = [
-  {
-    'old': 'AUSGABEN', 'new': sonstigeAusgaben,
-  }, {
-    'old': 'AUSGABEN:Ausbildung', 'new': Ausbildung,
-  }, {
-    'old': 'AUSGABEN:Bankgebühren', 'new': Bankgebuehren,
-  }, {
-    'old': 'AUSGABEN:Eltern', 'new': '',
-  }, {
-    'old': 'AUSGABEN:Essen', 'new': '',
-  }, {
-    'old': 'AUSGABEN:Freizeit', 'new': '',
-  }, {
-    'old': 'AUSGABEN:Geschenke', 'new': '',
-  }, {
-    'old': 'AUSGABEN:Gesundheit', 'new': '',
-  }, {
-    'old': 'AUSGABEN:Haus & Hof', 'new': '',
-  }, {
-    'old': 'AUSGABEN:Hausbau', 'new': '',
-  }, {
-    'old': 'AUSGABEN:Haushalt', 'new': '',
-  }, {
-    'old': 'AUSGABEN:Isabella', 'new': '',
-  }, {
-    'old': 'AUSGABEN:Kleidung', 'new': '',
-  }, {
-    'old': 'AUSGABEN:Laufende Ausgaben', 'new': '',
-  }, {
-    'old': 'AUSGABEN:Manuel', 'new': '',
-  }, {
-    'old': 'AUSGABEN:Mobilität', 'new': '',
-  }, {
-    'old': 'AUSGABEN:Reise', 'new': '',
-  }, {
-    'old': 'AUSGABEN:Sonderausgaben', 'new': '',
-  }, {
-    'old': 'AUSGABEN:Sonstige Ausgaben', 'new': '',
-  }, {
-    'old': 'AUSGABEN:Steuern', 'new': '',
-  }, {
-    'old': 'AUSGABEN:USA', 'new': '',
-  }, {
-    'old': 'AUSGABEN:Umb. auf gelöschtes Konto', 'new': '',
-  }, {
-    'old': 'AUSGABEN:Verschiedenes Anton', 'new': '',
-  }, {
-    'old': 'AUSGABEN:Verschiedenes Martina', 'new': '',
-  }, {
-    'old': 'AUSGABEN:Verzichtbar', 'new': '',
-  }, {
-    'old': 'AUSGABEN:Werbungskosten', 'new': '',
-  }, {
-    'old': 'Arzt- und Gesundheitskosten:Gesundheit - Selbstzahler - Anton',
-    'new': '',
-  }, {
-    'old': 'Arzt- und Gesundheitskosten:Gesundheit - Selbstzahler - Martina',
-    'new': '',
-  }, {
-    'old': 'Arzt- und Gesundheitskosten:Gesundheit - Zuzahlung - Anton',
-    'new': '',
-  }, {
-    'old': 'Arzt- und Gesundheitskosten:Gesundheit - Zuzahlung - Martina',
-    'new': '',
-  }, {
-    'old': 'Ausbildung:Bafög', 'new': '',
-  }, {
-    'old': 'Ausbildung:Konferenz', 'new': '',
-  }, {
-    'old': 'Ausbildung:Spanisch', 'new': '',
-  }, {
-    'old': 'Ausbildung:VHS', 'new': '',
-  }, {
-    'old': 'Ausg. für Kap.-Anlagen:Bausparvertrag', 'new': '',
-  }, {
-    'old': 'Ausg. für Kap.-Anlagen:Crypto', 'new': '',
-  }, {
-    'old': 'Ausg. für Kap.-Anlagen:Eutin', 'new': '',
-  }, {
-    'old': 'Ausg. für Kap.-Anlagen:Eutin (Darlehen)', 'new': '',
-  }, {
-    'old': 'Ausg. für Kap.-Anlagen:Eutin (Grundsteuer)', 'new': '',
-  }, {
-    'old': 'Ausg. für Kap.-Anlagen:Festgeldanlage', 'new': '',
-  }, {
-    'old': 'Ausg. für Kap.-Anlagen:Timber 2', 'new': '',
-  }, {
-    'old': 'Ausg. für Kap.-Anlagen:Wertpapier Order Gebühren', 'new': '',
-  }, {
-    'old': 'Ausg. für Kap.-Anlagen:Wertpapierkauf', 'new': '',
-  }, {
-    'old': 'Bankgebühren:Depotgebühren', 'new': '',
-  }, {
-    'old': 'Bankgebühren:Geldautomat', 'new': '',
-  }, {
-    'old': 'Bankgebühren:Kontoführungsgebühren', 'new': '',
-  }, {
-    'old': 'Bankgebühren:Kreditkarte', 'new': '',
-  }, {
-    'old': 'Bankgebühren:Kreditkarte Auslandseinsatz', 'new': '',
-  }, {
-    'old': 'Bankgebühren:Microsoft Investor', 'new': '',
-  }, {
-    'old': 'Bankgebühren:Sollzinsen', 'new': '',
-  }, {
-    'old': 'EINNAHMEN', 'new': '',
-  }, {
-    'old': 'EINNAHMEN:Eink. aus Kap.-Anlagen', 'new': '',
-  }, {
-    'old': 'EINNAHMEN:Geschenke - Einnahmen', 'new': '',
-  }, {
-    'old': 'EINNAHMEN:Lohn und Gehalt', 'new': '',
-  }, {
-    'old': 'EINNAHMEN:Pacht', 'new': '',
-  }, {
-    'old': 'EINNAHMEN:Sonstige Einkünfte', 'new': '',
-  }, {
-    'old': 'EINNAHMEN:Verkauf Kindersachen', 'new': '',
-  }, {
-    'old': 'Eink. aus Kap.-Anlagen:Dividenden', 'new': '',
-  }, {
-    'old': 'Eink. aus Kap.-Anlagen:Festgeld Ablauf', 'new': '',
-  }, {
-    'old': 'Eink. aus Kap.-Anlagen:Kapitalgewinne', 'new': '',
-  }, {
-    'old': 'Eink. aus Kap.-Anlagen:Langfr. Kursgewinne', 'new': '',
-  }, {
-    'old': 'Eink. aus Kap.-Anlagen:Miete Immobilie Eutin', 'new': '',
-  }, {
-    'old': 'Eink. aus Kap.-Anlagen:Sparbrief Ablauf', 'new': '',
-  }, {
-    'old': 'Eink. aus Kap.-Anlagen:Wertpapierverkauf', 'new': '',
-  }, {
-    'old': 'Eink. aus Kap.-Anlagen:Zinsen', 'new': '',
-  }, {
-    'old': 'Eink. aus Kap.-Anlagen:Zinsen Isabella', 'new': '',
-  }, {
-    'old': 'Eink. aus Kap.-Anlagen:Zinsen Manuel', 'new': '',
-  }, {
-    'old': 'Eltern:Haus', 'new': '',
-  }, {
-    'old': 'Essen:Isabella Schule', 'new': '',
-  }, {
-    'old': 'Essen:Kantine Anton', 'new': '',
-  }, {
-    'old': 'Essen:Manuel Schule', 'new': '',
-  }, {
-    'old': 'Essen:Mittag Martina', 'new': '',
-  }, {
-    'old': 'Essen:gemeinsam', 'new': '',
-  }, {
-    'old': 'Essen:verzichtbar', 'new': '',
-  }, {
-    'old': 'Freizeit:Anton Veranstaltungen', 'new': '',
-  }, {
-    'old': 'Freizeit:Eintritt', 'new': '',
-  }, {
-    'old': 'Freizeit:Fahrkarten', 'new': '',
-  }, {
-    'old': 'Freizeit:Martina Freizeit', 'new': '',
-  }, {
-    'old': 'Freizeit:Skifahren', 'new': '',
-  }, {
-    'old': 'Freizeit:Urlaub', 'new': '',
-  }, {
-    'old': 'Geschenke:Anton Geschenke', 'new': '',
-  }, {
-    'old': 'Geschenke:Isabella', 'new': '',
-  }, {
-    'old': 'Geschenke:Manuel', 'new': '',
-  }, {
-    'old': 'Geschenke:Martina Geschenke', 'new': '',
-  }, {
-    'old': 'Haus & Hof:Garten', 'new': '',
-  }, {
-    'old': 'Haus & Hof:Hasen', 'new': '',
-  }, {
-    'old': 'Haus & Hof:Laufende Kosten', 'new': '',
-  }, {
-    'old': 'Haus & Hof:Pflege', 'new': '',
-  }, {
-    'old': 'Haus & Hof:Reperaturen', 'new': '',
-  }, {
-    'old': 'Haus & Hof:Umbau Hausbus', 'new': '',
-  }, {
-    'old': 'Haus & Hof:Umbau/Ausbau', 'new': '',
-  }, {
-    'old': 'Hausbau - Einnahmen:Eigenheimzulage', 'new': '',
-  }, {
-    'old': 'Hausbau:Abbruch', 'new': '',
-  }, {
-    'old': 'Hausbau:Altbau', 'new': '',
-  }, {
-    'old': 'Hausbau:Außenanlage', 'new': '',
-  }, {
-    'old': 'Hausbau:Bauantrag', 'new': '',
-  }, {
-    'old': 'Hausbau:Dach', 'new': '',
-  }, {
-    'old': 'Hausbau:Einrichtung - Küche', 'new': '',
-  }, {
-    'old': 'Hausbau:Elektroinstallation', 'new': '',
-  }, {
-    'old': 'Hausbau:Heizung, Wasser + Sanitär', 'new': '',
-  }, {
-    'old': 'Hausbau:Innenausbau', 'new': '',
-  }, {
-    'old': 'Hausbau:Literatur', 'new': '',
-  }, {
-    'old': 'Hausbau:Rohbau', 'new': '',
-  }, {
-    'old': 'Hausbau:Türen, Fenster, Rollladen,Treppe', 'new': '',
-  }, {
-    'old': 'Haushalt:Büromaterial', 'new': '',
-  }, {
-    'old': 'Haushalt:Deko', 'new': '',
-  }, {
-    'old': 'Haushalt:Drogerieartikel', 'new': '',
-  }, {
-    'old': 'Haushalt:Einrichtung', 'new': '',
-  }, {
-    'old': 'Haushalt:Küche', 'new': '',
-  }, {
-    'old': 'Haushalt:Reparaturen', 'new': '',
-  }, {
-    'old': 'Haushalt:Verbrauchsmaterialien', 'new': '',
-  }, {
-    'old': 'Haushalt:Werkzeug, Maschinen, etc.', 'new': '',
-  }, {
-    'old': 'Isabella Kleidung', 'new': '',
-  }, {
-    'old': 'Isabella:Arztkosten Isabella', 'new': '',
-  }, {
-    'old': 'Isabella:Freizeit', 'new': '',
-  }, {
-    'old': 'Isabella:Führerschein', 'new': '',
-  }, {
-    'old': 'Isabella:Geschenke', 'new': '',
-  }, {
-    'old': 'Isabella:Hort Isabella', 'new': '',
-  }, {
-    'old': 'Isabella:Kindergarten Isabella', 'new': '',
-  }, {
-    'old': 'Isabella:Kleidung', 'new': '',
-  }, {
-    'old': 'Isabella:Mittagsbetreuung Isabella', 'new': '',
-  }, {
-    'old': 'Isabella:Reiten', 'new': '',
-  }, {
-    'old': 'Isabella:Schule Isabella', 'new': '',
-  }, {
-    'old': 'Isabella:Sonstiges', 'new': '',
-  }, {
-    'old': 'Isabella:Sparen', 'new': '',
-  }, {
-    'old': 'Isabella:Taschengeld', 'new': '',
-  }, {
-    'old': 'Isabella:Verbrauchsmaterial', 'new': '',
-  }, {
-    'old': 'Isabella:Versicherung_KinderPolice', 'new': '',
-  }, {
-    'old': 'Isabella:Versicherung_KÄNGURU.invest', 'new': '',
-  }, {
-    'old': 'Kinder:Spiel- und Bastelzeug', 'new': '',
-  }, {
-    'old': 'Kleidung:Anton Friseur', 'new': '',
-  }, {
-    'old': 'Kleidung:Anton Kleidung', 'new': '',
-  }, {
-    'old': 'Kleidung:Martina Kleidung', 'new': '',
-  }, {
-    'old': 'Laufende Ausgaben:Miete', 'new': '',
-  }, {
-    'old': 'Laufende Ausgaben:Rundfunkgebühren', 'new': '',
-  }, {
-    'old': 'Laufende Ausgaben:Strom', 'new': '',
-  }, {
-    'old': 'Laufende Ausgaben:Telefon', 'new': '',
-  }, {
-    'old': 'Laufende Ausgaben:Wasser und Kanalgebühren', 'new': '',
-  }, {
-    'old': 'Lohn und Gehalt:Gehalt Martina', 'new': '',
-  }, {
-    'old': 'Lohn und Gehalt:Nettovergütung', 'new': '',
-  }, {
-    'old': 'Lohn und Gehalt:Steuerfreie Einkünfte', 'new': '',
-  }, {
-    'old': 'Lohn und Gehalt:Steuernachzahlung', 'new': '',
-  }, {
-    'old': 'Lohn und Gehalt:Steuerrückerstattung', 'new': '',
-  }, {
-    'old': 'Lohn und Gehalt:VWL', 'new': '',
-  }, {
-    'old': 'Manuel:Arztkosten Manuel', 'new': '',
-  }, {
-    'old': 'Manuel:Freizeit', 'new': '',
-  }, {
-    'old': 'Manuel:Friseur', 'new': '',
-  }, {
-    'old': 'Manuel:Gaming', 'new': '',
-  }, {
-    'old': 'Manuel:Geschenke', 'new': '',
-  }, {
-    'old': 'Manuel:Kindergarten Manuel', 'new': '',
-  }, {
-    'old': 'Manuel:Kleidung', 'new': '',
-  }, {
-    'old': 'Manuel:Mittagsbetreuung Manuel', 'new': '',
-  }, {
-    'old': 'Manuel:Schule Manuel', 'new': '',
-  }, {
-    'old': 'Manuel:Sonstiges', 'new': '',
-  }, {
-    'old': 'Manuel:Sparen', 'new': '',
-  }, {
-    'old': 'Manuel:Taschengeld', 'new': '',
-  }, {
-    'old': 'Manuel:Taschengeldt', 'new': '',
-  }, {
-    'old': 'Manuel:Verbrauchsmaterial', 'new': '',
-  }, {
-    'old': 'Manuel:Versicherung_KinderPolice', 'new': '',
-  }, {
-    'old': 'Manuel:Versicherung_KÄNGURU.invest', 'new': '',
-  }, {
-    'old': 'Mobilität:Cloud Dienste', 'new': '',
-  }, {
-    'old': 'Mobilität:Fahrrad Anschaffung', 'new': '',
-  }, {
-    'old': 'Mobilität:Fahrrad Zubehör', 'new': '',
-  }, {
-    'old': 'Mobilität:KFZ Anschaffung', 'new': '',
-  }, {
-    'old': 'Mobilität:KFZ Laden', 'new': '',
-  }, {
-    'old': 'Mobilität:KFZ Steuer', 'new': '',
-  }, {
-    'old': 'Mobilität:KFZ Versicherung', 'new': '',
-  }, {
-    'old': 'Mobilität:KFZ Wartung', 'new': '',
-  }, {
-    'old': 'Mobilität:Kraftstoff', 'new': '',
-  }, {
-    'old': 'PKV:Apotheke', 'new': '',
-  }, {
-    'old': 'PKV:Leistungsabrechnung', 'new': '',
-  }, {
-    'old': 'PKV:Rechnung PKV', 'new': '',
-  }, {
-    'old': 'Photovolataik:Einspeisevergütung', 'new': '',
-  }, {
-    'old': 'Photovolataik:Installation und Wartung', 'new': '',
-  }, {
-    'old': 'Reise:2005 Andalusien', 'new': '',
-  }, {
-    'old': 'Reise:2005 Andalusien - Isla Canela', 'new': '',
-  }, {
-    'old': 'Reise:2010 Köln', 'new': '',
-  }, {
-    'old': 'Reise:2011 Köln', 'new': '',
-  }, {
-    'old': 'Reise:2012 Buchau', 'new': '',
-  }, {
-    'old': 'Reise:2012 Köln', 'new': '',
-  }, {
-    'old': 'Reise:2012 Unken', 'new': '',
-  }, {
-    'old': 'Reise:2013 Buchau', 'new': '',
-  }, {
-    'old': 'Reise:2013 Köln', 'new': '',
-  }, {
-    'old': 'Reise:2013 Meersburg', 'new': '',
-  }, {
-    'old': 'Reise:2014 Bayerisch Gmain', 'new': '',
-  }, {
-    'old': 'Reise:2014 Köln', 'new': '',
-  }, {
-    'old': 'Reise:2014 Südtirol', 'new': '',
-  }, {
-    'old': 'Reise:2015 Buchau', 'new': '',
-  }, {
-    'old': 'Reise:2015 Köln', 'new': '',
-  }, {
-    'old': 'Reise:2015 Oberjoch', 'new': '',
-  }, {
-    'old': 'Reise:2015 Südtirol', 'new': '',
-  }, {
-    'old': 'Reise:2015 Unken', 'new': '',
-  }, {
-    'old': 'Reise:2016 Buchau', 'new': '',
-  }, {
-    'old': 'Reise:2016 Caorle', 'new': '',
-  }, {
-    'old': 'Reise:2016 Hexenwasser', 'new': '',
-  }, {
-    'old': 'Reise:2016 Köln', 'new': '',
-  }, {
-    'old': 'Reise:2017 AIDA', 'new': '',
-  }, {
-    'old': 'Reise:2017 Caorle', 'new': '',
-  }, {
-    'old': 'Reise:2017 Gardasee', 'new': '',
-  }, {
-    'old': 'Reise:2018 AIDA', 'new': '',
-  }, {
-    'old': 'Reise:2018 Köln', 'new': '',
-  }, {
-    'old': 'Reise:2018 London', 'new': '',
-  }, {
-    'old': 'Reise:2018 Südtirol', 'new': '',
-  }, {
-    'old': 'Reise:2019 AIDA', 'new': '',
-  }, {
-    'old': 'Reise:2019 Truyenhof', 'new': '',
-  }, {
-    'old': 'Reise:2021 Caorle', 'new': '',
-  }, {
-    'old': 'Reise:2022 AIDA', 'new': '',
-  }, {
-    'old': 'Reise:2022 Bad Kleinkirchheim', 'new': '',
-  }, {
-    'old': 'Reise:2022 Caorle', 'new': '',
-  }, {
-    'old': 'Reise:2022 Mailand', 'new': '',
-  }, {
-    'old': 'Reise:2023 AIDA', 'new': '',
-  }, {
-    'old': 'Reise:2023 Paris', 'new': '',
-  }, {
-    'old': 'Reise:2023 Toskana', 'new': '',
-  }, {
-    'old': 'Reise:Dienstreise Anton', 'new': '',
-  }, {
-    'old': 'Reise:Krankenhaus Murnau', 'new': '',
-  }, {
-    'old': 'Sonderausgaben:Austrag', 'new': '',
-  }, {
-    'old': 'Sonderausgaben:Übergabe', 'new': '',
-  }, {
-    'old': 'Sonstige Ausgaben:Bankgebühren', 'new': '',
-  }, {
-    'old': 'Sonstige Ausgaben:Bargeld Martina', 'new': '',
-  }, {
-    'old': 'Sonstige Ausgaben:Durchlaufende Posten', 'new': '',
-  }, {
-    'old': 'Sonstige Ausgaben:Gebühren (sonstige)', 'new': '',
-  }, {
-    'old': 'Sonstige Ausgaben:Parkgebühren', 'new': '',
-  }, {
-    'old': 'Sonstige Ausgaben:Porto', 'new': '',
-  }, {
-    'old': 'Sonstige Ausgaben:Porto Martina', 'new': '',
-  }, {
-    'old': 'Sonstige Ausgaben:ausgelegt für CSU Merching', 'new': '',
-  }, {
-    'old': 'Sonstige Ausgaben:ausgelegt für Feuerwehr', 'new': '',
-  }, {
-    'old': 'Sonstige Ausgaben:ausgelegt für Isabella', 'new': '',
-  }, {
-    'old': 'Sonstige Ausgaben:ausgelegt für Manuel', 'new': '',
-  }, {
-    'old': 'Sonstige Ausgaben:Öffentliche Verkehrsmittel', 'new': '',
-  }, {
-    'old': 'Sonstige Einkünfte:Durchlaufende Posten', 'new': '',
-  }, {
-    'old': 'Sonstige Einkünfte:Elterngeld', 'new': '',
-  }, {
-    'old': 'Sonstige Einkünfte:Erhaltene Geschenke', 'new': '',
-  }, {
-    'old': 'Sonstige Einkünfte:Erstattung Arztkosten', 'new': '',
-  }, {
-    'old': 'Sonstige Einkünfte:Erstattung Reisekosten', 'new': '',
-  }, {
-    'old': 'Sonstige Einkünfte:Erstattung ausgelegt für Kids', 'new': '',
-  }, {
-    'old': 'Sonstige Einkünfte:Kindergeld', 'new': '',
-  }, {
-    'old': 'Steuern:Abgeltungssteuer', 'new': '',
-  }, {
-    'old': 'Steuern:Grundsteuer', 'new': '',
-  }, {
-    'old': 'Steuern:Grundsteuer A (Landw.)', 'new': '',
-  }, {
-    'old': 'Steuern:Grundsteuer B (Bahnhofstr. 10)', 'new': '',
-  }, {
-    'old': 'Steuern:Kapitalertragsteuer', 'new': '',
-  }, {
-    'old': 'Steuern:Kapitalertragsteuer Isabella', 'new': '',
-  }, {
-    'old': 'Steuern:Kapitalertragsteuer Manuel', 'new': '',
-  }, {
-    'old': 'Steuern:Kirchensteuer', 'new': '',
-  }, {
-    'old': 'Steuern:Solidaritätszuschlag', 'new': '',
-  }, {
-    'old': 'Steuern:Solidaritätszuschlag Isabella', 'new': '',
-  }, {
-    'old': 'Steuern:Umsatzsteuer PV', 'new': '',
-  }, {
-    'old': 'Steuern:Zinsabschlagsteuer', 'new': '',
-  }, {
-    'old': 'USA:us_Bank', 'new': '',
-  }, {
-    'old': 'USA:us_Deposit', 'new': '',
-  }, {
-    'old': 'USA:us_Essen', 'new': '',
-  }, {
-    'old': 'USA:us_Essen_Anton_Mittag', 'new': '',
-  }, {
-    'old': 'USA:us_Haushalt', 'new': '',
-  }, {
-    'old': 'USA:us_Miete', 'new': '',
-  }, {
-    'old': 'USA:us_Spesen_IXOS', 'new': '',
-  }, {
-    'old': 'USA:us_Strom', 'new': '',
-  }, {
-    'old': 'USA:us_Tanken', 'new': '',
-  }, {
-    'old': 'USA:us_Toll', 'new': '',
-  }, {
-    'old': 'USA:us_v_Eintritt', 'new': '',
-  }, {
-    'old': 'USA:us_v_Essen', 'new': '',
-  }, {
-    'old': 'USA:us_v_Haushalt', 'new': '',
-  }, {
-    'old': 'USA:us_v_Internet_Fernsehen', 'new': '',
-  }, {
-    'old': 'USA:us_v_Telefon', 'new': '',
-  }, {
-    'old': 'USA:us_öffentl. Verkehr', 'new': '',
-  }, {
-    'old': 'Umbuchung', 'new': '',
-  }, {
-    'old': 'Umbuchung:ADAC Kreditkarte', 'new': '',
-  }, {
-    'old': 'Umbuchung:Bargeld', 'new': '',
-  }, {
-    'old': 'Umbuchung:Berliner Bank Kreditkartenkonto', 'new': '',
-  }, {
-    'old': 'Umbuchung:Cortal Consors Tagesgeldkonto', 'new': '',
-  }, {
-    'old': 'Umbuchung:Cortal Consors Verrechnungskonto', 'new': '',
-  }, {
-    'old': 'Umbuchung:Geldkarte', 'new': '',
-  }, {
-    'old': 'Umbuchung:IngDiba Extrakonto Anton', 'new': '',
-  }, {
-    'old': 'Umbuchung:Isabella Festgeld INGDiba', 'new': '',
-  }, {
-    'old': 'Umbuchung:Isabella Sparbuch', 'new': '',
-  }, {
-    'old': 'Umbuchung:Manuel Festgeld INGDiba', 'new': '',
-  }, {
-    'old': 'Umbuchung:Netbank Tagesgeldkonto', 'new': '',
-  }, {
-    'old': 'Umbuchung:Netbank Verrechnungskonto', 'new': '',
-  }, {
-    'old': 'Umbuchung:Targobank', 'new': '',
-  }, {
-    'old': 'Umbuchung:auf Bargeld Martina', 'new': '',
-  }, {
-    'old': 'Umbuchung:auf Boon Kreditkarte', 'new': '',
-  }, {
-    'old': 'Umbuchung:auf Cortal Consors Tagesgeldkonto', 'new': '',
-  }, {
-    'old': 'Umbuchung:auf Cortal Consors Verrechnungskonto', 'new': '',
-  }, {
-    'old': 'Umbuchung:auf DKB Martina', 'new': '',
-  }, {
-    'old': 'Umbuchung:auf Girokonto Anton', 'new': '',
-  }, {
-    'old': 'Umbuchung:auf IngDiba Extrakonto Anton', 'new': '',
-  }, {
-    'old': 'Umbuchung:auf IngDiba Extrakonto Manuel', 'new': '',
-  }, {
-    'old': 'Umbuchung:auf IngDiba Extrakonto Martina', 'new': '',
-  }, {
-    'old': 'Umbuchung:auf Isabella Festgeld INGDiba', 'new': '',
-  }, {
-    'old': 'Umbuchung:auf Manuel Festgeld INGDiba', 'new': '',
-  }, {
-    'old': 'Umbuchung:auf N26', 'new': '',
-  }, {
-    'old': 'Umbuchung:auf Netbank Girokonto', 'new': '',
-  }, {
-    'old': 'Umbuchung:auf Netbank Sparbrief', 'new': '',
-  }, {
-    'old': 'Umbuchung:auf Netbank Tagesgeldkonto', 'new': '',
-  }, {
-    'old': 'Umbuchung:auf comdirect Anton Giro', 'new': '',
-  }, {
-    'old': 'Umbuchung:auf comdirect Anton Kreditkarte', 'new': '',
-  }, {
-    'old': 'Umbuchung:auf comdirect Martina Giro', 'new': '',
-  }, {
-    'old': 'Umbuchung:auf comdirect Martina Kreditkarte', 'new': '',
-  }, {
-    'old': 'Umbuchung:auf comdirect Tagesgeld', 'new': '',
-  }, {
-    'old': 'Umbuchung:von Bargeld Martina', 'new': '',
-  }, {
-    'old': 'Umbuchung:von Girokonto Anton', 'new': '',
-  }, {
-    'old': 'Umbuchung:von IngDiba Extrakonto Isabella', 'new': '',
-  }, {
-    'old': 'Umbuchung:von IngDiba Extrakonto Manuel', 'new': '',
-  }, {
-    'old': 'Umbuchung:von IngDiba Martina', 'new': '',
-  }, {
-    'old': 'Umbuchung:von IngDiba Martina Festgeld', 'new': '',
-  }, {
-    'old': 'Umbuchung:von Targobank', 'new': '',
-  }, {
-    'old': 'Umbuchung:von comdirect Anton Giro', 'new': '',
-  }, {
-    'old': 'Umbuchung:von comdirect Giro', 'new': '',
-  }, {
-    'old': 'Umbuchung:von comdirect Tagesgeld', 'new': '',
-  }, {
-    'old': 'Verschiedenes Anton:Druchlaufende Posten', 'new': '',
-  }, {
-    'old': 'Verschiedenes Martina:Sonstiges', 'new': '',
-  }, {
-    'old': 'Verschiedenes Martina:Verzichtbar', 'new': '',
-  }, {
-    'old': 'Versicherung:Auto', 'new': '',
-  }, {
-    'old': 'Versicherung:BU Versicherung (Basler) Anton', 'new': '',
-  }, {
-    'old': 'Versicherung:BU Versicherung Martina', 'new': '',
-  }, {
-    'old': 'Versicherung:Brandversicherung', 'new': '',
-  }, {
-    'old': 'Versicherung:Generali 3-Phasen-Rente 1-34.952.273-0', 'new': '',
-  }, {
-    'old': 'Versicherung:Generali 3D Pflegev. 1-34.952.204-4', 'new': '',
-  }, {
-    'old': 'Versicherung:Haftpflichtversicherung', 'new': '',
-  }, {
-    'old': 'Versicherung:Hausrat', 'new': '',
-  }, {
-    'old': 'Versicherung:Krankenversicherung', 'new': '',
-  }, {
-    'old': 'Versicherung:Krankenversicherung Anton', 'new': '',
-  }, {
-    'old': 'Versicherung:Krankenversicherung Isabella', 'new': '',
-  }, {
-    'old': 'Versicherung:Krankenversicherung Martina', 'new': '',
-  }, {
-    'old': 'Versicherung:Lebensversicherung', 'new': '',
-  }, {
-    'old': 'Versicherung:Lebensversicherung 5000127', 'new': '',
-  }, {
-    'old': 'Versicherung:Lebensversicherung 5000127-01', 'new': '',
-  }, {
-    'old': 'Versicherung:Lebensversicherung 5000127-03', 'new': '',
-  }, {
-    'old': 'Versicherung:Lebensversicherung 5000127-04', 'new': '',
-  }, {
-    'old': 'Versicherung:Lebensversicherung HDI 504309', 'new': '',
-  }, {
-    'old': 'Versicherung:Lebensversicherung S-01225520-01', 'new': '',
-  }, {
-    'old': 'Versicherung:Lebensversicherung S-01323071-01', 'new': '',
-  }, {
-    'old': 'Versicherung:Lebensversicherung_AXA_26218145001', 'new': '',
-  }, {
-    'old': 'Versicherung:Rechtsschutzversicherung', 'new': '',
-  }, {
-    'old': 'Versicherung:Reisekrankenversicherung Martina', 'new': '',
-  }, {
-    'old': 'Versicherung:Reiseversicherung', 'new': '',
-  }, {
-    'old': 'Versicherung:Rentenversicherung', 'new': '',
-  }, {
-    'old': 'Versicherung:Riester_1_Anton', 'new': '',
-  }, {
-    'old': 'Versicherung:Riester_2_Anton', 'new': '',
-  }, {
-    'old': 'Versicherung:Riester_Martina', 'new': '',
-  }, {
-    'old': 'Versicherung:Traktor', 'new': '',
-  }, {
-    'old': 'Versicherung:Wohngebäudeversicherung', 'new': '',
-  }, {
-    'old': 'Versicherung:Zahnzusatzversicherung Martina', 'new': '',
-  }, {
-    'old': 'Verzichtbar:Android Apps', 'new': '',
-  }, {
-    'old': 'Verzichtbar:Computer', 'new': '',
-  }, {
-    'old': 'Verzichtbar:Computer - NAS', 'new': '',
-  }, {
-    'old': 'Verzichtbar:Computer Cloud Dienste', 'new': '',
-  }, {
-    'old': 'Verzichtbar:Computer Development Tools', 'new': '',
-  }, {
-    'old': 'Verzichtbar:Computer Verbrauchsmaterial', 'new': '',
-  }, {
-    'old': 'Verzichtbar:Elektronik', 'new': '',
-  }, {
-    'old': 'Verzichtbar:Glücksspiel', 'new': '',
-  }, {
-    'old': 'Verzichtbar:Hobbies', 'new': '',
-  }, {
-    'old': 'Verzichtbar:Informatik eBooks', 'new': '',
-  }, {
-    'old': 'Verzichtbar:Mac Apps', 'new': '',
-  }, {
-    'old': 'Verzichtbar:Medien', 'new': '',
-  }, {
-    'old': 'Verzichtbar:Mobilfunk Gebühren', 'new': '',
-  }, {
-    'old': 'Verzichtbar:PC Apps', 'new': '',
-  }, {
-    'old': 'Verzichtbar:Spenden', 'new': '',
-  }, {
-    'old': 'Verzichtbar:Sport', 'new': '',
-  }, {
-    'old': 'Verzichtbar:TMow Entwicklung', 'new': '',
-  }, {
-    'old': 'Verzichtbar:Vereinsbeitrag', 'new': '',
-  }, {
-    'old': 'Verzichtbar:Werkstatt', 'new': '',
-  }, {
-    'old': 'Verzichtbar:eBay - Allgemein', 'new': '',
-  }, {
-    'old': 'Verzichtbar:iPhone Apps', 'new': '',
-  }, {
-    'old': 'Verzichtbar:iPhone Apps (Spiele)', 'new': '',
-  }, {
-    'old': 'Verzögern', 'new': '',
-  }, {
-    'old': 'Werbungskosten:Arbeitsmittel', 'new': '',
-  }, {
-    'old': 'Werbungskosten:Bahnrad', 'new': '',
-  }, {
-    'old': 'Werbungskosten:Fachliteratur', 'new': '',
-  }, {
-    'old': 'Werbungskosten:Fahrtkosten Martina', 'new': '',
-  }, {
-    'old': 'Werbungskosten:Reisekosten', 'new': '',
-  }, {
-    'old': 'Werbungskosten:Steuerberatungskosten', 'new': '',
-  }, {
-    'old': 'Werbungskosten:Steuerprogramm', 'new': '',
-  }, {
-    'old': 'eBay', 'new': '',
-  }];
-const mappings = {};
-catMappings.forEach(mapping => {
-  mappings[mapping.old] = mapping.new;
-});
-return mappings;
+  const mappings = {};
+  catMappings.forEach(mapping => {
+    mappings[mapping.old] = { category: mapping.new, tags: mapping.tags, transferAccount: mapping.transferAccount };
+  });
+  return mappings;
 }
 
 exportData().then(() => {

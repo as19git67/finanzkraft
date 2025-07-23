@@ -1,5 +1,5 @@
 const schema = {
-  version: 20,
+  version: 21,
   name: 'finanzkraft',
   tables: [
     {
@@ -934,6 +934,11 @@ const schema = {
           "nullable": true,
         },
         {
+          "name": "oldCategory",
+          "type": "string",
+          "nullable": true,
+        },
+        {
           "name": "entryText",
           "type": "string",
           "nullable": true,
@@ -1018,6 +1023,67 @@ const schema = {
           "name": "FK_Fk_TransactionStatus_idUser__Users_id",
           "columns": ["idUser"],
           "foreign_table": "Users",
+          "foreign_columns": ["id"],
+        },
+      ],
+    },
+    {
+      "tableName": "Fk_Tag",
+      "columns": [
+        {
+          "name": "id",
+          "type": "autoincrement",
+          "primary_key": true,
+        },
+        {
+          "name": "tag",
+          "type": "string",
+          "nullable": false,
+        },
+      ],
+      indexes: [
+        {
+          name: 'IDX_Tag',
+          columns: ['tag'],
+          unique: true,
+        },
+      ],
+    },
+    {
+      "tableName": "Fk_TagTransaction",
+      "columns": [
+        {
+          "name": "idTransaction",
+          "type": "integer",
+          "nullable": false,
+        },
+        {
+          "name": "idTag",
+          "type": "integer",
+          "nullable": false,
+        },
+      ],
+      indexes: [
+        {
+          name: 'IDX_TagTransaction_idTransaction',
+          columns: ['idTransaction'],
+        },
+        {
+          name: 'IDX_TagTransaction_idTag',
+          columns: ['idTag'],
+        },
+      ],
+      "foreign_keys": [
+        {
+          "name": "Fk_TagTransaction__Fk_Transaction_id",
+          "columns": ["idTransaction"],
+          "foreign_table": "Fk_Transaction",
+          "foreign_columns": ["id"],
+        },
+        {
+          "name": "Fk_TagTransaction_idTag__Fk_Tag_id",
+          "columns": ["idTag"],
+          "foreign_table": "Fk_Tag",
           "foreign_columns": ["id"],
         },
       ],

@@ -10,7 +10,7 @@ const DbMixinCategories = {
     .leftJoin('Fk_Category as parentCat', function () {
       this.on('parentCat.id', '=', 'Fk_Category.idCategoryParent');
     })
-    .whereNotNull('Fk_Category.idCategoryParent')
+    // .whereNotNull('Fk_Category.idCategoryParent')
     .andWhere((builder) => {
         if (idCategory !== undefined) {
           builder.where({id: idCategory});

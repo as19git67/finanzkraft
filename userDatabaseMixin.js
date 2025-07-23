@@ -294,6 +294,13 @@ const UserDatabaseMixin = {
     return _.map(result, (r) => this._extractSaveUserData(r));
   },
 
+  async getUserForBackup() {
+    const result = await this.knex.select().table('Users');
+    return _.map(result, (r) => {
+      return r;
+    });
+  },
+
   async getUserById(id) {
     if (id === undefined) {
       throw new Error('Undefined user id');
