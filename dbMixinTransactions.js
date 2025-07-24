@@ -32,7 +32,7 @@ const DbMixinTransactions = {
       'Fk_Category.fullName as category_name', 'Fk_Currency.id as currency_id',
       'Fk_Transaction.idRuleSet as rule_set_id', 'Fk_RuleSet.name as rule_set_name',
       'Fk_Currency.name as currency_name', 'Fk_Currency.short as currency_short',
-      'tagIds'];
+      'tagIds', 'tags'];
     if (idUser) {
       columnsToSelect.push('Fk_TransactionStatus.confirmed as confirmed');
     }
@@ -52,7 +52,7 @@ const DbMixinTransactions = {
     .leftJoin('Fk_RuleSet', function () {
       this.on('Fk_Transaction.idRuleSet', '=', 'Fk_RuleSet.id');
     })
-    .leftJoin(this.knex.raw("(SELECT Fk_TagTransaction.idTransaction, STRING_AGG(Fk_Tag.id, ',') as 'tagIds' FROM Fk_TagTransaction JOIN Fk_Tag ON Fk_TagTransaction.idTag = Fk_Tag.id GROUP BY Fk_TagTransaction.idTransaction) AS Fk_Tag_agg ON Fk_Transaction.id = Fk_Tag_agg.idTransaction"))
+    .leftJoin(this.knex.raw("(SELECT Fk_TagTransaction.idTransaction, STRING_AGG(Fk_Tag.id, ',') as tagIds, STRING_AGG(Fk_Tag.tag, ',') as tags FROM Fk_TagTransaction JOIN Fk_Tag ON Fk_TagTransaction.idTag = Fk_Tag.id GROUP BY Fk_TagTransaction.idTransaction) AS Fk_Tag_agg ON Fk_Transaction.id = Fk_Tag_agg.idTransaction"))
     .where((builder) => {
       if (idTransaction !== undefined) {
         builder.where({'Fk_Transaction.id': idTransaction});

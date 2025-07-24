@@ -152,6 +152,7 @@ async function exportData() {
 
   const missingMappings = {};
   const catMappings = getCatMappings();
+  console.log(`Processing ${result.length} transactions...`);
   // const catCache = {};
   for (const resultElement of result) {
     let category = resultElement.cat_name.trim();
@@ -217,7 +218,7 @@ async function exportData() {
   // delete data.transactions;
   // delete data.accounts;
 
-  console.log(`Exporting ${result.length} transactions...`);
+  console.log(`Exporting ${data.transactions} transactions...`);
 
   const json = JSON.stringify(data, undefined, 2);
   const dataBuffer = new Uint8Array(Buffer.from(json));

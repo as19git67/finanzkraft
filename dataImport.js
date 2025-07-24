@@ -29,7 +29,7 @@ export default async function importData(db, importFilename) {
 
   console.log(`Importing ${Object.keys(data.transactions).length} transactions...`);
   const balanceByDate = {};
-  const maxTr = 70000;
+  const maxTr = 100000;
   let cnt = 0;
 
   // first round: fix duplicate balances
