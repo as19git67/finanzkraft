@@ -173,12 +173,13 @@ async function exportData() {
     if (payee === 'Unbekannt') {
       payee = null;
     }
-    if (!catMappings[category]) {
-      if (category && !missingMappings[category]) {
-        console.log(`WARNING: Unknown category ${category}`);
-        missingMappings[category] = category;
+    if (category) {
+      if (!catMappings[category]) {
+        if (!missingMappings[category]) {
+          console.log(`WARNING: Unknown category ${category}`);
+          missingMappings[category] = category;
+        }
       }
-      continue;
     }
     data.transactions.push({
       ts_sequence: resultElement.ts_sequence,
@@ -218,7 +219,7 @@ async function exportData() {
   // delete data.transactions;
   // delete data.accounts;
 
-  console.log(`Exporting ${data.transactions} transactions...`);
+  console.log(`Exporting ${data.transactions.length} transactions...`);
 
   const json = JSON.stringify(data, undefined, 2);
   const dataBuffer = new Uint8Array(Buffer.from(json));
