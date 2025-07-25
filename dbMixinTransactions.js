@@ -581,6 +581,19 @@ const DbMixinTransactions = {
           await this.applyRules(trx, {includeProcessed: false, includeTransactionsWithRuleSet: false});
         }
         if (options && options.balance) {
+          const result = await trx('Fk_AccountBalance').where({idAccount: options.balance.idAccount, balanceDate: options.balance.balanceDate});
+          if (result.length > 0) {
+            // update instead of insert
+            // let balanceUpdates = await trx('Fk_AccountBalance').update(options.balance);
+            // console.log(`Updated ${balanceUpdates.length} account balances`);
+            let balanceDeletions = await trx('Fk_AccountBalance').
+                where({
+                  idAccount: options.balance.idAccount,
+                  balanceDate: options.balance.balanceDate
+                }).
+                delete();
+            console.log(`${balanceDeletions} balance deletions`);
+          }
           let balanceInserts = await trx('Fk_AccountBalance').insert(options.balance);
           console.log(`Inserted ${balanceInserts.length} account balances`);
         }

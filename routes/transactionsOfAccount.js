@@ -36,7 +36,7 @@ rc.post(async function (req, res, next) {
     balance = {
       idAccount: accountId,
       balance: req.body.balance.balance,
-      balanceDate: req.body.balance.balanceDate,
+      balanceDate: DateTime.fromISO(req.body.balance.balanceDate).toJSDate(),
     };
   }
   const transactions = transactionsData.map((tr) => {
