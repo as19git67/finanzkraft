@@ -76,15 +76,15 @@ const DbMixinAccounts = {
           throw new Error(`Account with id ${idAccount} was not updated`, {cause: 'unknown'});
         }
       }
-      if (data.readers) {
+      if (data.reader) {
         result = await trx.table('Fk_AccountReader').where('idAccount', idAccount).delete();
-        for (const idUser of data.readers) {
+        for (const idUser of data.reader) {
           result = await trx.table('Fk_AccountReader').insert({idAccount: idAccount, idUser: idUser});
         }
       }
-      if (data.writers) {
+      if (data.writer) {
         result = await trx.table('Fk_AccountWriter').where('idAccount', idAccount).delete();
-        for (const idUser of data.writers) {
+        for (const idUser of data.writer) {
           result = await trx.table('Fk_AccountWriter').insert({idAccount: idAccount, idUser: idUser});
         }
       }
@@ -93,6 +93,19 @@ const DbMixinAccounts = {
 
   async deleteAccount(idAccount) {
     return this.knex.table('Fk_Account').whereIn('id', idAccount).delete();
+  },
+
+  async addAccountBalance(idAccount, balanceDate, balance) {
+    const result = await this.knex('Fk_AccountBalance').insert({
+      idAccount: idAccount,
+      balanceDate: balanceDate,
+      balance: balance,
+    }).returning('*');
+    if (result.length > 0) {
+      return result;
+    } else {
+      return undefined;
+    }
   },
 
 };

@@ -14,10 +14,8 @@ rc.get(function (req, res, next) {
   const db = req.app.get('database');
   db.getAccounts().then((accounts) => {
     accounts.forEach((account) => {
-      account.readers = account.reader ? convertToInteger(account.reader.split(',')) : [];
-      delete account.reader;
-      account.writers = account.writer ? convertToInteger(account.writer.split(',')) : [];
-      delete account.writer;
+      account.reader = account.reader ? convertToInteger(account.reader.split(',')) : [];
+      account.writer = account.writer ? convertToInteger(account.writer.split(',')) : [];
     });
     res.json(accounts);
   }).catch((reason) => {

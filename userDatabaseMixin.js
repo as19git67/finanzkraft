@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import { DateTime } from 'luxon';
+import {DateTime} from 'luxon';
 import hat from 'hat';
 import crypto from 'crypto';
 import config from './config.js';
@@ -19,6 +19,22 @@ const UserDatabaseMixin = {
     };
     const result = await this.knex('Users').insert(user).returning('id');
     return result[0].id;
+  },
+
+  addUserFromBackup(users) {
+    const usersToImport = users.map((user) => {
+      return {
+        Email: user.Email,
+        EmailConfirmed: user.EmailConfirmed,
+        PasswordSalt: user.PasswordSalt,
+        PasswordHash: user.PasswordHash,
+        ExpiredAfter: user.ExpiredAfter,
+        LoginProvider: user.LoginProvider,
+        LoginProviderKey: user.LoginProviderKey,
+        Initials: user.Initials,
+      };
+    });
+    return this.knex('Users').insert(usersToImport).returning('*');
   },
 
   _createPasswordHash(password, salt) {

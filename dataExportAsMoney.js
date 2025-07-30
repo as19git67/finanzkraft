@@ -587,7 +587,7 @@ function getCatMappings() {
     {'old': 'USA:us_v_Eintritt', 'new': 'Freizeit & Hobby', tags: ['USA-Aufenthalt', 'Eintritt']},
     {'old': 'USA:us_v_Essen', 'new': 'Restaurant', tags: ['USA-Aufenthalt']},
     {'old': 'USA:us_v_Haushalt', 'new': 'Haushalt', tags: ['USA-Aufenthalt']},
-    {'old': 'USA:us_v_Internet_Fernsehen', 'new': 'ixkosten & Verträge', tags: ['USA-Aufenthalt', 'Telefon & Internet']},
+    {'old': 'USA:us_v_Internet_Fernsehen', 'new': 'Fixkosten & Verträge', tags: ['USA-Aufenthalt', 'Telefon & Internet']},
     {'old': 'USA:us_v_Telefon', 'new': 'Fixkosten & Verträge', tags: ['USA-Aufenthalt', 'Telefon & Internet']},
     {'old': 'USA:us_öffentl. Verkehr', 'new': 'Mobilität & Transport', tags: ['USA-Aufenthalt', 'ÖPNV']},
     {'old': 'Umbuchung', 'new': 'Umbuchungen'},

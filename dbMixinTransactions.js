@@ -541,21 +541,26 @@ const DbMixinTransactions = {
     }
   },
 
-  async addTransaction(transactionData, options) {
-    const fixedTransactionData = this._fixTransactionData(transactionData);
+  async addTransaction(transactionData, options = {}) {
+    let transactionDataForInsert;
+    if (options.dontFix) {
+      transactionDataForInsert = transactionData;
+    } else {
+      transactionDataForInsert = this._fixTransactionData(transactionData);
+    }
     return this.knex.transaction(async (trx) => {
-      let inserts = await trx('Fk_Transaction').insert(fixedTransactionData).returning('id');
+      let inserts = await trx('Fk_Transaction').insert(transactionDataForInsert).returning('id');
       if (inserts.length !== 1) {
         throw new Error(`Unexpected number of inserted transactions: ${inserts.length}. Should be 1.`);
       }
       const idTransaction = inserts[0].id;
-      if (!options || !options.ignoreRules) {
+      if (!options.ignoreRules) {
         await this.applyRules(trx, {includeProcessed: false, includeTransactionsWithRuleSet: false});
       }
-      if (options && options.balance) {
+      if (options.balance) {
         const balanceInserts = await trx('Fk_AccountBalance').insert(options.balance);
       }
-      if (options && options.tags && options.tags.length > 0) {
+      if (options.tags && options.tags.length > 0) {
         const transactionTagsToInsert = options.tags.map((idTag) => {
           return {
             idTransaction: idTransaction,

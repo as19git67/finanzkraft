@@ -299,7 +299,7 @@ const schema = {
         {
           name: 'key',
           type: 'string',
-          unique: true,
+          unique: false,
           nullable: false,
         },
         {

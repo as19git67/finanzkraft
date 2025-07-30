@@ -3,6 +3,7 @@ import fs from 'fs';
 import {writeFile} from "node:fs/promises";
 
 export default async function exportData(db, exportFilename) {
+  const schemaVersion = 1;
 
   let data = {};
   try {
@@ -18,6 +19,13 @@ export default async function exportData(db, exportFilename) {
         throw ex;
     }
   }
+
+  const schemaVersionInData = data.Schema || 0;
+  if (schemaVersionInData !== schemaVersion) {
+    console.log(`Export file ${exportFilename} has schema version ${schemaVersionInData}. Starting with empty file.`);
+    data = {};
+  }
+  data.Schema = schemaVersion;
 
   console.log('Exporting roles...');
   data.Roles = await db.getRoles();
@@ -79,18 +87,29 @@ export default async function exportData(db, exportFilename) {
   console.log(`Exported ${data.Categories.length} categories`);
 
   console.log('Exporting transaction presets...');
-  data.NewTransactionPresets = await Promise.all(users.map(async user => {
-    const newTransactionPresets = await db.getNewTransactionPresets(user.id);
-    const presetObj = JSON.parse(newTransactionPresets);
-    return {
-      userEmail: user.Email,
-      newTransactionPresets: presetObj.map(preset => {
-        preset.category = categoriesById[preset.categoryId].full_name;
-        delete preset.categoryId;
-        return preset;
-      }),
-    };
-  }));
+  try {
+    data.NewTransactionPresets = await Promise.all(users.map(async user => {
+      const newTransactionPresets = await db.getNewTransactionPresets(user.id);
+      const presetObj = JSON.parse(newTransactionPresets);
+      const filteredPresetObj = presetObj.filter(preset => {
+        // filter out empty objects
+        return Object.keys(preset).length > 0;
+      });
+      return {
+        userEmail: user.Email,
+        newTransactionPresets: presetObj.map(preset => {
+          if (preset.categoryId) {
+            preset.category = categoriesById[preset.categoryId].full_name;
+            delete preset.categoryId;
+          }
+          return preset;
+        }),
+      };
+    }));
+  } catch (ex) {
+    console.log(`Exception while exporting transaction presets: ${ex.message}`);
+    throw ex;
+  }
   console.log(`Exported ${data.NewTransactionPresets.length} transaction presets`);
 
   console.log('Exporting rule sets...');
@@ -99,7 +118,7 @@ export default async function exportData(db, exportFilename) {
 
   console.log('Exporting accounts...');
   const accounts = await db.getAccounts();
-  data.accounts = accounts.map(account => {
+  data.Accounts = accounts.map(account => {
     if (account.writer) {
       account.writer = account.writer.split(',').map(writer => {
         return usersById[writer];
@@ -116,10 +135,10 @@ export default async function exportData(db, exportFilename) {
     }
     return account;
   });
-  console.log(`Exported ${data.accounts.length} accounts`);
+  console.log(`Exported ${data.Accounts.length} accounts`);
 
-  data.transactions = await db.getTransactionsForExport();  // todo: incl. status?, tags
-  console.log(`Exported ${data.transactions.length} transactions`);
+  data.Transactions = await db.getTransactionsForExport();  // todo: incl. status?, tags
+  console.log(`Exported ${data.Transactions.length} transactions`);
 
   const json = JSON.stringify(data, undefined, 2);
   const dataBuffer = new Uint8Array(Buffer.from(json));
