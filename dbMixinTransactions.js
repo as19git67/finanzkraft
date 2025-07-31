@@ -586,7 +586,7 @@ const DbMixinTransactions = {
           await this.applyRules(trx, {includeProcessed: false, includeTransactionsWithRuleSet: false});
         }
         if (options.unconfirmed) {
-          const users = await trx('Fk_User').select('id').where({Type: this.UserTypes.interactive});
+          const users = await trx('Users').where({Type: this.UserTypes.interactive});
           const trStatusesForAllUsersToInsert = [];
           for (const user of users) {
             const trStatusesToInsert = inserts.map((t) => {
