@@ -1,5 +1,5 @@
 const schema = {
-  version: 21,
+  version: 22,
   name: 'finanzkraft',
   tables: [
     {
@@ -192,6 +192,12 @@ const schema = {
           name: 'Initials',
           type: 'string',
           length: 2,
+        },
+        {
+          name: "Type",
+          type: "string",
+          length: 10,
+          nullable: false,
         },
       ],
     },
@@ -1000,7 +1006,7 @@ const schema = {
           "nullable": false,
         },
         {
-          "name": "confirmed",
+          "name": "unseen",
           "type": "boolean",
           "nullable": false,
         },
@@ -1008,7 +1014,7 @@ const schema = {
       indexes: [
         {
           name: 'IDX_idTransaction_idUser_confirmed',
-          columns: ['idTransaction', 'idUser', 'confirmed'],
+          columns: ['idTransaction', 'idUser', 'unseen'],
           unique: true,
         },
       ],

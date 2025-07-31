@@ -7,6 +7,8 @@ import config from './config.js';
 const UserDatabaseMixin = {
   getMixinName() { return 'UserDatabaseMixin'; },
 
+  UserTypes: {interactive: 'interactive', api: 'api'},
+
   async addUser(email, passwordSalt, passwordHash) {
     const user = {
       Email: email,
@@ -16,6 +18,7 @@ const UserDatabaseMixin = {
       ExpiredAfter: DateTime.now().plus({ days: 7 }).toISO(),
       LoginProvider: 'local',
       LoginProviderKey: '',
+      Type: this.UserTypes.interactive,
     };
     const result = await this.knex('Users').insert(user).returning('id');
     return result[0].id;
@@ -32,6 +35,7 @@ const UserDatabaseMixin = {
         LoginProvider: user.LoginProvider,
         LoginProviderKey: user.LoginProviderKey,
         Initials: user.Initials,
+        Type: user.Type,
       };
     });
     return this.knex('Users').insert(usersToImport).returning('*');
@@ -42,6 +46,7 @@ const UserDatabaseMixin = {
     const passwordHash = crypto.pbkdf2Sync(password, salt, 1000, 64, 'sha512').toString('hex');
     return passwordHash;
   },
+
   async createUser(email, password) {
     if (email === 'undefined' || !email) {
       throw new Error('email undefined');
@@ -569,7 +574,7 @@ const UserDatabaseMixin = {
   },
 
   _extractSaveUserData(user) {
-    const data = _.pick(user, ['id', 'Email', 'EmailConfirmed', 'Initials', 'LoginProvider', 'PasswordSalt']);
+    const data = _.pick(user, ['id', 'Email', 'EmailConfirmed', 'Initials', 'LoginProvider', 'PasswordSalt', 'Type']);
     data.ExpiredAfter = DateTime.fromISO(user.ExpiredAfter);
     data.EmailConfirmed = user.EmailConfirmed === 1 || user.EmailConfirmed === true;
     return data;

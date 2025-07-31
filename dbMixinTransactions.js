@@ -34,7 +34,7 @@ const DbMixinTransactions = {
       'Fk_Currency.name as currency_name', 'Fk_Currency.short as currency_short',
       'tagIds', 'tags'];
     if (idUser) {
-      columnsToSelect.push('Fk_TransactionStatus.confirmed as confirmed');
+      columnsToSelect.push('Fk_TransactionStatus.unseen as unseen');
     }
     const builder = this.knex.table('Fk_Transaction')
     .join('Fk_Account', function () {
@@ -573,7 +573,7 @@ const DbMixinTransactions = {
     });
   },
 
-  async addTransactions(transactions, options) {
+  async addTransactions(transactions, options = {}) {
     const trToInsert = transactions.map((t) => {
       return this._fixTransactionData(t);
     });
@@ -585,7 +585,23 @@ const DbMixinTransactions = {
         if (!options || !options.ignoreRules) {
           await this.applyRules(trx, {includeProcessed: false, includeTransactionsWithRuleSet: false});
         }
-        if (options && options.balance) {
+        if (options.unconfirmed) {
+          const users = await trx('Fk_User').select('id').where({Type: this.UserTypes.interactive});
+          const trStatusesForAllUsersToInsert = [];
+          for (const user of users) {
+            const trStatusesToInsert = inserts.map((t) => {
+              return {
+                idTransaction: t.id,
+                idUser: user.id,
+                unseen: true,
+              };
+            });
+            trStatusesForAllUsersToInsert.concat(trStatusesToInsert);
+          }
+          const res = await trx('Fk_TransactionStatus').insert(trStatusesForAllUsersToInsert);
+          console.log(`Inserted ${res.length} transaction statuses`);
+        }
+        if (options.balance) {
           const result = await trx('Fk_AccountBalance').where({idAccount: options.balance.idAccount, balanceDate: options.balance.balanceDate});
           if (result.length > 0) {
             // update instead of insert
@@ -613,11 +629,13 @@ const DbMixinTransactions = {
       if (result.length !== 1) {
         throw new Error(`Transaction with id ${idTransaction} does not exist`, {cause: 'unknown'});
       }
-      let confirmed;
-      if (idUser !== undefined && data.confirmed !== undefined) {
-        confirmed = data.confirmed;
-        delete data.confirmed;
+
+      let unseen;
+      if (idUser !== undefined && data.unseen !== undefined) {
+        unseen = data.unseen;
       }
+      delete data.unseen;
+
       if (data.tagIds) {
         const tagsToInsert = data.tagIds.map((idTag) => {
           return {
@@ -645,17 +663,16 @@ const DbMixinTransactions = {
         idAccount: data.account_id,
       }, _.isUndefined);
 
-      if (confirmed !== undefined) {
-        const result = await trx.table('Fk_TransactionStatus')
-        .where('idTransaction', idTransaction)
-        .andWhere('idUser', idUser)
-        .update({'confirmed': confirmed})
-        .returning('idTransaction');
-        if (result.length === 0 && confirmed) {
+      if (unseen !== undefined) {
+        await trx.table('Fk_TransactionStatus')
+          .where('idTransaction', idTransaction)
+          .andWhere('idUser', idUser)
+          .delete();
+        if (unseen) {
           await trx.table('Fk_TransactionStatus').insert({
             idTransaction: idTransaction,
             idUser: idUser,
-            confirmed: confirmed
+            unseen: true,
           });
         }
       }
