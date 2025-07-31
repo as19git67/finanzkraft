@@ -587,7 +587,7 @@ const DbMixinTransactions = {
         }
         if (options.unconfirmed) {
           const users = await trx('Users').where({Type: this.UserTypes.interactive});
-          const trStatusesForAllUsersToInsert = [];
+          let trStatusesForAllUsersToInsert = [];
           for (const user of users) {
             const trStatusesToInsert = inserts.map((t) => {
               return {
@@ -596,10 +596,13 @@ const DbMixinTransactions = {
                 unseen: true,
               };
             });
-            trStatusesForAllUsersToInsert.concat(trStatusesToInsert);
+            trStatusesForAllUsersToInsert = trStatusesForAllUsersToInsert.concat(trStatusesToInsert);
           }
-          const res = await trx('Fk_TransactionStatus').insert(trStatusesForAllUsersToInsert);
-          console.log(`Inserted ${res.length} transaction statuses`);
+          if (trStatusesForAllUsersToInsert.length > 0) {
+            console.log(`Inserting ${trStatusesForAllUsersToInsert.length} transaction statuses`);
+            const res = await trx('Fk_TransactionStatus').insert(trStatusesForAllUsersToInsert);
+            console.log(`Inserted ${res.length} transaction statuses`);
+          }
         }
         if (options.balance) {
           const result = await trx('Fk_AccountBalance').where({idAccount: options.balance.idAccount, balanceDate: options.balance.balanceDate});
