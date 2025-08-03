@@ -647,8 +647,12 @@ const DbMixinTransactions = {
           };
         });
         await trx.table('Fk_TagTransaction').where({idTransaction: idTransaction}).delete();
-        const result = await trx.table('Fk_TagTransaction').insert(tagsToInsert).returning('*');
-        console.log(`Inserted ${result.length} tags for transaction ${idTransaction}`);
+        if (tagsToInsert.length > 0) {
+          const result = await trx.table('Fk_TagTransaction').
+              insert(tagsToInsert).
+              returning('*');
+          console.log(`Inserted ${result.length} tags for transaction ${idTransaction}`);
+        }
       }
       const updateData = _.omitBy({
         bookingDate: data.t_booking_date,

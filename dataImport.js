@@ -157,11 +157,16 @@ export default async function importData(db, importFilename) {
     for (const newTransactionPreset of newTransactionPresets) {
       const userEmail = newTransactionPreset.userEmail;
       const user = await db.getUserByEmail(userEmail);
-      const presets = newTransactionPreset.newTransactionPresets.map(async preset => {
+      const validPresets = newTransactionPreset.newTransactionPresets.filter(preset => {
+        return Object.keys(preset).length > 0;
+      });
+      const presets = [];
+      for (const preset of validPresets) {
         const p = {...preset};
         p.categoryId = await db.getOrCreateCategory(preset.category);
         delete p.category;
-      });
+        presets.push(p);
+      }
       const res = await db.addNewTransactionPresets(user.id, presets);
       console.log(`Imported newTransactionPresets for user ${userEmail} with ${newTransactionPreset.newTransactionPresets.length} presets.`);
     }
