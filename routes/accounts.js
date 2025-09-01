@@ -11,8 +11,13 @@ function convertToInteger(ids) {
 }
 
 rc.get(function (req, res, next) {
+  const idUser = req.user.id;
+  if (!idUser) {
+    console.log('userId required')
+    res.send(401);
+  }
   const db = req.app.get('database');
-  db.getAccounts().then((accounts) => {
+  db.getAccounts(idUser).then((accounts) => {
     accounts.forEach((account) => {
       account.reader = account.reader ? convertToInteger(account.reader.split(',')) : [];
       account.writer = account.writer ? convertToInteger(account.writer.split(',')) : [];

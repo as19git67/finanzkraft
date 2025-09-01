@@ -542,6 +542,11 @@ const DbMixinTransactions = {
   },
 
   async addTransaction(transactionData, options = {}) {
+    // if tagIds are in transactionData, move them to options, because below code expects it in options
+    if (transactionData.tagIds) {
+      options.tags = transactionData.tagIds;
+      delete transactionData.tagIds;
+    }
     let transactionDataForInsert;
     if (options.dontFix) {
       transactionDataForInsert = transactionData;
@@ -693,12 +698,9 @@ const DbMixinTransactions = {
 
   deleteTransaction(idTransaction) {
     return this.knex.transaction(async (trx) => {
-      await trx.table('Fk_TransactionStatus').
-          where('idTransaction', idTransaction).
-          delete();
-      await trx.table('Fk_Transaction').
-          where('id', idTransaction).
-          delete();
+      await trx.table('Fk_TagTransaction').where({'idTransaction': idTransaction}).delete();
+      await trx.table('Fk_TransactionStatus').where('idTransaction', idTransaction).delete();
+      await trx.table('Fk_Transaction').where('id', idTransaction).delete();
     });
   },
 };

@@ -32,7 +32,7 @@ rc.put(async (req, res, next) => {
   // todo explicitly pick values from body
   const db = req.app.get('database');
   try {
-    const result = await db.addTransaction(transactionData);
+    const result = await db.addTransaction(transactionData, );
     if (result.length > 0) {
       const resRow = result[0];
       console.log(`transaction created with id ${resRow.id}`);
