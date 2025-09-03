@@ -696,6 +696,26 @@ const DbMixinTransactions = {
     });
   },
 
+  async updateTransactions(tIds, data) {
+    if (!_.isArray(tIds)) {
+      throw new Error('tIds is not an array', {cause: 'invalid'});
+    }
+    if (!data) {
+      throw new Error('data is undefined', {cause: 'undefined'});
+    }
+    if (data.categoryId !== undefined) {
+      return this.knex.transaction(async (trx) => {
+        const result = await trx.select(['id']).table('Fk_Transaction').whereIn('id', tIds);
+        if (result.length !== tIds.length) {
+          throw new Error(`Not all given tIds exist`, {cause: 'invalid'});
+        }
+        await trx.table('Fk_Transaction').whereIn('id', tIds).update({idCategory: data.categoryId})
+      });
+    } else {
+      throw new Error('Can\'t handle update with given data', {cause: 'invalid'});
+    }
+  },
+
   deleteTransaction(idTransaction) {
     return this.knex.transaction(async (trx) => {
       await trx.table('Fk_TagTransaction').where({'idTransaction': idTransaction}).delete();

@@ -32,7 +32,7 @@ rc.put(async (req, res, next) => {
   // todo explicitly pick values from body
   const db = req.app.get('database');
   try {
-    const result = await db.addTransaction(transactionData, );
+    const result = await db.addTransaction(transactionData);
     if (result.length > 0) {
       const resRow = result[0];
       console.log(`transaction created with id ${resRow.id}`);
@@ -58,5 +58,33 @@ rc.put(async (req, res, next) => {
   }
 });
 
+rc.post(async (req, res, next) => {
+  const {tIds, categoryId} = req.body;
+  if (tIds === undefined || categoryId === undefined) {
+    res.sendStatus(404);
+    return;
+  }
+
+  const db = req.app.get('database');
+  try {
+    await db.updateTransactions(tIds, {categoryId: categoryId});
+    res.sendStatus(200);
+  } catch (error) {
+    switch (error.cause) {
+      case 'invalid':
+      case 'undefined':
+        console.error(error.message);
+        res.sendStatus(400); // bad request
+        break;
+      default:
+        console.error(error);
+        if (error.message) {
+          res.send(500, error.message);
+        } else {
+          res.sendStatus(500);
+        }
+    }
+  }
+});
 
 export default rc;

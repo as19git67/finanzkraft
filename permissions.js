@@ -229,7 +229,7 @@ const permissions = {
   },
   transaction_update: {
     description: "Transaktion ändern",
-    resources: ["/api/transaction/:id"],
+    resources: ["/api/transaction/:id", "/api/transaction"],
     methods: ["get", "post"],
     menus: ["admin.transaction"]
   },
