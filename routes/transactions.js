@@ -1,4 +1,5 @@
 import AsRouteConfig from '../as-router.js';
+import _ from "lodash";
 
 const rc = new AsRouteConfig('/');
 
@@ -59,15 +60,15 @@ rc.put(async (req, res, next) => {
 });
 
 rc.post(async (req, res, next) => {
-  const {tIds, categoryId} = req.body;
-  if (tIds === undefined || categoryId === undefined) {
+  const {tIds, categoryId, tagIds} = req.body;
+  if (tIds === undefined || (categoryId === undefined && (tagIds === undefined || !_.isArray(tagIds)))) {
     res.sendStatus(404);
     return;
   }
 
   const db = req.app.get('database');
   try {
-    await db.updateTransactions(tIds, {categoryId: categoryId});
+    await db.updateTransactions(tIds, {categoryId: categoryId, tagIds: _.isArray(tagIds) ? tagIds : []});
     res.sendStatus(200);
   } catch (error) {
     switch (error.cause) {

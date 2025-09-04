@@ -703,17 +703,37 @@ const DbMixinTransactions = {
     if (!data) {
       throw new Error('data is undefined', {cause: 'undefined'});
     }
-    if (data.categoryId !== undefined) {
-      return this.knex.transaction(async (trx) => {
+    return this.knex.transaction(async (trx) => {
+      if (data.categoryId !== undefined) {
         const result = await trx.select(['id']).table('Fk_Transaction').whereIn('id', tIds);
         if (result.length !== tIds.length) {
           throw new Error(`Not all given tIds exist`, {cause: 'invalid'});
         }
-        await trx.table('Fk_Transaction').whereIn('id', tIds).update({idCategory: data.categoryId})
-      });
-    } else {
-      throw new Error('Can\'t handle update with given data', {cause: 'invalid'});
-    }
+        await trx.table('Fk_Transaction').whereIn('id', tIds).update({idCategory: data.categoryId});
+      }
+      if (data.tagIds !== undefined) {
+        const result = await trx.select(['id']).table('Fk_Transaction').whereIn('id', tIds);
+        if (result.length !== tIds.length) {
+          throw new Error(`Not all given tIds exist`, {cause: 'invalid'});
+        }
+        await trx.table('Fk_TagTransaction').whereIn('idTransaction', tIds).delete();
+        const dataRows = [];
+        tIds.forEach((idTransaction) => {
+          data.tagIds.forEach(tagId => {
+            dataRows.push({ idTransaction: idTransaction, idTag: tagId });
+          });
+        });
+        if (dataRows.length > 0) {
+          const insertResult = await trx.table('Fk_TagTransaction').insert(dataRows).returning('idTag');
+          console.log(`Inserted ${insertResult.length} tagIds (${data.tagIds.length} tags for ${tIds.length} transactions)`);
+        } else {
+          console.log('No tagIds to insert');
+        }
+      } else {
+        console.log('No categoryId or tagIds given -> can\'t update transactions');
+        throw new Error('Can\'t handle update with given data', {cause: 'invalid'});
+      }
+    });
   },
 
   deleteTransaction(idTransaction) {
