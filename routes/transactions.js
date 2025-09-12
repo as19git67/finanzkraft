@@ -60,15 +60,32 @@ rc.put(async (req, res, next) => {
 });
 
 rc.post(async (req, res, next) => {
-  const {tIds, categoryId, tagIds} = req.body;
-  if (tIds === undefined || (categoryId === undefined && (tagIds === undefined || !_.isArray(tagIds)))) {
+  const {categoryForTransactions, tagsForTransactions} = req.body;
+  if (tagsForTransactions === undefined && categoryForTransactions === undefined) {
+    console.log('No category or tags for transactions');
+    res.sendStatus(404);
+    return;
+  }
+
+  if (tagsForTransactions && !_.isArray(tagsForTransactions)) {
+    console.log('tagsForTransactions is not an array');
+    res.sendStatus(404);
+    return;
+  }
+
+  if (categoryForTransactions && (!_.isArray(categoryForTransactions.tIds) || categoryForTransactions.categoryId === undefined)) {
+    console.log('categoryForTransactions.tIds is not an array or categoryId is undefined');
     res.sendStatus(404);
     return;
   }
 
   const db = req.app.get('database');
   try {
-    await db.updateTransactions(tIds, {categoryId: categoryId, tagIds: _.isArray(tagIds) ? tagIds : []});
+    if (categoryForTransactions) {
+      await db.updateTransactions(categoryForTransactions.tIds, {categoryId: categoryForTransactions.categoryId});
+    } else {
+      await db.updateTransactions(tagsForTransactions);
+    }
     res.sendStatus(200);
   } catch (error) {
     switch (error.cause) {

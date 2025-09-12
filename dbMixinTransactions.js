@@ -700,38 +700,37 @@ const DbMixinTransactions = {
     if (!_.isArray(tIds)) {
       throw new Error('tIds is not an array', {cause: 'invalid'});
     }
-    if (!data) {
-      throw new Error('data is undefined', {cause: 'undefined'});
-    }
     return this.knex.transaction(async (trx) => {
-      if (data.categoryId !== undefined) {
+      if (data && data.categoryId !== undefined) {
         const result = await trx.select(['id']).table('Fk_Transaction').whereIn('id', tIds);
         if (result.length !== tIds.length) {
           throw new Error(`Not all given tIds exist`, {cause: 'invalid'});
         }
         await trx.table('Fk_Transaction').whereIn('id', tIds).update({idCategory: data.categoryId});
+        return;
       }
-      if (data.tagIds !== undefined) {
-        const result = await trx.select(['id']).table('Fk_Transaction').whereIn('id', tIds);
-        if (result.length !== tIds.length) {
-          throw new Error(`Not all given tIds exist`, {cause: 'invalid'});
-        }
-        await trx.table('Fk_TagTransaction').whereIn('idTransaction', tIds).delete();
-        const dataRows = [];
-        tIds.forEach((idTransaction) => {
-          data.tagIds.forEach(tagId => {
-            dataRows.push({ idTransaction: idTransaction, idTag: tagId });
-          });
+      const transactionIds = tIds.map((t) => {
+        return t.t_id;
+      });
+      // check if all transactions exist
+      const result = await trx.select(['id']).table('Fk_Transaction').whereIn('id', transactionIds);
+      if (result.length !== tIds.length) {
+        throw new Error(`Not all given tIds exist`, {cause: 'invalid'});
+      }
+      // remove all tags for transactions
+      await trx.table('Fk_TagTransaction').whereIn('idTransaction', transactionIds).delete();
+      // for each transaction add tags specified for it
+      const dataRows = [];
+      tIds.forEach((t) => {
+        t.tagIds.forEach(tagId => {
+          dataRows.push({idTransaction: t.t_id, idTag: tagId});
         });
-        if (dataRows.length > 0) {
-          const insertResult = await trx.table('Fk_TagTransaction').insert(dataRows).returning('idTag');
-          console.log(`Inserted ${insertResult.length} tagIds (${data.tagIds.length} tags for ${tIds.length} transactions)`);
-        } else {
-          console.log('No tagIds to insert');
-        }
+      });
+      if (dataRows.length > 0) {
+        const insertResult = await trx.table('Fk_TagTransaction').insert(dataRows).returning('idTag');
+        console.log(`Inserted ${insertResult.length} tagIds for ${tIds.length} transactions)`);
       } else {
-        console.log('No categoryId or tagIds given -> can\'t update transactions');
-        throw new Error('Can\'t handle update with given data', {cause: 'invalid'});
+        console.log('No tagIds to insert');
       }
     });
   },
