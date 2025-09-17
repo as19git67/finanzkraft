@@ -13,6 +13,7 @@ export default async function importData(db, importFilename) {
     importAccounts,
     importCategories,
     importTransactions,
+    importBankcontacts,
   };
 
   let isFinanzkraftExport = false;
@@ -35,6 +36,7 @@ export default async function importData(db, importFilename) {
       'RolePermissionProfiles',
       'UserRoles',
       'NewTransactionPresets',
+      'Bankcontacts',
       'Accounts',
       'Categories',
       'Transactions',
@@ -72,7 +74,7 @@ export default async function importData(db, importFilename) {
     return;
   }
 
-  await importAsMoneyExport();
+  // await importAsMoneyExport();
 
   async function importUsers(users) {
     console.log(`Importing ${Object.keys(users).length} users...`);
@@ -175,6 +177,12 @@ export default async function importData(db, importFilename) {
   async function importAccounts(accounts) {
     console.log(`Importing ${Object.keys(accounts).length} accounts...`);
 
+    const bankcontacts = await db.getBankcontacts();
+    const bankcontactByName = {};
+    bankcontacts.forEach(bankcontact => {
+      bankcontactByName[bankcontact.name] = bankcontact;
+    });
+
     for (const account of accounts) {
       const accountId = await db.addAccount({
         name: account.name,
@@ -184,6 +192,8 @@ export default async function importData(db, importFilename) {
         idAccountType: account.account_type_id,
         startBalance: account.startBalance,
         closedAt: account.closedAt,
+        idBankcontact: bankcontactByName[account.bankcontact_name],
+        fintsError: account.fintsError,
       });
       console.log(`Imported account ${account.name}`);
       if (account.balanceDate && account.balance !== null) {
@@ -212,6 +222,18 @@ export default async function importData(db, importFilename) {
         const res3 = await db.updateAccount(accountId, updateData);
         console.log(`Imported ${account.reader.length} reader and ${account.writer.length} writer for account ${account.name}`);
       }
+    }
+  }
+
+  async function importBankcontacts(bankcontacts) {
+    console.log(`Importing ${Object.keys(bankcontacts).length} accounts...`);
+
+    for (const bankcontact of bankcontacts) {
+      const id = await db.addBankcontact({
+        name: bankcontact.name,
+        fintsurl: bankcontact.fintsurl,
+      });
+      console.log(`Imported bankcontact ${bankcontact.name}`);
     }
   }
 

@@ -116,6 +116,10 @@ export default async function exportData(db, exportFilename) {
   data.RuleSets = await db.getRuleSets();
   console.log(`Exported ${data.RuleSets.length} rule sets`);
 
+  console.log('Exporting bankcontacts...');
+  data.Bankcontacts = await db.getBankcontacts();
+  console.log(`Exported ${data.Bankcontacts.length} bankcontacts`);
+
   console.log('Exporting accounts...');
   const accounts = await db.getAccounts();
   data.Accounts = accounts.map(account => {

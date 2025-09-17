@@ -105,7 +105,7 @@ export default class AsExpress {
         dbExporter.push(options.dbExporter);
       }
     }
-    await this.#initDB(dbSchemas, dbMixins, options.dropTables);
+    const schemaWasCurrent = await this.#initDB(dbSchemas, dbMixins, options.dropTables);
     this.app.set('database', this.#database);
     this.app.set('permissions', this.permissions);
     if (dbImporter.length > 0) {
@@ -141,7 +141,7 @@ export default class AsExpress {
     if (!adminUser) {
       console.log(
           'Not checking if initialization needed, because adminUser is not configured');
-      return;
+      throw new Error('adminUser is not configured');
     }
 
     this.#database = new DB({appName: this.appName, mixins: dbMixins});
@@ -155,6 +155,8 @@ export default class AsExpress {
     }
     await this.#setPermissionProfiles();
     await this.#setAdminRolePermissions();
+
+    return wasOk;
   }
 
   async #setPermissionProfiles() {

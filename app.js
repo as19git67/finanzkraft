@@ -9,6 +9,7 @@ import permissions from './permissions.js';
 import dbSchema from './dbSchema.js';
 import accountRouter from './routes/account.js';
 import accountsRouter from './routes/accounts.js';
+import bankcontactsRouter from './routes/bankcontacts.js';
 import accountTypesRouter from './routes/accountTypes.js';
 import transactionRouter from './routes/transaction.js';
 import transactionsRouter from './routes/transactions.js';
@@ -29,6 +30,7 @@ import dbMixinCategories from "./dbMixinCategories.js";
 import dbMixinTags from "./dbMixinTags.js";
 import dbMixinTimespan from "./dbMixinTimespan.js";
 import dbMixinRules from "./dbMixinRules.js";
+import dbMixinOnlineBanking from "./dbMixinOnlineBanking.js";
 import di from './dataImport.js'
 import dataExporter from './dataExport.js'
 
@@ -69,7 +71,8 @@ new Promise(async (resolve, reject) => {
       dbMixinCategories,
       dbMixinTags,
       dbMixinTimespan,
-      dbMixinRules
+      dbMixinRules,
+      dbMixinOnlineBanking,
     ],
     dbImporter: [di],
     dbExporter: [dataExporter],
@@ -127,6 +130,7 @@ new Promise(async (resolve, reject) => {
   asExpress.addRouter("/api/accounts", transactionsOfAccountRouter);
   asExpress.addRouter("/api/accounts", accountsRouter);
   asExpress.addRouter("/api/accounts", accountRouter);
+  asExpress.addRouter("/api/bankcontacts", bankcontactsRouter);
   asExpress.addRouter("/api/accounttypes", accountTypesRouter);
   asExpress.addRouter("/api/transaction", transactionRouter);
   asExpress.addRouter("/api/transaction", transactionsRouter);

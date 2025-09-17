@@ -173,6 +173,36 @@ const permissions = {
     methods: ["delete"],
     menus: ["admin.currency"]
   },
+  onlinebanking_list_read: {
+    description: "Onlinebanking Liste anzeigen",
+    resources: ["/api/bankcontacts"],
+    methods: ["get"],
+    menus: ["admin.bankcontacts", "admin.onlinebanking"]
+  },
+  onlinebanking_create: {
+    description: "Onlinebanking neu",
+    resources: ["/api/bankcontacts"],
+    methods: ["put"],
+    menus: ["admin.bankcontacts", "admin.bankcontact", "admin.onlinebanking.new"]
+  },
+  onlinebanking_read: {
+    description: "Onlinebanking anzeigen",
+    resources: ["/api/bankcontacts/:id"],
+    methods: ["get"],
+    menus: ["admin.bankcontact", "admin.onlinebanking"]
+  },
+  onlinebanking_update: {
+    description: "Onlinebanking ändern",
+    resources: ["/api/bankcontacts/:id"],
+    methods: ["get", "post"],
+    menus: ["admin.bankcontact", "admin.onlinebanking.edit"]
+  },
+  onlinebanking_delete: {
+    description: "Onlinebanking Eintrag löschen",
+    resources: ["/api/bankcontacts/:id"],
+    methods: ["delete"],
+    menus: ["admin.bankcontact", "admin.onlinebanking.delete"]
+  },
   accounts_list_read: {
     description: "Konten anzeigen",
     resources: ["/api/accounts", "/api/accounttypes"],

@@ -1,5 +1,5 @@
 const schema = {
-  version: 23,
+  version: 24,
   name: 'finanzkraft',
   tables: [
     {
@@ -457,6 +457,28 @@ const schema = {
       ]
     },
     {
+      "tableName": "Fk_Bankcontact",
+      "columns": [
+        {
+          "name": "id",
+          "type": "autoincrement",
+          "primary_key": true,
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "unique": true,
+          "nullable": false,
+        },
+        {
+          "name": "fintsurl",
+          "type": "string",
+          "length": 256,
+          "nullable": false,
+        },
+      ],
+    },
+    {
       "tableName": "Fk_Account",
       "columns": [
         {
@@ -505,6 +527,17 @@ const schema = {
           "type": "dateTime",
           "nullable": true,
         },
+        {
+          "name": "idBankcontact",
+          "type": "integer",
+          "nullable": true,
+        },
+        {
+          "name": "fintsError",
+          "type": "string",
+          "nullable": false,
+          "default": "",
+        },
       ],
       "foreign_keys": [
         {
@@ -517,6 +550,12 @@ const schema = {
           "name": "FK_idAccountType__Fk_AccountType_id",
           "columns": ["idAccountType"],
           "foreign_table": "Fk_AccountType",
+          "foreign_columns": ["id"],
+        },
+        {
+          "name": "FK_idBankcontact__Fk_Bankcontact_id",
+          "columns": ["idBankcontact"],
+          "foreign_table": "Fk_Bankcontact",
           "foreign_columns": ["id"],
         },
       ],
