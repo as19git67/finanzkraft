@@ -544,7 +544,7 @@ export default class AsExpress {
   #addRoleHandlerToRouter(router, verb, routeConfig) {
     // add the role basePermissions middleware to check users role has required basePermissions
     router[verb](routeConfig.path, (req, res, next) => {
-      console.log('checking role basePermissions');
+      //console.log('checking role basePermissions');
       let userId;
       if ((req.user) && (req.user.id)) {
         userId = req.user.id;
@@ -583,7 +583,7 @@ export default class AsExpress {
 
       this.#isAllowed(userId, resource, action).then((allowed) => {
         if (allowed) {
-          console.log(`Allowed ${action} on ${resource} by user ${userId}`);
+          //console.log(`Allowed ${action} on ${resource} by user ${userId}`);
           next();
         } else {
           console.log(`Not allowed ${action} on ${resource} by user ${userId}`);
@@ -599,7 +599,7 @@ export default class AsExpress {
 
   #addAuthHandlerToRouter(router, verb, routeConfig) {
     router[verb](routeConfig.path, (req, res, next) => {
-      console.log('passport authenticate');
+      //console.log('passport authenticate');
       // check for bearer authentication header with token
       let token = '';
       if (req.headers && req.headers.authorization) {

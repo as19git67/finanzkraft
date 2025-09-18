@@ -51,7 +51,7 @@ export default class AsPassport {
     // });
 
     this.#passport.use('bearer', new BearerStrategy((accessToken, done) => {
-      console.log('BEARER Strategy');
+      //console.log('BEARER Strategy');
       this.#database.getUserByAccessToken(accessToken).then((user) => {
         if (!user) {
           done(null, false, { message: 'user undefined' });

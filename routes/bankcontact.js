@@ -1,23 +1,31 @@
 import AsRouteConfig from '../as-router.js';
 
-const rc = new AsRouteConfig('/');
+const rc = new AsRouteConfig('/:id/');
 
 rc.get(function (req, res, next) {
+  const id = parseInt(req.params.id);
   const db = req.app.get('database');
-  db.getBankcontacts().then((bankcontacts) => {
-    res.json(bankcontacts);
+  db.getBankcontact(id).then((bankcontact) => {
+    res.json(bankcontact);
   }).catch((reason) => {
     console.log(reason);
     res.send(500);
   });
 });
 
-/* PUT create new bankcontact */
-rc.put((req, res, next) => {
+/* POST update bankcontact */
+rc.post((req, res, next) => {
   const db = req.app.get('database');
+  const id = parseInt(req.params.id);
+  if (id === undefined) {
+    console.log("Can't update bankcontact with no id");
+    res.send(404);
+    return;
+  }
+  // pick only the fields that are known
   const {name, fintsurl} = req.body;
-  db.addBankcontact({name: name, fintsurl: fintsurl}).then((newBankcontact) => {
-    res.send({newBankcontact});
+  db.updateBankcontact(id,{name: name, fintsurl: fintsurl}).then((updatedBankcontact) => {
+    res.send({updatedBankcontact});
   }).catch((error) => {
     switch (error.cause) {
       case 'exists':

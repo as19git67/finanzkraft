@@ -9,13 +9,18 @@ const DbMixinOnlineBanking = {
     return this.knex.table('Fk_Bankcontact').orderBy('Fk_Bankcontact.name');
   },
 
-  async addBankcontact(name, fintsurl) {
+  async getBankcontact(id) {
+    return this.knex.table('Fk_Bankcontact').where('id', id);
+  },
+
+  async addBankcontact(data) {
+    const { name, fintsurl } = data;
     const result = await this.knex('Fk_Bankcontact').insert({
       name: name,
       fintsurl: fintsurl,
-    }).returning('id');
+    }).returning('*');
     if (result.length > 0) {
-      return result[0].id;
+      return result[0];
     } else {
       return undefined;
     }
@@ -24,10 +29,10 @@ const DbMixinOnlineBanking = {
   async updateBankcontact(idBankcontact, data) {
     const result = await this.knex.select().table('Fk_Bankcontact').where({id: idBankcontact});
     if (result.length !== 1) {
-      throw new Error(`Bankcontact with id ${idBankcontact} does not exist`);
+      throw new Error(`Bankcontact with id ${idBankcontact} does not exist`, {cause: 'exists'});
     }
     const updateData = _.pick(data, 'name', 'fintsurl');
-    return this.knex.table('Fk_Bankcontact').where('id').update(updateData);
+    return this.knex.table('Fk_Bankcontact').where('id', idBankcontact).update(updateData);
   },
 
   async deleteCurrency(idBankcontact) {
