@@ -231,7 +231,10 @@ export default async function importData(db, importFilename) {
     for (const bankcontact of bankcontacts) {
       const id = await db.addBankcontact({
         name: bankcontact.name,
-        fintsurl: bankcontact.fintsurl,
+        fintsUrl: bankcontact.fintsUrl ? bankcontact.fintsUrl : '',
+        fintsBankId: bankcontact.fintsBankId ? bankcontact.fintsBankId :  '',
+        fintsUserId: bankcontact.fintsUserId ? bankcontact.fintsUserId :  '',
+        fintsPasswordEncrypted: bankcontact.fintsPasswordEncrypted ? bankcontact.fintsPasswordEncrypted :  '',
       });
       console.log(`Imported bankcontact ${bankcontact.name}`);
     }

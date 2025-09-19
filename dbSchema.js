@@ -1,5 +1,5 @@
 const schema = {
-  version: 24,
+  version: 25,
   name: 'finanzkraft',
   tables: [
     {
@@ -471,9 +471,26 @@ const schema = {
           "nullable": false,
         },
         {
-          "name": "fintsurl",
+          "name": "fintsUrl",
           "type": "string",
           "length": 256,
+          "nullable": false,
+        },
+        {
+          "name": "fintsBankId",
+          "type": "string",
+          "length": 100,
+          "nullable": false,
+        },
+        {
+          "name": "fintsUserId",
+          "type": "string",
+          "length": 50,
+          "nullable": false,
+        },
+        {
+          "name": "fintsPasswordEncrypted",
+          "type": "string",
           "nullable": false,
         },
       ],

@@ -1,4 +1,5 @@
 import AsRouteConfig from '../as-router.js';
+import _ from "lodash";
 
 const rc = new AsRouteConfig('/:id/');
 
@@ -23,8 +24,12 @@ rc.post((req, res, next) => {
     return;
   }
   // pick only the fields that are known
-  const {name, fintsurl} = req.body;
-  db.updateBankcontact(id,{name: name, fintsurl: fintsurl}).then((updatedBankcontact) => {
+  const data = _.pick(req.body, 'name', 'fintsUrl', 'fintsBankId', 'fintsUserId');
+  if (req.body.fintsPassword) {
+    // todo: encrypt password
+    // data.fintsPasswordEncrypted = enryptPassword(req.body.fintsPassword);
+  }
+  db.updateBankcontact(id,data).then((updatedBankcontact) => {
     res.send({updatedBankcontact});
   }).catch((error) => {
     switch (error.cause) {

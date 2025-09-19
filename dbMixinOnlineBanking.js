@@ -14,11 +14,8 @@ const DbMixinOnlineBanking = {
   },
 
   async addBankcontact(data) {
-    const { name, fintsurl } = data;
-    const result = await this.knex('Fk_Bankcontact').insert({
-      name: name,
-      fintsurl: fintsurl,
-    }).returning('*');
+    const dbData = _.pick(data, 'name', 'fintsUrl', 'fintsBankId', 'fintsUserId', 'fintsPasswordEncrypted');
+    const result = await this.knex('Fk_Bankcontact').insert(dbData).returning('*');
     if (result.length > 0) {
       return result[0];
     } else {
@@ -31,7 +28,7 @@ const DbMixinOnlineBanking = {
     if (result.length !== 1) {
       throw new Error(`Bankcontact with id ${idBankcontact} does not exist`, {cause: 'exists'});
     }
-    const updateData = _.pick(data, 'name', 'fintsurl');
+    const updateData = _.pick(data, 'name', 'fintsUrl', 'fintsBankId', 'fintsUserId', 'fintsPasswordEncrypted');
     return this.knex.table('Fk_Bankcontact').where('id', idBankcontact).update(updateData);
   },
 
