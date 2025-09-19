@@ -1,7 +1,29 @@
 const schema = {
-  version: 25,
+  version: 26,
   name: 'finanzkraft',
   tables: [
+    {
+      tableName: 'SystemPreferences',
+      columns: [
+        {
+          name: 'key',
+          type: 'string',
+          primary_key: true,
+        },
+        {
+          name: 'description',
+          type: 'string',
+          unique: false,
+          nullable: true,
+        },
+        {
+          name: 'value',
+          type: 'text',
+          unique: false,
+          nullable: true,
+        },
+      ],
+    },
     {
       tableName: 'Roles',
       columns: [

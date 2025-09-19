@@ -27,6 +27,10 @@ export default async function exportData(db, exportFilename) {
   }
   data.Schema = schemaVersion;
 
+  console.log('Exporting SystemPreferences...');
+  data.SystemPreferences = await db.getSystemPreferences();
+  console.log(`Exported ${data.SystemPreferences.length} SystemPreferences`);
+
   console.log('Exporting roles...');
   data.Roles = await db.getRoles();
   const rolesById = {};

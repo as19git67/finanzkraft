@@ -14,6 +14,7 @@ export default async function importData(db, importFilename) {
     importCategories,
     importTransactions,
     importBankcontacts,
+    importSystemPreferences,
   };
 
   let isFinanzkraftExport = false;
@@ -31,6 +32,7 @@ export default async function importData(db, importFilename) {
 
   if (isFinanzkraftExport) {
     const dataToCheck = [
+      'SystemPreferences',
       'Users',
       'Roles',
       'RolePermissionProfiles',
@@ -226,7 +228,7 @@ export default async function importData(db, importFilename) {
   }
 
   async function importBankcontacts(bankcontacts) {
-    console.log(`Importing ${Object.keys(bankcontacts).length} accounts...`);
+    console.log(`Importing ${Object.keys(bankcontacts).length} bankcontacts...`);
 
     for (const bankcontact of bankcontacts) {
       const id = await db.addBankcontact({
@@ -237,6 +239,15 @@ export default async function importData(db, importFilename) {
         fintsPasswordEncrypted: bankcontact.fintsPasswordEncrypted ? bankcontact.fintsPasswordEncrypted :  '',
       });
       console.log(`Imported bankcontact ${bankcontact.name}`);
+    }
+  }
+
+  async function importSystemPreferences(systemPreferences) {
+    console.log(`Importing ${Object.keys(systemPreferences).length} SystemPreferences...`);
+
+    for (const p of systemPreferences) {
+      await db.addSystemPreference(p.key, p.description, p.value);
+      console.log(`Imported SystemPreferences ${p.key}`);
     }
   }
 

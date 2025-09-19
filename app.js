@@ -25,6 +25,7 @@ import rulesRouter from './routes/rules.js';
 import dbMixinAccounts from "./dbMixinAccounts.js";
 import dbMixinTransactions from "./dbMixinTransactions.js";
 import dbMixinPrefsNewTransactionPresets from "./dbMixinPrefsNewTransactionPresets.js";
+import DbMixinSystemPreferences from "./DbMixinSystemPreferences.js";
 import dbMixinCurrencies from "./dbMixinCurrencies.js";
 import dbMixinAccountTypes from "./dbMixinAccountTypes.js";
 import dbMixinCategories from "./dbMixinCategories.js";
@@ -67,6 +68,7 @@ new Promise(async (resolve, reject) => {
       dbMixinAccounts,
       dbMixinTransactions,
       dbMixinPrefsNewTransactionPresets,
+      DbMixinSystemPreferences,
       dbMixinCurrencies,
       dbMixinAccountTypes,
       dbMixinCategories,
