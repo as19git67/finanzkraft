@@ -3,6 +3,7 @@ import _ from 'lodash';
 const DbMixinSystemPreferences = {
   keyEncryptionPublicKey: 'EncryptionPublicKey',
   keyEncryptionPrivateKey: 'EncryptionPrivateKey',
+  keyPassphraseSalt: 'PassphraseSalt',
 
   getMixinName() {
     return 'DbMixinSystemPreferences';
@@ -37,10 +38,9 @@ const DbMixinSystemPreferences = {
   },
 
   async updateSystemPreference(key, value, description) {
-    const result = await this.knex.select().table('SystemPreferences')
-      .where('key', key)
+    const result = await this.knex.select().table('SystemPreferences').where('key', key)
     if (result.length !== 1) {
-      return this.addPreference(key, value, description);
+      return this.addSystemPreference(key, value, description);
     }
     return this.knex.table('SystemPreferences')
       .where('key', key)

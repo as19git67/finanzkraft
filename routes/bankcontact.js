@@ -24,11 +24,7 @@ rc.post((req, res, next) => {
     return;
   }
   // pick only the fields that are known
-  const data = _.pick(req.body, 'name', 'fintsUrl', 'fintsBankId', 'fintsUserId');
-  if (req.body.fintsPassword) {
-    // todo: encrypt password
-    // data.fintsPasswordEncrypted = enryptPassword(req.body.fintsPassword);
-  }
+  const data = _.pick(req.body, 'name', 'fintsUrl', 'fintsBankId', 'fintsUserId', 'fintsPassword');
   db.updateBankcontact(id,data).then((updatedBankcontact) => {
     res.send({updatedBankcontact});
   }).catch((error) => {
@@ -36,6 +32,10 @@ rc.post((req, res, next) => {
       case 'exists':
         console.error(error.message);
         res.sendStatus(422);
+        break;
+      case 'invalid':
+        console.error(error.message);
+        res.sendStatus(500);
         break;
       default:
         console.error(error);

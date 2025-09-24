@@ -196,6 +196,7 @@ export default async function importData(db, importFilename) {
         closedAt: account.closedAt,
         idBankcontact: bankcontactByName[account.bankcontact_name],
         fintsError: account.fintsError,
+        fintsAccountNumber: account.fintsAccountNumber,
       });
       console.log(`Imported account ${account.name}`);
       if (account.balanceDate && account.balance !== null) {
@@ -235,7 +236,7 @@ export default async function importData(db, importFilename) {
         name: bankcontact.name,
         fintsUrl: bankcontact.fintsUrl ? bankcontact.fintsUrl : '',
         fintsBankId: bankcontact.fintsBankId ? bankcontact.fintsBankId :  '',
-        fintsUserId: bankcontact.fintsUserId ? bankcontact.fintsUserId :  '',
+        fintsUserIdEncrypted: bankcontact.fintsUserIdEncrypted ? bankcontact.fintsUserIdEncrypted :  '',
         fintsPasswordEncrypted: bankcontact.fintsPasswordEncrypted ? bankcontact.fintsPasswordEncrypted :  '',
       });
       console.log(`Imported bankcontact ${bankcontact.name}`);
@@ -246,7 +247,7 @@ export default async function importData(db, importFilename) {
     console.log(`Importing ${Object.keys(systemPreferences).length} SystemPreferences...`);
 
     for (const p of systemPreferences) {
-      await db.addSystemPreference(p.key, p.description, p.value);
+      await db.addSystemPreference(p.key, p.value, p.description);
       console.log(`Imported SystemPreferences ${p.key}`);
     }
   }

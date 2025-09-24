@@ -2,6 +2,7 @@ import _ from 'lodash';
 import fs from 'fs';
 import path from 'path';
 import https from 'https';
+import crypto from 'crypto';
 import waitFor from 'p-wait-for';
 import http from 'http';
 import debug from 'debug';
@@ -112,6 +113,7 @@ export default class AsExpress {
       await this.#importData(dbImporter,
           path.resolve(dataDirectory, importDatafile));
     }
+    await this.#ensurePrivatePublicKeyPairInSystemPreferences();
     this.#initApiRouter();
     await this.#initPassport();
     await this.#startHttpServer();
@@ -132,6 +134,65 @@ export default class AsExpress {
           debug(ex);
           await this.terminateHttpServer();
         }
+      }
+    }
+  }
+
+  async #ensurePrivatePublicKeyPairInSystemPreferences() {
+    const privateKey = await this.#database.getSystemPreference(this.#database.keyEncryptionPrivateKey);
+    const publicKey = await this.#database.getSystemPreference(this.#database.keyEncryptionPublicKey);
+    const passphraseSalt = await this.#database.getSystemPreference(this.#database.keyPassphraseSalt);
+
+    if (!privateKey || !publicKey || !passphraseSalt) {
+      console.log('Creating new encryption key pair for database entries');
+      const {privateKeyPassphrase} = config;
+      if (!privateKeyPassphrase) {
+        throw new Error('No private key passphrase found in settings', {cause: 'invalid'});
+      }
+
+      try {
+        // create random salt
+        const salt = crypto.randomBytes(32).toString('base64');
+        const pwHash = this.#database.createHashPassword(privateKeyPassphrase, salt);
+
+        const {privateKey, publicKey} = await new Promise((resolve, reject) => {
+          crypto.generateKeyPair(
+            'rsa',
+            {
+              modulusLength: 4096,
+              publicKeyEncoding: {type: 'spki', format: 'pem'},
+              privateKeyEncoding: {type: 'pkcs8', format: 'pem', cipher: 'aes-256-cbc', passphrase: pwHash}
+            }, (err, pubKey, privKey) => {
+              if (err) {
+                reject(err);
+              } else {
+                resolve({privateKey: privKey, publicKey: pubKey});
+              }
+            }
+          );
+        });
+
+
+        const text = "This is a test message to encrypt."
+        const encryptedTextBase64 = crypto.publicEncrypt(publicKey, Buffer.from(text)).toString('base64');
+
+
+        const encryptedTextBuffer = Buffer.from(encryptedTextBase64, 'base64');
+        const keyDef = {
+          key: privateKey,
+          passphrase: pwHash,
+        };
+        const textDecrypted = crypto.privateDecrypt(keyDef, encryptedTextBuffer).toString();
+        console.log('Decrypted text === original text', textDecrypted === text);
+
+        if (textDecrypted === text) {
+          await this.#database.updateSystemPreference(this.#database.keyEncryptionPrivateKey, privateKey, 'Private key for encrypting sensitive database entries');
+          await this.#database.updateSystemPreference(this.#database.keyEncryptionPublicKey, publicKey, 'Public key for encrypting sensitive database entries');
+          await this.#database.updateSystemPreference(this.#database.keyPassphraseSalt, salt, 'Salt for hashing the passphrase');
+        }
+      } catch (ex) {
+        console.log('ERROR: Creating new encryption key pair failed:', ex.message);
+        throw ex;
       }
     }
   }

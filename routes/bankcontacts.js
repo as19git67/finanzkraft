@@ -16,11 +16,7 @@ rc.get(function (req, res, next) {
 /* PUT create new bankcontact */
 rc.put((req, res, next) => {
   const db = req.app.get('database');
-  const data = _.pick(req.body, 'name', 'fintsUrl', 'fintsBankId', 'fintsUserId');
-  if (req.body.fintsPassword) {
-    // todo: encrypt password
-    // data.fintsPasswordEncrypted = enryptPassword(req.body.fintsPassword);
-  }
+  const data = _.pick(req.body, 'name', 'fintsUrl', 'fintsBankId', 'fintsUserId', 'fintsPassword');
   db.addBankcontact(data).then((newBankcontact) => {
     res.send({newBankcontact});
   }).catch((error) => {
