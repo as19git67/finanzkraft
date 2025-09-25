@@ -17,7 +17,7 @@ rc.get(function (req, res, next) {
     res.send(401);
   }
   const db = req.app.get('database');
-  db.getAccounts(idUser).then((accounts) => {
+  db.getAccountsWithStatusForUser(idUser).then((accounts) => {
     accounts.forEach((account) => {
       account.reader = account.reader ? convertToInteger(account.reader.split(',')) : [];
       account.writer = account.writer ? convertToInteger(account.writer.split(',')) : [];
