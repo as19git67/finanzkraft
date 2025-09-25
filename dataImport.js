@@ -194,7 +194,7 @@ export default async function importData(db, importFilename) {
         idAccountType: account.account_type_id,
         startBalance: account.startBalance,
         closedAt: account.closedAt,
-        idBankcontact: bankcontactByName[account.bankcontact_name],
+        idBankcontact: bankcontactByName[account.bankcontact_name]?.id,
         fintsError: account.fintsError,
         fintsAccountNumber: account.fintsAccountNumber,
       });
