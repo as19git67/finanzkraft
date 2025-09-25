@@ -18,6 +18,9 @@ ln -snf /usr/share/zoneinfo/"$TZ" /etc/localtime && echo "$TZ" > /etc/timezone
   echo "exportDatafile: \"$EXPORTDATAFILE\""
   echo "adminUser: \"$INITIALADMINUSER\""
   echo "initialAdminPassword: \"$INITIALADMINUSERPASSWORD\""
+  echo "fintsProductId: \"$FINTSPRODUCTID\""
+  echo "fintsProductVersion: \"$FINTSPRODUCTVERSION\""
+  echo "privateKeyPassphrase: \"$PRIVATEKEYPASSPHRASE\""
 } >  /app/settings.yaml
 
 if [ ! -f /data/key.pem ]
