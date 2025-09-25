@@ -28,33 +28,27 @@ const DbMixinOnlineBanking = {
   async getBankcontacts() {
     const {privateKeyPassphrase} = config;
     let pref = await this.getSystemPreference(this.keyEncryptionPrivateKey);
-    const privateKey = pref.value;
+    const privateKey = pref?.value;
     pref = await this.getSystemPreference(this.keyPassphraseSalt);
-    const salt = pref.value;
+    const salt = pref?.value;
 
     const result = await this.knex.table('Fk_Bankcontact').orderBy('Fk_Bankcontact.name');
 
     return _.map(result, (bankcontact) => {
       const bc = _.pick(bankcontact, 'id', 'name', 'fintsUrl', 'fintsBankId', 'fintsPasswordEncrypted');
       if (bankcontact.fintsUserIdEncrypted || bankcontact.fintsPasswordEncrypted) {
-        if (!privateKeyPassphrase) {
-          throw new Error('No private key passphrase found in settings', { cause: 'invalid' });
-        }
-        if (!privateKey) {
-          throw new Error('No private key found in system preferences', { cause: 'invalid' });
-        }
-        if (!salt) {
-          throw new Error('No salt found in system preferences', { cause: 'invalid' });
-        }
-        if (bankcontact.fintsUserIdEncrypted) {
-          try {
-            bc.fintsUserId = this.decrypt(privateKey, privateKeyPassphrase, salt, bankcontact.fintsUserIdEncrypted);
-          } catch (e) {
-            console.error(`Error decrypting fintsUserId for bankcontact id ${bankcontact.id}: ${e.message}`);
+        if (privateKeyPassphrase && privateKey && salt) {
+          if (bankcontact.fintsUserIdEncrypted ) {
+            try {
+              bc.fintsUserId = this.decrypt(privateKey, privateKeyPassphrase, salt, bankcontact.fintsUserIdEncrypted);
+            } catch (e) {
+              console.error(`Error decrypting fintsUserId for bankcontact id ${bankcontact.id}: ${e.message}`);
+            }
           }
+          // note, that the password is decrypted when used to download bank statements
+        } else {
+          console.error(`No private key, passphrase or salt found. Not importing encrypted fintsUserid or fintsPassword for bankcontact ${bankcontact.name}`);
         }
-
-        // note, that the password is decrypted when used to download bank statements
       }
 
       return bc;
