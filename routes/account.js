@@ -22,6 +22,8 @@ rc.post(function (req, res, next) {
     'idBankcontact',
     'fintsAccountNumber',
     'fintsError',
+    'fintsAuthRequired',
+    'fintsActivated',
   );
   if (Object.keys(updateData).length === 0) {
     console.log('Ignoring empty update of account');

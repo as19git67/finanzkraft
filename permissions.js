@@ -177,37 +177,43 @@ const permissions = {
     description: "Onlinebanking Liste anzeigen",
     resources: ["/api/bankcontacts"],
     methods: ["get"],
-    menus: ["admin.bankcontacts", "admin.onlinebanking"]
+    menus: ["admin.fints.bankcontacts", "admin.onlinebanking"]
   },
   onlinebanking_create: {
     description: "Onlinebanking neu",
     resources: ["/api/bankcontacts"],
     methods: ["put"],
-    menus: ["admin.bankcontacts", "admin.bankcontact", "admin.onlinebanking.new"]
+    menus: ["admin.fints.bankcontacts", "admin.bankcontact", "admin.onlinebanking.new"]
   },
   onlinebanking_read: {
     description: "Onlinebanking anzeigen",
     resources: ["/api/bankcontacts/:id"],
     methods: ["get"],
-    menus: ["admin.bankcontact", "admin.onlinebanking"]
+    menus: ["admin.fints.bankcontact", "admin.onlinebanking"]
   },
   onlinebanking_update: {
     description: "Onlinebanking ändern",
     resources: ["/api/bankcontacts/:id"],
     methods: ["get", "post"],
-    menus: ["admin.bankcontact", "admin.onlinebanking.edit"]
+    menus: ["admin.fints.bankcontact", "admin.onlinebanking.edit"]
   },
   onlinebanking_delete: {
     description: "Onlinebanking Eintrag löschen",
     resources: ["/api/bankcontacts/:id"],
     methods: ["delete"],
-    menus: ["admin.bankcontact", "admin.onlinebanking.delete"]
+    menus: ["admin.fints.bankcontact", "admin.onlinebanking.delete"]
   },
   onlinebanking_statements_download: {
     description: "Onlinebanking Konten abrufen",
     resources: ["/api/statements/"],
     methods: ["get"],
     menus: ["admin.statements_download"]
+  },
+  onlinebanking_accounts_of_bankcontact_read: {
+    description: "Onlinebanking Konten eines Bankkontakts abrufen",
+    resources: ["/api/bankcontacts/:id/accounts"],
+    methods: ["get"],
+    menus: ["admin.fints.accounts"]
   },
   accounts_list_read: {
     description: "Konten anzeigen",

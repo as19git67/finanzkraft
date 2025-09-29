@@ -33,6 +33,9 @@ _.defaults(config, settings, {
   importDatafile: '',
   exportDatafile: '',
   exportDatafileWithTimestamp: false,
+  fintsProductId: '123ABC',
+  fintsProductVersion: '1.0',
+  privateKeyPassphrase: 'verysecret',
 });
 
 export default config;

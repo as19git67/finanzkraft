@@ -28,6 +28,8 @@ const DbMixinAccounts = {
         'Fk_Account.idBankcontact',
         'Fk_Account.fintsAccountNumber',
         'Fk_Account.fintsError',
+        'Fk_Account.fintsAuthRequired',
+        'Fk_Account.fintsActivated',
         'Fk_Bankcontact.id as bankcontact_id',
         'Fk_Bankcontact.name as bankcontact_name',
         'Fk_Bankcontact.fintsUrl as bankcontact_fintsUrl',
@@ -81,6 +83,8 @@ const DbMixinAccounts = {
         'Fk_Account.idBankcontact',
         'Fk_Account.fintsAccountNumber',
         'Fk_Account.fintsError',
+        'Fk_Account.fintsAuthRequired',
+        'Fk_Account.fintsActivated',
         'Fk_Bankcontact.id as bankcontact_id',
         'Fk_Bankcontact.name as bankcontact_name',
         'Fk_Bankcontact.fintsUrl as bankcontact_fintsUrl',
@@ -147,7 +151,19 @@ const DbMixinAccounts = {
     if (result.length !== 1) {
       throw new Error(`Account with id ${idAccount} does not exist`, {cause: 'unknown'});
     }
-    const updateData = _.pick(data, 'name', 'iban', 'idAccountType', 'idCurrency', 'startBalance', 'closedAt', 'fintsError', 'fintsAccountNumber', 'idBankcontact');
+    const updateData = _.pick(data,
+      'name',
+      'iban',
+      'idAccountType',
+      'idCurrency',
+      'startBalance',
+      'closedAt',
+      'idBankcontact',
+      'fintsAccountNumber',
+      'fintsError',
+      'fintsAuthRequired',
+      'fintsActivated',
+    );
     return this.knex.transaction(async (trx) => {
       let result;
       if (Object.keys(updateData).length > 0) {

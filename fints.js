@@ -7,18 +7,13 @@ export default class FinTS {
   #productId;
   #productVersion;
 
-  #bankcontacts;
-  #accounts;
-
-  constructor(productId, productVersion, bankcontacts, accounts) {
+  constructor(productId, productVersion) {
     this.#productId = productId;
     this.#productVersion = productVersion;
-    this.#bankcontacts = bankcontacts;
-    this.#accounts = accounts;
   }
 
-  async synchronize(productId, productVersion, bankUrl, bankId, userId, pin) {
-    this.#fintsConfig = FinTSConfig.forFirstTimeUse(productId, productVersion,
+  async synchronize(bankUrl, bankId, userId, pin) {
+    this.#fintsConfig = FinTSConfig.forFirstTimeUse(this.#productId, this.#productVersion,
         bankUrl, bankId, userId, pin);
     //fintsConfig.debugEnabled = true;
     const client = new FinTSClient(this.#fintsConfig);
@@ -30,9 +25,6 @@ export default class FinTS {
     let bankingInformation = synchronizeResponse.bankingInformation;
     let systemId = bankingInformation.systemId;
     let bankMessages = bankingInformation.bankMessages;
-    for (let j = 0; j < bankMessages.length; j++) {
-      console.log(`Bank message: ${bankMessages[j].subject} ${bankMessages[j].text}`);
-    }
     let bpd = bankingInformation.bpd;
     let availableTanMethodIds = bpd.availableTanMethodIds;
     console.log('Available TAN methods: ', availableTanMethodIds);
@@ -48,6 +40,15 @@ export default class FinTS {
     bankMessages = bankingInformation.bankMessages;
     bpd = bankingInformation.bpd;
     const upd = bankingInformation.upd;
+    return { success, requiresTan, bankAnswers, bankMessages, bankingInformation };
+  }
+
+  getBankAnswers() {
+    return this.#fintsConfig.bankAnswers;
+  }
+
+  getAccounts() {
+    return this.#fintsConfig.bankingInformation.upd.bankAccounts;
   }
 
   async getStatements(accountNumber, from, to) {
@@ -114,18 +115,18 @@ export default class FinTS {
     return statements;
   }
 
-  async download() {
-    const accounts = ['ingdiba_anton', 'ingdiba_anton_sparbrief', 'ingdiba_manuel', 'giro_anton', 'raiba_geschäftsanteile', 'raiba_manuel',
+  async download(bankcontacts, accounts) {
+    const accountNames = ['ingdiba_anton', 'ingdiba_anton_sparbrief', 'ingdiba_manuel', 'giro_anton', 'raiba_geschäftsanteile', 'raiba_manuel',
       'comdirect_anton_giro', 'comdirect_anton_tagesgeld', 'comdirect_anton_kreditkarte', 'mlp_kontokorrent',
       'comdirect_manuel_giro', 'comdirect_manuel_tagesgeld'];
 
     const synchronizedBankData = new Map();
 
-    for (let account of accounts) {
+    for (let accountName of accountNames) {
       console.log('#############################################');
-      const accountConfig = this.#accounts[account];
+      const accountConfig = accounts[accountName];
       if (!accountConfig) {
-        console.log(`No such account config for ${account}`);
+        console.log(`No such account config for ${accountName}`);
         continue;
       }
 
@@ -138,9 +139,9 @@ export default class FinTS {
         console.log(`Downloading credit card ${account} with number ${accountNumber}...`);
       }
 
-      const productId = this.#fintsProductId;
-      const productVersion = this.#fintsProductVersion;
-      const bankContactConfig = this.#bankcontacts[bankcontactName].fints;
+      const productId = this.#productId;
+      const productVersion = this.#productVersion;
+      const bankContactConfig = bankcontacts[bankcontactName].fints;
       const bankUrl = bankContactConfig.url;
       const bankId = bankContactConfig.blz;
       const userId = bankContactConfig.username;

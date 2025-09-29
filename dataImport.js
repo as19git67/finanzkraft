@@ -197,6 +197,8 @@ export default async function importData(db, importFilename) {
         idBankcontact: bankcontactByName[account.bankcontact_name]?.id,
         fintsError: account.fintsError ? account.fintsError : '',
         fintsAccountNumber: account.fintsAccountNumber,
+        fintsAuthRequired: account.fintsAuthRequired ? account.fintsAuthRequired : false,
+        fintsActivated: account.fintsActivated ? account.fintsActivated : false,
       });
       console.log(`Imported account ${account.name}`);
       if (account.balanceDate && account.balance !== null) {

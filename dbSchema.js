@@ -1,5 +1,5 @@
 const schema = {
-  version: 29,
+  version: 30,
   name: 'finanzkraft',
   tables: [
     {
@@ -578,8 +578,17 @@ const schema = {
         {
           "name": "fintsError",
           "type": "string",
+          "nullable": true,
+        },
+        {
+          "name": "fintsAuthRequired",
+          "type": "boolean",
           "nullable": false,
-          "default": "",
+        },
+        {
+          "name": "fintsActivated",
+          "type": "boolean",
+          "nullable": false,
         },
       ],
       "foreign_keys": [

@@ -56,7 +56,11 @@ const DbMixinOnlineBanking = {
   },
 
   async getBankcontact(id) {
-    const result = this.knex.table('Fk_Bankcontact').where('id', id);
+    const idBankcontact = parseInt(id);
+    if (idBankcontact === undefined) {
+      throw new Error('Undefined idBankcontact', { cause: 'invalid' });
+    }
+    const result = await this.knex.table('Fk_Bankcontact').where('id', idBankcontact);
     if (result.length === 1) {
       const bankcontact = result[0];
 

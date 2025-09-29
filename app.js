@@ -11,6 +11,7 @@ import accountRouter from './routes/account.js';
 import accountsRouter from './routes/accounts.js';
 import bankcontactRouter from './routes/bankcontact.js';
 import bankcontactsRouter from './routes/bankcontacts.js';
+import fintsAccountsOfBankcontactsRouter from './routes/fintsAccountsOfBankcontact.js';
 import accountTypesRouter from './routes/accountTypes.js';
 import transactionRouter from './routes/transaction.js';
 import transactionsRouter from './routes/transactions.js';
@@ -135,6 +136,7 @@ new Promise(async (resolve, reject) => {
   asExpress.addRouter("/api/accounts", accountRouter);
   asExpress.addRouter("/api/bankcontacts", bankcontactsRouter);
   asExpress.addRouter("/api/bankcontacts", bankcontactRouter);
+  asExpress.addRouter("/api/bankcontacts", fintsAccountsOfBankcontactsRouter);
   asExpress.addRouter("/api/accounttypes", accountTypesRouter);
   asExpress.addRouter("/api/transaction", transactionRouter);
   asExpress.addRouter("/api/transaction", transactionsRouter);
