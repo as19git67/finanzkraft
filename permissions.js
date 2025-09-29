@@ -203,6 +203,12 @@ const permissions = {
     methods: ["delete"],
     menus: ["admin.bankcontact", "admin.onlinebanking.delete"]
   },
+  onlinebanking_statements_download: {
+    description: "Onlinebanking Konten abrufen",
+    resources: ["/api/statements/"],
+    methods: ["get"],
+    menus: ["admin.statements_download"]
+  },
   accounts_list_read: {
     description: "Konten anzeigen",
     resources: ["/api/accounts", "/api/accounttypes"],
