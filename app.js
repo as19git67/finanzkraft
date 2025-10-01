@@ -9,6 +9,7 @@ import permissions from './permissions.js';
 import dbSchema from './dbSchema.js';
 import accountRouter from './routes/account.js';
 import accountsRouter from './routes/accounts.js';
+import accountStatementsRouter from './routes/accountStatements.js';
 import bankcontactRouter from './routes/bankcontact.js';
 import bankcontactsRouter from './routes/bankcontacts.js';
 import fintsAccountsOfBankcontactsRouter from './routes/fintsAccountsOfBankcontact.js';
@@ -134,6 +135,7 @@ new Promise(async (resolve, reject) => {
   asExpress.addRouter("/api/accounts", transactionsOfAccountRouter);
   asExpress.addRouter("/api/accounts", accountsRouter);
   asExpress.addRouter("/api/accounts", accountRouter);
+  asExpress.addRouter("/api/accounts", accountStatementsRouter);
   asExpress.addRouter("/api/bankcontacts", bankcontactsRouter);
   asExpress.addRouter("/api/bankcontacts", bankcontactRouter);
   asExpress.addRouter("/api/bankcontacts", fintsAccountsOfBankcontactsRouter);

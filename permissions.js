@@ -205,7 +205,7 @@ const permissions = {
   },
   onlinebanking_statements_download: {
     description: "Onlinebanking Konten abrufen",
-    resources: ["/api/statements/"],
+    resources: ["/api/accounts/:id/statements"],
     methods: ["get"],
     menus: ["admin.statements_download"]
   },

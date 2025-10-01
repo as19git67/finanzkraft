@@ -22,24 +22,30 @@ export default class FinTS {
     let bankingInformationUpdated = synchronizeResponse.bankingInformationUpdated;
     let bankAnswers = synchronizeResponse.bankAnswers;
     let requiresTan = synchronizeResponse.requiresTan;
-    let bankingInformation = synchronizeResponse.bankingInformation;
-    let systemId = bankingInformation.systemId;
-    let bankMessages = bankingInformation.bankMessages;
-    let bpd = bankingInformation.bpd;
-    let availableTanMethodIds = bpd.availableTanMethodIds;
-    console.log('Available TAN methods: ', availableTanMethodIds);
-    client.selectTanMethod(availableTanMethodIds[0]);
-    // sync again to get accounts
-    synchronizeResponse = await client.synchronize();
-    success = synchronizeResponse.success;
-    bankingInformationUpdated = synchronizeResponse.bankingInformationUpdated;
-    bankAnswers = synchronizeResponse.bankAnswers;
-    requiresTan = synchronizeResponse.requiresTan;
-    bankingInformation = synchronizeResponse.bankingInformation;
-    systemId = bankingInformation.systemId;
-    bankMessages = bankingInformation.bankMessages;
-    bpd = bankingInformation.bpd;
-    const upd = bankingInformation.upd;
+    let bankingInformation;
+    let bankMessages = [];
+    if (success) {
+      bankingInformation = synchronizeResponse.bankingInformation;
+      bankMessages = bankingInformation.bankMessages;
+      let systemId = bankingInformation.systemId;
+      let bpd = bankingInformation.bpd;
+      let availableTanMethodIds = bpd.availableTanMethodIds;
+      console.log('Available TAN methods: ', availableTanMethodIds);
+      client.selectTanMethod(availableTanMethodIds[0]);
+      // sync again to get accounts
+      synchronizeResponse = await client.synchronize();
+      success = synchronizeResponse.success;
+      bankingInformationUpdated = synchronizeResponse.bankingInformationUpdated;
+      bankAnswers = synchronizeResponse.bankAnswers;
+      requiresTan = synchronizeResponse.requiresTan;
+      if (success) {
+        bankingInformation = synchronizeResponse.bankingInformation;
+        systemId = bankingInformation.systemId;
+        bankMessages = bankingInformation.bankMessages;
+        bpd = bankingInformation.bpd;
+        const upd = bankingInformation.upd;
+      }
+    }
     return { success, requiresTan, bankAnswers, bankMessages, bankingInformation };
   }
 
@@ -52,11 +58,13 @@ export default class FinTS {
   }
 
   async getStatements(accountNumber, from, to) {
+    const fromAlways = from ? from : DateTime.now().minus({ days: 14 }).toJSDate();
+    const toAlways = from ? from : DateTime.now().toJSDate();
     let statements = { balance : {}, transactions: []};
 
     const client = new FinTSClient(this.#fintsConfig);
     if (client.canGetAccountStatements(accountNumber)) {
-      const statementResponse = await client.getAccountStatements(accountNumber, from, to);
+      const statementResponse = await client.getAccountStatements(accountNumber, fromAlways, toAlways);
 
       for (let j = 0; j < statementResponse.bankAnswers.length; j++) {
         console.log(`Bank answer: ${statementResponse.bankAnswers[j].code} ${statementResponse.bankAnswers[j].text}`);
@@ -76,7 +84,11 @@ export default class FinTS {
       const balanceResponse = await client.getAccountBalance(accountNumber);
       statements.balance = balanceResponse.balance;
     } else {
-      console.log(`Account ${accountNumber} does not allow getting account statements`);
+      if (client.canGetCreditCardStatements(accountNumber)) {
+        statements = await this.getCreditCardStatements(accountNumber, fromAlways, toAlways);
+      } else {
+        console.log(`Account ${accountNumber} does not allow getting statements or credit card statements`);
+      }
     }
     return statements;
   }

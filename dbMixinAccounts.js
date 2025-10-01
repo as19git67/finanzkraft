@@ -143,7 +143,12 @@ const DbMixinAccounts = {
     if (!idAccount) {
       throw new Error('Undefined idAccount', {cause: 'unknown'});
     }
-    return this.knex.select().table('Fk_Account').where({id: idAccount});
+    const result = await this.knex.select().table('Fk_Account').where({id: idAccount});
+    if (result.length > 0) {
+      return result[0];
+    } else {
+      return undefined;
+    }
   },
 
   async updateAccount(idAccount, data) {
