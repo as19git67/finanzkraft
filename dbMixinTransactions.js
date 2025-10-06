@@ -596,7 +596,12 @@ const DbMixinTransactions = {
         await this.applyRules(trx, {includeProcessed: false, includeTransactionsWithRuleSet: false});
       }
       if (options.balance) {
-        const balanceInserts = await trx('Fk_AccountBalance').insert(options.balance);
+        const balance = {
+          idAccount: options.balance.idAccount,
+          balanceDate: this._fixDate(options.balance.balanceDate),
+          balance: options.balance,
+        }
+        const balanceInserts = await trx('Fk_AccountBalance').insert(balance);
       }
       if (options.tags && options.tags.length > 0) {
         const transactionTagsToInsert = options.tags.map((idTag) => {
@@ -643,20 +648,25 @@ const DbMixinTransactions = {
           }
         }
         if (options.balance) {
-          const result = await trx('Fk_AccountBalance').where({idAccount: options.balance.idAccount, balanceDate: options.balance.balanceDate});
+          const balance = {
+            idAccount: options.balance.idAccount,
+            balanceDate: this._fixDate(options.balance.balanceDate),
+            balance: options.balance,
+          }
+          const result = await trx('Fk_AccountBalance').where({idAccount: balance.idAccount, balanceDate: balance.balanceDate});
           if (result.length > 0) {
             // update instead of insert
             // let balanceUpdates = await trx('Fk_AccountBalance').update(options.balance);
             // console.log(`Updated ${balanceUpdates.length} account balances`);
             let balanceDeletions = await trx('Fk_AccountBalance').
                 where({
-                  idAccount: options.balance.idAccount,
-                  balanceDate: options.balance.balanceDate
+                  idAccount: balance.idAccount,
+                  balanceDate: balance.balanceDate
                 }).
                 delete();
             console.log(`${balanceDeletions} balance deletions`);
           }
-          let balanceInserts = await trx('Fk_AccountBalance').insert(options.balance);
+          let balanceInserts = await trx('Fk_AccountBalance').insert(balance);
           console.log(`Inserted ${balanceInserts.length} account balances`);
         }
       }
