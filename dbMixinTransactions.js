@@ -599,7 +599,7 @@ const DbMixinTransactions = {
         const balance = {
           idAccount: options.balance.idAccount,
           balanceDate: this._fixDate(options.balance.balanceDate),
-          balance: options.balance,
+          balance: options.balance.balance,
         }
         const balanceInserts = await trx('Fk_AccountBalance').insert(balance);
       }
@@ -651,7 +651,7 @@ const DbMixinTransactions = {
           const balance = {
             idAccount: options.balance.idAccount,
             balanceDate: this._fixDate(options.balance.balanceDate),
-            balance: options.balance,
+            balance: options.balance.balance,
           }
           const result = await trx('Fk_AccountBalance').where({idAccount: balance.idAccount, balanceDate: balance.balanceDate});
           if (result.length > 0) {
