@@ -35,15 +35,13 @@ const DbMixinOnlineBanking = {
     const result = await this.knex.table('Fk_Bankcontact').orderBy('Fk_Bankcontact.name');
 
     return _.map(result, (bankcontact) => {
-      const bc = _.pick(bankcontact, 'id', 'name', 'fintsUrl', 'fintsBankId', 'fintsPasswordEncrypted');
-      if (bankcontact.fintsUserIdEncrypted || bankcontact.fintsPasswordEncrypted) {
+      const bc = _.pick(bankcontact, 'id', 'name', 'fintsUrl', 'fintsBankId', 'fintsUserIdEncrypted', 'fintsPasswordEncrypted');
+     if (bankcontact.fintsUserIdEncrypted) {
         if (privateKeyPassphrase && privateKey && salt) {
-          if (bankcontact.fintsUserIdEncrypted ) {
-            try {
-              bc.fintsUserId = this.decrypt(privateKey, privateKeyPassphrase, salt, bankcontact.fintsUserIdEncrypted);
-            } catch (e) {
-              console.error(`Error decrypting fintsUserId for bankcontact id ${bankcontact.id}: ${e.message}`);
-            }
+          try {
+            bc.fintsUserId = this.decrypt(privateKey, privateKeyPassphrase, salt, bankcontact.fintsUserIdEncrypted);
+          } catch (e) {
+            console.error(`Error decrypting fintsUserIdEncrypted for bankcontact id ${bankcontact.id}: ${e.message}`);
           }
           // note, that the password is decrypted when used to download bank statements
         } else {

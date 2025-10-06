@@ -1,5 +1,5 @@
 const schema = {
-  version: 30,
+  version: 31,
   name: 'finanzkraft',
   tables: [
     {
@@ -1049,6 +1049,24 @@ const schema = {
         {
           "name": "primaNotaNo",
           "type": "integer",
+          "nullable": true,
+        },
+        {
+          "name": "originalCurrency",
+          "type": "string",
+          "length": 3,
+          "nullable": true,
+        },
+        {
+          "name": "originalAmount",
+          "type": "decimal",
+          precision: 12,
+          scale: 2,
+          "nullable": true,
+        },
+        {
+          "name": "exchangeRate",
+          "type": "float",
           "nullable": true,
         },
         {

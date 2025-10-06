@@ -121,7 +121,12 @@ export default async function exportData(db, exportFilename) {
   console.log(`Exported ${data.RuleSets.length} rule sets`);
 
   console.log('Exporting bankcontacts...');
-  data.Bankcontacts = await db.getBankcontacts();
+  const bankcontacts = await db.getBankcontacts();
+  data.Bankcontacts = bankcontacts.map((bankcontact) => {
+    delete bankcontact.fintsUserId;
+    delete bankcontact.fintsPassword;
+    return bankcontact;
+  });
   console.log(`Exported ${data.Bankcontacts.length} bankcontacts`);
 
   console.log('Exporting accounts...');

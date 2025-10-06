@@ -1,8 +1,65 @@
 import AsRouteConfig from '../as-router.js';
 import config from "../config.js";
 import FinTS from "../fints.js";
+import { DateTime } from "luxon";
 
 const rc = new AsRouteConfig('/:idAccount/statements');
+
+function isEqual(tr, key, sTr) {
+  if (tr[key]) {
+    return tr[key] === sTr['t_' + key];
+  } else {
+    return true;
+  }
+}
+
+async function transactionExists(db, tra) {
+  const fixedTr = db._fixTransactionData(tra);
+  const from = DateTime.fromISO(tra.valueDate).minus({days: 5}).toISO();
+  const to = DateTime.fromISO(tra.valueDate).plus({days: 2}).toISO();
+  const savedTr = await db.getTransactions(50, fixedTr.text, [tra.idAccount], from, to);
+  // search transaction in saved transactions and add the new transaction only if it was not found
+  const filteredTransactions = savedTr.filter((sTr) => {
+    if (fixedTr.text && fixedTr.text.trim()) {
+      if (fixedTr.text.trim() !== sTr.t_text?.trim()) {
+        return false;
+      }
+    }
+    if (!isEqual(fixedTr, 'REF', sTr)) return false;
+    if (!isEqual(fixedTr, 'EREF', sTr)) return false;
+    if (!isEqual(fixedTr, 'CRED', sTr)) return false;
+    if (!isEqual(fixedTr, 'MREF', sTr)) return false;
+    if (!isEqual(fixedTr, 'ABWA', sTr)) return false;
+    if (!isEqual(fixedTr, 'ABWE', sTr)) return false;
+    if (!isEqual(fixedTr, 'IBAN', sTr)) return false;
+    if (!isEqual(fixedTr, 'BIC', sTr)) return false;
+
+    if (fixedTr.entryText && fixedTr.entryText.trim()) {
+      if (fixedTr.entryText.trim() !== sTr.t_entry_text?.trim()) {
+        return false;
+      }
+    }
+    if (fixedTr.payeePayerAcctNo && fixedTr.payeePayerAcctNo.trim()) {
+      if (fixedTr.payeePayerAcctNo.trim() !== sTr.t_payeePayerAcctNo?.trim()) {
+        return false;
+      }
+    }
+    if (fixedTr.gvCode && fixedTr.gvCode.trim()) {
+      if (fixedTr.gvCode.trim() !== sTr.t_gvCode?.trim()) {
+        return false;
+      }
+    }
+    if (fixedTr.primaNotaNo && sTr.t_primaNotaNo) {
+      const trPN = parseInt(fixedTr.primaNotaNo);
+      const sTrPN = parseInt(sTr.t_primaNotaNo);
+      if (trPN !== undefined && sTrPN !== undefined && trPN !== sTrPN) {
+        return false;
+      }
+    }
+    return fixedTr.amount === sTr.t_amount;
+  });
+  return filteredTransactions.length > 0;
+}
 
 rc.get(async function (req, res, next) {
   try {
@@ -35,6 +92,17 @@ rc.get(async function (req, res, next) {
 
     try {
       console.log(`Synchronizing bankcontact ${account.idBankcontact}: ${account.name}`);
+      const transactions = await db.getTransactions(20, undefined, [idAccount]);
+      let fromDate = DateTime.now().minus({days: 82});
+      for (let i = 0; i < transactions.length; i++) {
+        const t = transactions[i];
+        const tDate = DateTime.fromISO(t.t_value_date);
+        if (tDate > fromDate) {
+          fromDate = tDate;
+        }
+      }
+      fromDate = fromDate.minus({days: 7}).toJSDate();
+
       const fints = new FinTS(fintsProductId, fintsProductVersion);
       const result = await fints.synchronize(bankcontact.fintsUrl, bankcontact.fintsBankId, bankcontact.fintsUserId, bankcontact.fintsPassword);
       if (!result.success) {
@@ -45,8 +113,29 @@ rc.get(async function (req, res, next) {
         res.json(result);
         return;
       }
-      const statements = await fints.getStatements(account.fintsAccountNumber);
-      console.log(statements);
+      const statements = await fints.getStatements(account.fintsAccountNumber, fromDate);
+      const downloadedTransactions = statements.transactions.map(tr => {
+        return {
+          idAccount: idAccount,
+          ...tr,
+        };
+      });
+
+      const transactionsToSave = [];
+      for (let i = 0; i < downloadedTransactions.length; i++) {
+        const tra = downloadedTransactions[i];
+        if (!(await transactionExists(db, tra))) {
+          transactionsToSave.push(tra);
+        }
+      }
+      if (transactionsToSave.length > 0) {
+        const balance = {
+          idAccount: idAccount,
+          balanceDate: statements.balance.balanceDate
+        }
+        const storedTransactions = await db.addTransactions(transactionsToSave, {balance, unconfirmed: true});
+        console.log(`${storedTransactions.length} new transactions stored for account ID ${idAccount}`);
+      }
       await db.updateAccount(idAccount, {fintsError: null});
       res.json(result);
     } catch (ex) {

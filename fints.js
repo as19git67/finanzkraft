@@ -57,9 +57,42 @@ export default class FinTS {
     return this.#fintsConfig.bankingInformation.upd.bankAccounts;
   }
 
+  getStatementHash(statement) {
+    const keys = [
+      'bookingDate',
+      'valueDate',
+      'amount',
+      'entryText',
+      'text',
+      'EREF',
+      'CRED',
+      'MREF',
+      'ABWA',
+      'ABWE',
+      'IBAN',
+      'BIC',
+      'REF',
+      'payee',
+      'payeePayerAcctNo',
+      'gvCode',
+      'primaNotaNo',
+      'originalCurrency',
+      'originalAmount',
+      'exchangeRate'
+    ];
+    let hashString = '';
+    for (let key of keys) {
+      if (hashString.length > 0) {
+        hashString += ':';
+      }
+      hashString += statement[key] ? statement[key] : '';
+    }
+    return hashString;
+  }
+
   async getStatements(accountNumber, from, to) {
     const fromAlways = from ? from : DateTime.now().minus({ days: 14 }).toJSDate();
-    const toAlways = from ? from : DateTime.now().toJSDate();
+    const toAlways = to ? to : DateTime.now().toJSDate();
     let statements = { balance : {}, transactions: []};
 
     const client = new FinTSClient(this.#fintsConfig);
@@ -75,14 +108,39 @@ export default class FinTS {
           const statement = statementResponse.statements[i];
           // console.log(statementResponse.statements[i]);
           for (let j = 0; j < statement.transactions.length; j++) {
-            // console.log(statement.transactions[j]);
-            statements.transactions.push(statement.transactions[j]);
+            const t = statement.transactions[j];
+            const st = {
+              type: 'bankAccountStatement',
+              bookingDate: t.transactionDate,
+              valueDate: t.valueDate,
+              amount: t.amount,
+              entryText: null,
+              text: t.purpose,
+              EREF: null,
+              CRED: null,
+              MREF: null,
+              ABWA: null,
+              ABWE: null,
+              IBAN: null,
+              BIC: null,
+              REF: null,
+              notes: null,
+              payee: null,
+              payeePayerAcctNo: null,
+              gvCode: null,
+              primaNotaNo: null,
+              originalCurrency: t.null,
+              originalAmount: t.null,
+              exchangeRate: t.null,
+            };
+            statements.transactions.push(st);
           }
         }
       }
 
       const balanceResponse = await client.getAccountBalance(accountNumber);
       statements.balance = balanceResponse.balance;
+      statements.balance.type = 'bankAccountBalance';
     } else {
       if (client.canGetCreditCardStatements(accountNumber)) {
         statements = await this.getCreditCardStatements(accountNumber, fromAlways, toAlways);
@@ -106,8 +164,35 @@ export default class FinTS {
       }
 
       if (statementResponse.statements) {
-        statements.transactions = statementResponse.statements;
+        statements.transactions = statementResponse.statements.map((t) => {
+          const st = {
+            type: 'creditCardStatement',
+            bookingDate: t.transactionDate,
+            valueDate: t.valueDate,
+            amount: t.amount,
+            entryText: null,
+            text: t.purpose,
+            EREF: null,
+            CRED: null,
+            MREF: null,
+            ABWA: null,
+            ABWE: null,
+            IBAN: null,
+            BIC: null,
+            REF: null,
+            notes: null,
+            payee: null,
+            payeePayerAcctNo: null,
+            gvCode: null,
+            primaNotaNo: null,
+            originalCurrency: t.originalCurrency,
+            originalAmount: t.originalAmount,
+            exchangeRate: t.exchangeRate,
+          };
+          return st;
+        });
         statements.balance = statementResponse.balance;
+        statements.balance.type = 'creditCardBalance';
       }
     }
 
