@@ -1,7 +1,7 @@
 import AsRouteConfig from '../as-router.js';
-import config from "../config.js";
-import FinTS from "../fints.js";
-import { DateTime } from "luxon";
+import config from '../config.js';
+import FinTS from '../fints.js';
+import {DateTime} from 'luxon';
 
 const rc = new AsRouteConfig('/:idAccount/statements');
 
@@ -15,8 +15,8 @@ function isEqual(tr, key, sTr) {
 
 async function transactionExists(db, tra) {
   const fixedTr = db._fixTransactionData(tra);
-  const from = DateTime.fromISO(tra.valueDate).minus({days: 5}).toISO();
-  const to = DateTime.fromISO(tra.valueDate).plus({days: 2}).toISO();
+  const from = DateTime.fromJSDate(tra.valueDate).minus({days: 5}).toISO();
+  const to = DateTime.fromJSDate(tra.valueDate).plus({days: 2}).toISO();
   const savedTr = await db.getTransactions(50, fixedTr.text, [tra.idAccount], from, to);
   // search transaction in saved transactions and add the new transaction only if it was not found
   const filteredTransactions = savedTr.filter((sTr) => {
@@ -131,7 +131,8 @@ rc.get(async function (req, res, next) {
       if (transactionsToSave.length > 0) {
         const balance = {
           idAccount: idAccount,
-          balanceDate: statements.balance.balanceDate
+          balanceDate: statements.balance.date,
+          balance: statements.balance.balance,
         }
         const storedTransactions = await db.addTransactions(transactionsToSave, {balance, unconfirmed: true});
         console.log(`${storedTransactions.length} new transactions stored for account ID ${idAccount}`);

@@ -1,5 +1,6 @@
 import _ from 'lodash';
 import NumberParser from './NumberParser.js';
+import {DateTime} from 'luxon';
 
 const DbMixinTransactions = {
   _maxTextToken: 20,
@@ -28,6 +29,7 @@ const DbMixinTransactions = {
       'Fk_Transaction.entryText as t_entry_text', 'Fk_Transaction.amount as t_amount',
       'Fk_Transaction.notes as t_notes', 'Fk_Transaction.payee as t_payee', 'Fk_Transaction.primaNotaNo as t_primaNotaNo',
       'Fk_Transaction.payeePayerAcctNo as t_payeePayerAcctNo', 'Fk_Transaction.gvCode as t_gvCode',
+      'Fk_Transaction.originalCurrency as t_originalCurrency', 'Fk_Transaction.originalAmount as t_originalAmount', 'Fk_Transaction.exchangeRate as t_exchangeRate',
       'Fk_Transaction.processed as t_processed', 'Fk_Category.id as category_id',
       'Fk_Category.fullName as category_name', 'Fk_Currency.id as currency_id',
       'Fk_Transaction.idRuleSet as rule_set_id', 'Fk_RuleSet.name as rule_set_name',
@@ -152,7 +154,7 @@ const DbMixinTransactions = {
   async getTransactionsForExport() {
     try {
       const results = await this.knex.table('Fk_Transaction')
-        .select(['Fk_Transaction.id as Fk_Transaction:id', 'Fk_Transaction.*', 'Fk_Account.id as Fk_Account:id', 'Fk_Account.name as Fk_Account:name', 'Fk_Account.iban as Fk_Account:iban', 'Fk_Account.*', 'Fk_Currency.id as Fk_Currency:id', 'Fk_Currency.name as Fk_Currency:name', 'Fk_Currency.*', 'Fk_Category.id as Fk_Category:id', 'Fk_Category.name as Fk_Category:name', 'Fk_Category.*', 'Fk_RuleSet.id as Fk_RuleSet:id', 'Fk_RuleSet.name as Fk_RuleSet:name', 'Fk_RuleSet.*', 'Fk_Tags:tags'])
+        .select(['Fk_Transaction.id as Fk_Transaction:id', 'Fk_Transaction.*', 'Fk_Account.id as Fk_Account:id', 'Fk_Account.name as Fk_Account:name', 'Fk_Account.iban as Fk_Account:iban', 'Fk_Currency.id as Fk_Currency:id', 'Fk_Currency.name as Fk_Currency:name', 'Fk_Currency.*', 'Fk_Category.id as Fk_Category:id', 'Fk_Category.name as Fk_Category:name', 'Fk_Category.*', 'Fk_RuleSet.id as Fk_RuleSet:id', 'Fk_RuleSet.name as Fk_RuleSet:name', 'Fk_RuleSet.*', 'Fk_Tags:tags'])
         .join('Fk_Account', function () {
           this.on('Fk_Transaction.idAccount', '=', 'Fk_Account.id');
         })
@@ -252,9 +254,33 @@ const DbMixinTransactions = {
     }
   },
 
+  _fixDate: function(d) {
+    if (d instanceof Date) {
+      return DateTime.fromJSDate(d).toISO();
+    } else {
+      if (_.isString(d)) {
+        const dt = DateTime.fromISO(d);
+        if (dt.isValid) {
+          return dt.toISO();
+        } else {
+          throw new Error("Value can't be parsed into valid DateTime");
+        }
+      } else {
+        if (d !== undefined && d !== null) {
+          throw new Error('value must be Date, ISO string or undefined/null.');
+        } else {
+          return d;
+        }
+      }
+    }
+
+  },
+
   // Convert empty values to undefined for having null in DB and parse ABWE, ABWA, ANAM, BNAM, BIC, IBAN, Ref, CRED, SVWZ, EREF
   _fixTransactionData: function (t) {
     const tRet = t;
+    tRet.valueDate = this._fixDate(t.valueDate);
+    tRet.bookingDate = this._fixDate(t.bookingDate);
     if (t.processed === undefined) {
       tRet.processed = false;
     }
@@ -262,6 +288,13 @@ const DbMixinTransactions = {
       tRet.text = null;
     } else {
       if (_.isString(tRet.text)) {
+        const entryTexts = ["LASTSCHRIFT / BELASTUNG", 'BELASTUNG', 'KARTENVERFÜGUNG', 'ÜBERTRAG / ÜBERWEISUNG', 'WERTPAPIERE', 'KUPON', 'KONTOFÜHRUNGSENTGELTENTGELT'];
+        for (const entryText of entryTexts) {
+          if (tRet.text.startsWith(entryText) && !tRet.entryText) {
+            tRet.entryText = tRet.text.substring(0, entryText.length);
+            tRet.text = tRet.text.substring(entryText.length);
+          }
+        }
         const parts = [];
         this._parseText(parts, tRet.text, ['ABWE:', 'ABWE+', 'A BWE:', 'AB WE:', 'ABW E:', 'ABWE :'], 'ABWE');
         this._parseText(parts, tRet.text, ['ABWA:', 'ABWE+', 'A BWA:', 'AB WA:', 'ABW A:', 'ABWA :', ' ABWA '], 'ABWA');
@@ -669,6 +702,7 @@ const DbMixinTransactions = {
         payee: data.t_payee,
         primaNotaNo: data.t_primaNotaNo,
         payeePayerAcctNo: data.t_payeePayerAcctNo,
+        payeeBankId: data.payeeBankId,
         gvCode: data.t_gvCode,
         processed: data.t_processed,
         idCategory: data.category_id,

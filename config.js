@@ -35,7 +35,7 @@ _.defaults(config, settings, {
   exportDatafileWithTimestamp: false,
   fintsProductId: '123ABC',
   fintsProductVersion: '1.0',
-  privateKeyPassphrase: 'verysecret',
+  privateKeyPassphrase: '',
 });
 
 export default config;

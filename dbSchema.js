@@ -1,5 +1,5 @@
 const schema = {
-  version: 31,
+  version: 32,
   name: 'finanzkraft',
   tables: [
     {
@@ -1022,6 +1022,11 @@ const schema = {
         },
         {
           "name": "payeePayerAcctNo",
+          "type": "string",
+          "nullable": true,
+        },
+        {
+          "name": "payeeBankId",
           "type": "string",
           "nullable": true,
         },

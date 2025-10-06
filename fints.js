@@ -1,5 +1,5 @@
 import {FinTSClient, FinTSConfig} from 'lib-fints';
-import { DateTime } from 'luxon';
+import {DateTime} from 'luxon';
 
 export default class FinTS {
   #fintsConfig;
@@ -110,11 +110,10 @@ export default class FinTS {
           for (let j = 0; j < statement.transactions.length; j++) {
             const t = statement.transactions[j];
             const st = {
-              type: 'bankAccountStatement',
-              bookingDate: t.transactionDate,
+              bookingDate: t.entryDate,
               valueDate: t.valueDate,
               amount: t.amount,
-              entryText: null,
+              entryText: t.bookingText,
               text: t.purpose,
               EREF: null,
               CRED: null,
@@ -123,15 +122,16 @@ export default class FinTS {
               ABWE: null,
               IBAN: null,
               BIC: null,
-              REF: null,
+              REF: t.customerReference,
               notes: null,
-              payee: null,
-              payeePayerAcctNo: null,
-              gvCode: null,
-              primaNotaNo: null,
-              originalCurrency: t.null,
-              originalAmount: t.null,
-              exchangeRate: t.null,
+              payee: t.remoteName,
+              payeePayerAcctNo: t.remoteAccountNumber,
+              payeeBankId: t.remoteBankId, // todo!!
+              gvCode: t.transactionType,
+              primaNotaNo: t.primeNotesNr,
+              originalCurrency: null,
+              originalAmount: null,
+              exchangeRate: null,
             };
             statements.transactions.push(st);
           }
@@ -165,8 +165,7 @@ export default class FinTS {
 
       if (statementResponse.statements) {
         statements.transactions = statementResponse.statements.map((t) => {
-          const st = {
-            type: 'creditCardStatement',
+          return {
             bookingDate: t.transactionDate,
             valueDate: t.valueDate,
             amount: t.amount,
@@ -189,7 +188,6 @@ export default class FinTS {
             originalAmount: t.originalAmount,
             exchangeRate: t.exchangeRate,
           };
-          return st;
         });
         statements.balance = statementResponse.balance;
         statements.balance.type = 'creditCardBalance';
