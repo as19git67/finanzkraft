@@ -57,39 +57,6 @@ export default class FinTS {
     return this.#fintsConfig.bankingInformation.upd.bankAccounts;
   }
 
-  getStatementHash(statement) {
-    const keys = [
-      'bookingDate',
-      'valueDate',
-      'amount',
-      'entryText',
-      'text',
-      'EREF',
-      'CRED',
-      'MREF',
-      'ABWA',
-      'ABWE',
-      'IBAN',
-      'BIC',
-      'REF',
-      'payee',
-      'payeePayerAcctNo',
-      'gvCode',
-      'primaNotaNo',
-      'originalCurrency',
-      'originalAmount',
-      'exchangeRate'
-    ];
-    let hashString = '';
-    for (let key of keys) {
-      if (hashString.length > 0) {
-        hashString += ':';
-      }
-      hashString += statement[key] ? statement[key] : '';
-    }
-    return hashString;
-  }
-
   async getStatements(accountNumber, from, to) {
     const fromAlways = from ? from : DateTime.now().minus({ days: 14 }).toJSDate();
     const toAlways = to ? to : DateTime.now().toJSDate();

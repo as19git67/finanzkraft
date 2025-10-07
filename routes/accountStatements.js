@@ -140,8 +140,8 @@ rc.get(async function (req, res, next) {
       await db.updateAccount(idAccount, {fintsError: null});
       res.json(result);
     } catch (ex) {
-      await db.updateAccount(idAccount, {fintsError: ex.message});
       console.log(ex);
+      await db.updateAccount(idAccount, {fintsError: ex.message?.substring(0, 250)});
       res.sendStatus(500);
     }
   } catch (ex) {
