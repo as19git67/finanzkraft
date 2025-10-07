@@ -128,7 +128,7 @@ rc.get(async function (req, res, next) {
         balanceDate: statements.balance.date,
         balance: statements.balance.balance,
       }
-      for (let i = 0; i < downloadedTransactions.length && i < 50; i++) {
+      for (let i = 0; i < downloadedTransactions.length && transactionsToSave.length < 100; i++) {
         const tra = downloadedTransactions[i];
         if (!(await transactionExists(db, tra))) {
           transactionsToSave.push(tra);
