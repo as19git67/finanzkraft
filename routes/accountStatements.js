@@ -110,6 +110,7 @@ rc.get(async function (req, res, next) {
         for (let j = 0; j < result.bankAnswers.length; j++) {
           console.log(`Bank answers: ${result.bankAnswers[j].code} ${result.bankAnswers[j].text}`);
         }
+        await db.updateAccount(idAccount, {fintsError: 'Fehler bei der FinTS Synchronisierung'});
         res.json(result);
         return;
       }
@@ -122,22 +123,24 @@ rc.get(async function (req, res, next) {
       });
 
       const transactionsToSave = [];
-      for (let i = 0; i < downloadedTransactions.length; i++) {
+      const balance = {
+        idAccount: idAccount,
+        balanceDate: statements.balance.date,
+        balance: statements.balance.balance,
+      }
+      for (let i = 0; i < downloadedTransactions.length && i < 50; i++) {
         const tra = downloadedTransactions[i];
         if (!(await transactionExists(db, tra))) {
           transactionsToSave.push(tra);
         }
       }
       if (transactionsToSave.length > 0) {
-        const balance = {
-          idAccount: idAccount,
-          balanceDate: statements.balance.date,
-          balance: statements.balance.balance,
-        }
         const storedTransactions = await db.addTransactions(transactionsToSave, {balance, unconfirmed: true});
         console.log(`${storedTransactions.length} new transactions stored for account ID ${idAccount}`);
       }
       await db.updateAccount(idAccount, {fintsError: null});
+      result.savedTransactions = transactionsToSave.length;
+      result.balance = balance;
       res.json(result);
     } catch (ex) {
       console.log(ex);
