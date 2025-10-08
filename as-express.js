@@ -145,13 +145,13 @@ export default class AsExpress {
     );
 
     this.#statementsDownloadJob = new CronJob(
-      '25 6,12 * * *', // cronTime
+      '25 6,15 * * *', // cronTime
       async () => {
         console.log('Regularly downloading statements from bank accounts');
         try {
           await this.#downloadStatements();
         } catch (ex) {
-          console.log(`Downloading statements from bank accounts failed: ${ex.message}`);
+          console.log(`Exception during statement download failed: ${ex.message}`);
           // todo: alert notification to admin
         }
       }, // onTick
@@ -381,6 +381,7 @@ export default class AsExpress {
       }
       accountsForBankcontact.get(bankcontactId).push(account);
     });
+    const resultsByAccountId = {};
     const bankContactIds = Array.from(accountsForBankcontact.keys());
     for (let i = 0; i < bankContactIds.length; i++) {
       const fints = new FinTS(fintsProductId, fintsProductVersion, false);
@@ -402,6 +403,7 @@ export default class AsExpress {
           }
           fromDate = fromDate.minus({days: 7}).toJSDate();
 
+          console.log(`Downloading bank statements for ${account.name} using bank contact ${bankcontact.name}`);
           const statements = await fints.getStatements(account.fintsAccountNumber, fromDate);
           const downloadedTransactions = statements.transactions.map(tr => {
             return {
@@ -428,7 +430,7 @@ export default class AsExpress {
           await this.#database.updateAccount(account.id, {fintsError: null});
           result.savedTransactions = transactionsToSave.length;
           result.balance = balance;
-
+          resultsByAccountId[account.id] = result;
         }
       } else {
         console.log(`Failed to synchronize bankcontact ${bankcontact.id}`);
@@ -440,10 +442,11 @@ export default class AsExpress {
         for (let k = 0; k < accountsOfBankcontact.length; k++) {
           const account = accountsOfBankcontact[k];
           await this.#database.updateAccount(account.id, {fintsError: errorMessage});
+          resultsByAccountId[account.id] = result;
         }
       }
-
     }
+    return resultsByAccountId;
   }
 
   #initApiRouter() {
