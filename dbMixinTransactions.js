@@ -9,7 +9,64 @@ const DbMixinTransactions = {
     return 'DbMixinTransactions';
   },
 
-  _selectTransactions: function (idTransaction, maxItems, searchTerm, accountsWhereIn, dateFilterFrom, dateFilterTo, idUser, amountMin, amountMax, textToken, mRefToken) {
+
+_isEqual: function(tr, key, sTr) {
+  if (tr[key]) {
+    return tr[key] === sTr['t_' + key];
+  } else {
+    return true;
+  }
+},
+
+transactionExists: async function(tra) {
+  const fixedTr = this._fixTransactionData(tra);
+  const from = tra.valueDate instanceof Date ? DateTime.fromJSDate(tra.valueDate).minus({days: 5}).toISO() : DateTime.fromISO(tra.valueDate).minus({days: 5}).toISO();
+  const to = tra.valueDate instanceof Date ? DateTime.fromJSDate(tra.valueDate).plus({days: 2}).toISO() : DateTime.fromISO(tra.valueDate).plus({days: 2}).toISO();
+  const savedTr = await this.getTransactions(50, fixedTr.text, [tra.idAccount], from, to);
+  // search transaction in saved transactions and add the new transaction only if it was not found
+  const filteredTransactions = savedTr.filter((sTr) => {
+    if (fixedTr.text && fixedTr.text.trim()) {
+      if (fixedTr.text.trim() !== sTr.t_text?.trim()) {
+        return false;
+      }
+    }
+    if (!this._isEqual(fixedTr, 'REF', sTr)) return false;
+    if (!this._isEqual(fixedTr, 'EREF', sTr)) return false;
+    if (!this._isEqual(fixedTr, 'CRED', sTr)) return false;
+    if (!this._isEqual(fixedTr, 'MREF', sTr)) return false;
+    if (!this._isEqual(fixedTr, 'ABWA', sTr)) return false;
+    if (!this._isEqual(fixedTr, 'ABWE', sTr)) return false;
+    if (!this._isEqual(fixedTr, 'IBAN', sTr)) return false;
+    if (!this._isEqual(fixedTr, 'BIC', sTr)) return false;
+
+    if (fixedTr.entryText && fixedTr.entryText.trim()) {
+      if (fixedTr.entryText.trim() !== sTr.t_entry_text?.trim()) {
+        return false;
+      }
+    }
+    if (fixedTr.payeePayerAcctNo && fixedTr.payeePayerAcctNo.trim()) {
+      if (fixedTr.payeePayerAcctNo.trim() !== sTr.t_payeePayerAcctNo?.trim()) {
+        return false;
+      }
+    }
+    if (fixedTr.gvCode && fixedTr.gvCode.trim()) {
+      if (fixedTr.gvCode.trim() !== sTr.t_gvCode?.trim()) {
+        return false;
+      }
+    }
+    if (fixedTr.primaNotaNo && sTr.t_primaNotaNo) {
+      const trPN = parseInt(fixedTr.primaNotaNo);
+      const sTrPN = parseInt(sTr.t_primaNotaNo);
+      if (trPN !== undefined && sTrPN !== undefined && trPN !== sTrPN) {
+        return false;
+      }
+    }
+    return fixedTr.amount === sTr.t_amount;
+  });
+  return filteredTransactions.length > 0;
+},
+
+_selectTransactions: function (idTransaction, maxItems, searchTerm, accountsWhereIn, dateFilterFrom, dateFilterTo, idUser, amountMin, amountMax, textToken, mRefToken) {
     const np = new NumberParser();
     const amountMinParsed = np.parse(amountMin);
     const amountMaxParsed = np.parse(amountMax);
@@ -365,8 +422,11 @@ const DbMixinTransactions = {
         }
       }
     }
+    if (t.REF === 'NONREF') {
+      tRet.REF = undefined;
+    }
     if (_.isString(t.payee) && t.payee.trim().length === 0) {
-      tRet.payee = null;
+      tRet.payee = undefined;
     }
     if (_.isString(t.payeePayerAcctNo) && t.payeePayerAcctNo.trim().length === 0) {
       tRet.payeePayerAcctNo = undefined;

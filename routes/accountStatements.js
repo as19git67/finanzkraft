@@ -5,62 +5,6 @@ import {DateTime} from 'luxon';
 
 const rc = new AsRouteConfig('/:idAccount/statements');
 
-function isEqual(tr, key, sTr) {
-  if (tr[key]) {
-    return tr[key] === sTr['t_' + key];
-  } else {
-    return true;
-  }
-}
-
-async function transactionExists(db, tra) {
-  const fixedTr = db._fixTransactionData(tra);
-  const from = DateTime.fromJSDate(tra.valueDate).minus({days: 5}).toISO();
-  const to = DateTime.fromJSDate(tra.valueDate).plus({days: 2}).toISO();
-  const savedTr = await db.getTransactions(50, fixedTr.text, [tra.idAccount], from, to);
-  // search transaction in saved transactions and add the new transaction only if it was not found
-  const filteredTransactions = savedTr.filter((sTr) => {
-    if (fixedTr.text && fixedTr.text.trim()) {
-      if (fixedTr.text.trim() !== sTr.t_text?.trim()) {
-        return false;
-      }
-    }
-    if (!isEqual(fixedTr, 'REF', sTr)) return false;
-    if (!isEqual(fixedTr, 'EREF', sTr)) return false;
-    if (!isEqual(fixedTr, 'CRED', sTr)) return false;
-    if (!isEqual(fixedTr, 'MREF', sTr)) return false;
-    if (!isEqual(fixedTr, 'ABWA', sTr)) return false;
-    if (!isEqual(fixedTr, 'ABWE', sTr)) return false;
-    if (!isEqual(fixedTr, 'IBAN', sTr)) return false;
-    if (!isEqual(fixedTr, 'BIC', sTr)) return false;
-
-    if (fixedTr.entryText && fixedTr.entryText.trim()) {
-      if (fixedTr.entryText.trim() !== sTr.t_entry_text?.trim()) {
-        return false;
-      }
-    }
-    if (fixedTr.payeePayerAcctNo && fixedTr.payeePayerAcctNo.trim()) {
-      if (fixedTr.payeePayerAcctNo.trim() !== sTr.t_payeePayerAcctNo?.trim()) {
-        return false;
-      }
-    }
-    if (fixedTr.gvCode && fixedTr.gvCode.trim()) {
-      if (fixedTr.gvCode.trim() !== sTr.t_gvCode?.trim()) {
-        return false;
-      }
-    }
-    if (fixedTr.primaNotaNo && sTr.t_primaNotaNo) {
-      const trPN = parseInt(fixedTr.primaNotaNo);
-      const sTrPN = parseInt(sTr.t_primaNotaNo);
-      if (trPN !== undefined && sTrPN !== undefined && trPN !== sTrPN) {
-        return false;
-      }
-    }
-    return fixedTr.amount === sTr.t_amount;
-  });
-  return filteredTransactions.length > 0;
-}
-
 rc.get(async function (req, res, next) {
   try {
     const {fintsProductId, fintsProductVersion} = config;
@@ -130,7 +74,7 @@ rc.get(async function (req, res, next) {
       }
       for (let i = 0; i < downloadedTransactions.length && transactionsToSave.length < 50; i++) {
         const tra = downloadedTransactions[i];
-        if (!(await transactionExists(db, tra))) {
+        if (!(await db.transactionExists(tra))) {
           transactionsToSave.push(tra);
         }
       }

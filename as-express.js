@@ -11,6 +11,7 @@ import passport from 'passport';
 import express from 'express';
 import {fileURLToPath} from 'url';
 import {DateTime} from 'luxon';
+import { CronJob } from 'cron';
 import AsPassport from './as-passport.js';
 import config from './config.js';
 import DB from './database.js';
@@ -25,6 +26,7 @@ import rolePermissionProfilesRouteConfig
   from './routes/rolePermissionProfiles.js';
 import authRouteConfig from './routes/auth.js';
 import userrolesRouteConfig from './routes/userroles.js';
+import FinTS from "./fints.js";
 
 class HttpError {
   constructor(errorCode, msg) {
@@ -54,6 +56,10 @@ export default class AsExpress {
   #dirname;
 
   #exportTimer;
+
+  #backupJob;
+
+  #statementsDownloadJob;
 
   constructor(appName, app) {
     const filename = fileURLToPath(import.meta.url);
@@ -118,24 +124,41 @@ export default class AsExpress {
     await this.#initPassport();
     await this.#startHttpServer();
 
-    if (dbExporter.length > 0) {
-      try {
-        await this.#exportData(dbExporter,
-            path.resolve(dataDirectory, exportDatafile));
-        this.#exportTimer = setInterval(async () => {
+    this.#backupJob = new CronJob(
+      '0 5 * * *', // cronTime
+      async () => {
+        if (dbExporter.length > 0) {
           console.log('Regularly exporting DB...');
-          await this.#exportData(dbExporter,
-              path.resolve(dataDirectory, exportDatafile));
-        }, 1000 * 3600 * 8);
-      } catch (ex) {
-        if (this.#exportTimer) {
-          clearInterval(this.#exportTimer);
-          console.log(`DB export failed: ${ex.message}`);
-          debug(ex);
-          await this.terminateHttpServer();
+          try {
+            await this.#exportData(dbExporter, path.resolve(dataDirectory, exportDatafile));
+          } catch (ex) {
+            console.log(`DB export failed: ${ex.message}`);
+            // todo: alert notification to admin
+          }
+        } else {
+          console.log('No DB export configured. Skipping regular DB export.');
         }
-      }
-    }
+      }, // onTick
+      null, // onComplete
+      true, // start
+      'Europe/Berlin' // timeZone
+    );
+
+    this.#statementsDownloadJob = new CronJob(
+      '25 6,12 * * *', // cronTime
+      async () => {
+        console.log('Regularly downloading statements from bank accounts');
+        try {
+          await this.#downloadStatements();
+        } catch (ex) {
+          console.log(`Downloading statements from bank accounts failed: ${ex.message}`);
+          // todo: alert notification to admin
+        }
+      }, // onTick
+      null, // onComplete
+      true, // start
+      'Europe/Berlin' // timeZone
+    );
   }
 
   async #ensurePrivatePublicKeyPairInSystemPreferences() {
@@ -332,6 +355,95 @@ export default class AsExpress {
     //    this.app.use(passport.session()); // don't use persistent login sessions
     const asPassport = new AsPassport(passport, this.#database);
     await asPassport.init();
+  }
+
+  async #downloadStatements() {
+    const {fintsProductId, fintsProductVersion} = config;
+    if (!fintsProductId || !fintsProductVersion) {
+      console.log('No FinTS product ID or version configured. Skipping downloading statements from bank accounts.');
+      throw new Error('No FinTS product ID or version configured. Skipping downloading statements from bank accounts.', { cause: 'undefined'});
+    }
+    const allAccounts = await this.#database.getAccounts();
+    const allAccountsWithBankcontact = allAccounts.filter(account => {
+      return account.idBankcontact
+        && account.fintsActivated
+        && account.fintsAccountNumber
+        && account.bankcontact_fintsUrl
+        && account.bankcontact_fintsBankId
+        && account.bankcontact_fintsUserIdEncrypted
+        && account.bankcontact_fintsPasswordEncrypted;
+    });
+    const accountsForBankcontact = new Map();
+    allAccountsWithBankcontact.forEach(account => {
+      const bankcontactId = account.idBankcontact;
+      if (!accountsForBankcontact.has(bankcontactId)) {
+        accountsForBankcontact.set(bankcontactId, []);
+      }
+      accountsForBankcontact.get(bankcontactId).push(account);
+    });
+    const bankContactIds = Array.from(accountsForBankcontact.keys());
+    for (let i = 0; i < bankContactIds.length; i++) {
+      const fints = new FinTS(fintsProductId, fintsProductVersion, false);
+      const bankcontact = await this.#database.getBankcontact(bankContactIds[i]);
+      console.log(`Synchronizing bankcontact ${bankcontact.name}`);
+      const result = await fints.synchronize(bankcontact.fintsUrl, bankcontact.fintsBankId, bankcontact.fintsUserId, bankcontact.fintsPassword);
+      if (result.success) {
+        const accountsOfBankcontact = accountsForBankcontact.get(bankcontact.id);
+        for (let k = 0; k < accountsOfBankcontact.length; k++) {
+          const account = accountsOfBankcontact[k];
+          const transactions = await this.#database.getTransactions(20, undefined, [account.id]);
+          let fromDate = DateTime.now().minus({days: 82});
+          for (let i = 0; i < transactions.length; i++) {
+            const t = transactions[i];
+            const tDate = DateTime.fromISO(t.t_value_date);
+            if (tDate > fromDate) {
+              fromDate = tDate;
+            }
+          }
+          fromDate = fromDate.minus({days: 7}).toJSDate();
+
+          const statements = await fints.getStatements(account.fintsAccountNumber, fromDate);
+          const downloadedTransactions = statements.transactions.map(tr => {
+            return {
+              idAccount: account.id,
+              ...tr,
+            };
+          });
+          const transactionsToSave = [];
+          const balance = {
+            idAccount: account.id,
+            balanceDate: statements.balance.date,
+            balance: statements.balance.balance,
+          }
+          for (let i = 0; i < downloadedTransactions.length && transactionsToSave.length < 50; i++) {
+            const tra = downloadedTransactions[i];
+            if (!(await this.#database.transactionExists(tra))) {
+              transactionsToSave.push(tra);
+            }
+          }
+          if (transactionsToSave.length > 0) {
+            const storedTransactions = await this.#database.addTransactions(transactionsToSave, {balance, unconfirmed: true});
+            console.log(`${storedTransactions.length} new transactions stored for account ID ${account.id}`);
+          }
+          await this.#database.updateAccount(account.id, {fintsError: null});
+          result.savedTransactions = transactionsToSave.length;
+          result.balance = balance;
+
+        }
+      } else {
+        console.log(`Failed to synchronize bankcontact ${bankcontact.id}`);
+        for (let j = 0; j < result.bankAnswers.length; j++) {
+          console.log(`Bank answers: ${result.bankAnswers[j].code} ${result.bankAnswers[j].text}`);
+        }
+        const errorMessage = result.bankAnswers.map(ba => ba.text).join(', ');
+        const accountsOfBankcontact = accountsForBankcontact.get(bankcontact.id);
+        for (let k = 0; k < accountsOfBankcontact.length; k++) {
+          const account = accountsOfBankcontact[k];
+          await this.#database.updateAccount(account.id, {fintsError: errorMessage});
+        }
+      }
+
+    }
   }
 
   #initApiRouter() {

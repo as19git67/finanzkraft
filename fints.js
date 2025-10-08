@@ -6,16 +6,18 @@ export default class FinTS {
 
   #productId;
   #productVersion;
+  #debugEnabled;
 
-  constructor(productId, productVersion) {
+  constructor(productId, productVersion, debugEnabled = false) {
     this.#productId = productId;
     this.#productVersion = productVersion;
+    this.#debugEnabled = debugEnabled;
   }
 
   async synchronize(bankUrl, bankId, userId, pin) {
     this.#fintsConfig = FinTSConfig.forFirstTimeUse(this.#productId, this.#productVersion,
         bankUrl, bankId, userId, pin);
-    //fintsConfig.debugEnabled = true;
+    this.#fintsConfig.debugEnabled = this.#debugEnabled;
     const client = new FinTSClient(this.#fintsConfig);
     let synchronizeResponse = await client.synchronize();
     let success = synchronizeResponse.success;
@@ -80,8 +82,8 @@ export default class FinTS {
               bookingDate: t.entryDate,
               valueDate: t.valueDate,
               amount: t.amount,
-              entryText: t.bookingText,
-              text: t.purpose,
+              entryText: t.bookingText ? t.bookingText.trim() : '',
+              text: t.purpose ? t.purpose.trim() : '',
               EREF: null,
               CRED: null,
               MREF: null,
@@ -89,11 +91,11 @@ export default class FinTS {
               ABWE: null,
               IBAN: null,
               BIC: null,
-              REF: t.customerReference,
+              REF: t.customerReference ? t.customerReference.trim() : null,
               notes: null,
-              payee: t.remoteName,
+              payee: t.remoteName ? t.remoteName.trim() : null,
               payeePayerAcctNo: t.remoteAccountNumber,
-              payeeBankId: t.remoteBankId, // todo!!
+              payeeBankId: t.remoteBankId,
               gvCode: t.transactionType,
               primaNotaNo: t.primeNotesNr,
               originalCurrency: null,
@@ -137,7 +139,7 @@ export default class FinTS {
             valueDate: t.valueDate,
             amount: t.amount,
             entryText: null,
-            text: t.purpose,
+            text: t.purpose ? t.purpose.trim() : '',
             EREF: null,
             CRED: null,
             MREF: null,
