@@ -345,7 +345,7 @@ _selectTransactions: function (idTransaction, maxItems, searchTerm, accountsWher
       tRet.text = null;
     } else {
       if (_.isString(tRet.text)) {
-        const entryTexts = ["LASTSCHRIFT / BELASTUNG", 'KONTOABSCHLUSS', 'BELASTUNG', 'KARTENVERFÜGUNG', 'ÜBERTRAG / ÜBERWEISUNG', 'WERTPAPIERE', 'KUPON', 'KONTOFÜHRUNGSENTGELTENTGELT'];
+        const entryTexts = ["LASTSCHRIFT / BELASTUNG", 'KONTOABSCHLUSS', 'BELASTUNG', 'KARTENVERFÜGUNG', 'ÜBERTRAG / ÜBERWEISUNG', 'WERTPAPIERE', 'KUPON', 'KONTOFÜHRUNGSENTGELTENTGELT', 'KONTOÜBERTRAG'];
         for (const entryText of entryTexts) {
           if (tRet.text.startsWith(entryText) && !tRet.entryText) {
             tRet.entryText = tRet.text.substring(0, entryText.length);
