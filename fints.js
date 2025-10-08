@@ -22,8 +22,12 @@ export default class FinTS {
     let synchronizeResponse = await client.synchronize();
     let success = synchronizeResponse.success;
     let bankingInformationUpdated = synchronizeResponse.bankingInformationUpdated;
+    console.log('bankingInformationUpdated', bankingInformationUpdated);
     let bankAnswers = synchronizeResponse.bankAnswers;
     let requiresTan = synchronizeResponse.requiresTan;
+    if (requiresTan) {
+      console.log('Tan required');
+    }
     let bankingInformation;
     let bankMessages = [];
     if (success) {
@@ -38,14 +42,22 @@ export default class FinTS {
       synchronizeResponse = await client.synchronize();
       success = synchronizeResponse.success;
       bankingInformationUpdated = synchronizeResponse.bankingInformationUpdated;
+      console.log('bankingInformationUpdated', bankingInformationUpdated);
       bankAnswers = synchronizeResponse.bankAnswers;
       requiresTan = synchronizeResponse.requiresTan;
+      if (requiresTan) {
+        console.log('Tan required');
+      }
       if (success) {
         bankingInformation = synchronizeResponse.bankingInformation;
-        systemId = bankingInformation.systemId;
-        bankMessages = bankingInformation.bankMessages;
-        bpd = bankingInformation.bpd;
-        const upd = bankingInformation.upd;
+        if (bankingInformation) {
+          systemId = bankingInformation.systemId;
+          bankMessages = bankingInformation.bankMessages;
+          bpd = bankingInformation.bpd;
+          const upd = bankingInformation.upd;
+        } else {
+          console.log('No bankingInformation returned for second synchronize');
+        }
       }
     }
     return { success, requiresTan, bankAnswers, bankMessages, bankingInformation };
