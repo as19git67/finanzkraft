@@ -55,8 +55,6 @@ export default class AsExpress {
 
   #dirname;
 
-  #exportTimer;
-
   #backupJob;
 
   #statementsDownloadJob;
