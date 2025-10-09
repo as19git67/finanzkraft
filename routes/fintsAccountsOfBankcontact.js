@@ -38,20 +38,24 @@ rc.get(async function (req, res, next) {
         return;
       }
 
-      const bankAns = fints.getBankAnswers();
-      const bankAcc = fints.getAccounts();
+      if (requiresTan) {
+        res.json({ requiresTan: true, bankAccounts: [], bankAnswers: bankAnswers });
+      } else {
+        const bankAns = fints.getBankAnswers();
+        const bankAcc = fints.getAccounts();
 
-      const synchronizedAccounts = bankAcc.map(accountDetails => {
-        return {
-          accountNumber: accountDetails.accountNumber,
-          name: accountDetails.subAccountId ? accountDetails.subAccountId : accountDetails.product,
-          type: accountDetails.accountType,
-          currency: accountDetails.currency,
-          accountHolder: accountDetails.holder1,
-          iban: accountDetails.iban,
-        }
-      });
-      res.json(synchronizedAccounts);
+        const synchronizedAccounts = bankAcc.map(accountDetails => {
+          return {
+            accountNumber: accountDetails.accountNumber,
+            name: accountDetails.subAccountId ? accountDetails.subAccountId : accountDetails.product,
+            type: accountDetails.accountType,
+            currency: accountDetails.currency,
+            accountHolder: accountDetails.holder1,
+            iban: accountDetails.iban,
+          }
+        });
+        res.json({ requiresTan: true, bankAccounts: synchronizedAccounts, bankAnswers: bankAns });
+      }
     } else {
       console.log(`Missing bankcontact configuration for bankcontact ${idBankcontact}`);
       res.sendStatus(500);
