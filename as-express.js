@@ -118,6 +118,7 @@ export default class AsExpress {
           path.resolve(dataDirectory, importDatafile));
     }
     await this.#ensurePrivatePublicKeyPairInSystemPreferences();
+    await this.#exportData(dbExporter, path.resolve(dataDirectory, exportDatafile));
     this.#initApiRouter();
     await this.#initPassport();
     await this.#startHttpServer();

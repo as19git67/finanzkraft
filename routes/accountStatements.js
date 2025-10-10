@@ -6,6 +6,21 @@ import {DateTime} from 'luxon';
 const rc = new AsRouteConfig('/:idAccount/statements');
 
 rc.get(async function (req, res, next) {
+  await handleRequest(req, res);
+});
+
+rc.post(async function (req, res, next) {
+  const tanReference = req.body.tanReference;
+  const tan = req.body.tan;
+  if (tanReference === undefined) {
+    console.log("Can't continue synchronization with no tanReference");
+    res.sendStatus(404);
+    return;
+  }
+  await handleRequest(req, res, tanReference, tan);
+});
+
+async function handleRequest(req, res, tanReference, tan) {
   try {
     const {fintsProductId, fintsProductVersion} = config;
     if (!fintsProductId || !fintsProductVersion) {
@@ -35,7 +50,6 @@ rc.get(async function (req, res, next) {
     }
 
     try {
-      console.log(`Synchronizing bankcontact ${account.idBankcontact}: ${account.name}`);
       const transactions = await db.getTransactions(20, undefined, [idAccount]);
       let fromDate = DateTime.now().minus({days: 82});
       for (let i = 0; i < transactions.length; i++) {
@@ -47,17 +61,32 @@ rc.get(async function (req, res, next) {
       }
       fromDate = fromDate.minus({days: 7}).toJSDate();
 
-      const fints = new FinTS(fintsProductId, fintsProductVersion);
-      const result = await fints.synchronize(bankcontact.fintsUrl, bankcontact.fintsBankId, bankcontact.fintsUserId, bankcontact.fintsPassword);
-      if (!result.success) {
+      let synchronizeResult;
+      console.log(`Synchronizing bankcontact ${account.idBankcontact}: ${account.name}`);
+      const fints = FinTS.from(fintsProductId, fintsProductVersion, false, bankcontact.fintsUrl, bankcontact.fintsBankId, bankcontact.fintsUserId, bankcontact.fintsPassword);
+      if (tanReference) {
+        console.log(`Synchronizing with tanReference ${tanReference}`);
+        synchronizeResult = await fints.synchronizeWithTanReference(tanReference, tan);
+      } else {
+       synchronizeResult = await fints.synchronize();
+      }
+      const  {success, bankAnswers, tanInfo} = synchronizeResult;
+      if (!success) {
         console.log(`Failed to synchronize bankcontact ${account.idBankcontact}`);
-        for (let j = 0; j < result.bankAnswers.length; j++) {
-          console.log(`Bank answers: ${result.bankAnswers[j].code} ${result.bankAnswers[j].text}`);
+        for (let j = 0; j < bankAnswers.length; j++) {
+          console.log(`Bank answers: ${bankAnswers[j].code} ${bankAnswers[j].text}`);
         }
         await db.updateAccount(idAccount, {fintsError: 'Fehler bei der FinTS Synchronisierung'});
-        res.json(result);
+        res.sendStatus(500);
         return;
       }
+
+      if (tanInfo.requiresTan) {
+        await db.updateAccount(idAccount, {fintsError: '', fintsAuthRequired: true});
+        res.json({tanInfo, bankAccounts: [], bankAnswers: bankAnswers});
+        return;
+      }
+
       const statements = await fints.getStatements(account.fintsAccountNumber, fromDate);
       const downloadedTransactions = statements.transactions.map(tr => {
         return {
@@ -83,9 +112,7 @@ rc.get(async function (req, res, next) {
         console.log(`${storedTransactions.length} new transactions stored for account ID ${idAccount}`);
       }
       await db.updateAccount(idAccount, {fintsError: null});
-      result.savedTransactions = transactionsToSave.length;
-      result.balance = balance;
-      res.json(result);
+      res.json({tanInfo, savedTransactions: transactionsToSave.length, balance: balance});
     } catch (ex) {
       console.log(ex);
       await db.updateAccount(idAccount, {fintsError: ex.message?.substring(0, 250)});
@@ -95,6 +122,6 @@ rc.get(async function (req, res, next) {
     console.log(ex);
     res.sendStatus(500);
   }
-});
+}
 
 export default rc;

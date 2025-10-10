@@ -206,13 +206,13 @@ const permissions = {
   onlinebanking_statements_download: {
     description: "Onlinebanking Konten abrufen",
     resources: ["/api/accounts/:id/statements"],
-    methods: ["get"],
+    methods: ["get", "post"],
     menus: ["admin.statements_download"]
   },
   onlinebanking_accounts_of_bankcontact_read: {
     description: "Onlinebanking Konten eines Bankkontakts abrufen",
     resources: ["/api/bankcontacts/:id/accounts"],
-    methods: ["get"],
+    methods: ["get", "post"],
     menus: ["admin.fints.accounts"]
   },
   accounts_list_read: {
