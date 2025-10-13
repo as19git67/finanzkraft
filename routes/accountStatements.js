@@ -76,7 +76,15 @@ async function handleRequest(req, res, tanReference, tan) {
         for (let j = 0; j < bankAnswers.length; j++) {
           console.log(`Bank answers: ${bankAnswers[j].code} ${bankAnswers[j].text}`);
         }
-        await db.updateAccount(idAccount, {fintsError: 'Fehler bei der FinTS Synchronisierung'});
+        const pinOk = bankAnswers.find(bankAnswer => {
+          return bankAnswer.code === 9910;
+        }) === undefined;
+        if (pinOk) {
+          await db.updateAccount(idAccount, {fintsError: 'Fehler bei der FinTS Synchronisierung'});
+        } else {
+          console.log(`PIN WRONG for bankcontact ${idBankcontact} - resetting to empty password`);
+          await db.updateBankcontact(idBankcontact, {fintsPassword: null, fintsActivated: false, fintsError: pinOk.message?.substring(0, 250)});
+        }
         res.sendStatus(500);
         return;
       }
@@ -86,6 +94,8 @@ async function handleRequest(req, res, tanReference, tan) {
         res.json({tanInfo, bankAccounts: [], bankAnswers: bankAnswers});
         return;
       }
+
+      // todo: update account: fintsAuthRequired: false
 
       const statements = await fints.getStatements(account.fintsAccountNumber, fromDate);
       const downloadedTransactions = statements.transactions.map(tr => {

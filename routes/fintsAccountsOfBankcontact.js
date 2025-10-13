@@ -34,6 +34,14 @@ rc.get(async function (req, res, next) {
       const fints = FinTS.from(fintsProductId, fintsProductVersion, false, bankcontact.fintsUrl, bankcontact.fintsBankId, bankcontact.fintsUserId, bankcontact.fintsPassword);
       const { success, bankAnswers, tanInfo, bankMessages} = await fints.synchronize();
       logSyncResponse(idBankcontact, success, bankAnswers, tanInfo, bankMessages);
+      const pinOk = bankAnswers.find(bankAnswer => {
+        return bankAnswer.code === 9910;
+      }) === undefined;
+      if (!pinOk) {
+        console.log(`PIN WRONG for bankcontact ${idBankcontact} - resetting to empty password`);
+        await db.updateBankcontact(idBankcontact,
+            {fintsPassword: null, fintsActivated: false, fintsError: pinOk.message?.substring(0, 250)});
+      }
       if (!success) {
         res.sendStatus(500);
         return;

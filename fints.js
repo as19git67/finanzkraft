@@ -82,14 +82,18 @@ export default class FinTS {
         tanMediaName: synchronizeResponse.tanMediaName,
       }
       bankingInformation = synchronizeResponse.bankingInformation;
-      bankMessages = bankingInformation.bankMessages;
-      let bpd = bankingInformation.bpd;
+      if (bankingInformation) {
+        bankMessages = bankingInformation.bankMessages;
+        let bpd = bankingInformation.bpd;
+        let availableTanMethodIds = bpd.availableTanMethodIds;
+        console.log('Available TAN methods: ', availableTanMethodIds);
+        this.#fintsClient.selectTanMethod(availableTanMethodIds[0]); // todo: get from config
+      } else {
+        console.log('No bankingInformation returned for second synchronize');
+      }
       if (tanInfo.requiresTan) {
         console.log('Tan required');
       }
-      let availableTanMethodIds = bpd.availableTanMethodIds;
-      console.log('Available TAN methods: ', availableTanMethodIds);
-      this.#fintsClient.selectTanMethod(availableTanMethodIds[0]);
     }
     if (!success || tanInfo.requiresTan) {
       return {success, tanInfo, bankAnswers, bankMessages, bankingInformation};
