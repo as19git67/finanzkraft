@@ -7,8 +7,6 @@ const DbMixinOnlineBanking = {
     return 'DbMixinOnlineBanking';
   },
 
-
-
   // create key from password with salt
   createHashPassword(password, salt) {
     let passwordHash = crypto.pbkdf2Sync(Buffer.from(password), Buffer.from(salt), 2000000, 32, 'sha512');
@@ -115,7 +113,6 @@ const DbMixinOnlineBanking = {
     return this.knex.table('Fk_Bankcontact').where('id', idBankcontact).delete();
   },
 
-
   async updateWithEncrypted(data, updateData) {
     let publicKey;
 
@@ -143,6 +140,24 @@ const DbMixinOnlineBanking = {
       }
     }
   },
+
+  async setFintsStatusOnAccountsOfBankcontact(idBankcontact, data) {
+    try {
+      const fintsData = _.pick(data, ['fintsError', 'fintsAuthRequired', 'fintsActivated']);
+      if (_.isEmpty(fintsData)) {
+        return; // no need to update if nothing changed
+      }
+      const accounts = await this.getAccounts();
+      for (let i = 0; i < accounts.length; i++) {
+        const account = accounts[i];
+        if (account.idBankcontact === idBankcontact) {
+          await this.updateAccount(account.id, fintsData);
+        }
+      }
+    } catch(ex) {
+      console.log(ex);
+    }
+  }
 
 };
 
