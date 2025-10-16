@@ -43,7 +43,7 @@ export default class FinTS {
   }
 
   checkSyncResponse(syncResponse) {
-    this.logResponse(syncResponse);
+    this.logSynchronizeResponse(syncResponse);
     const {success, bankingInformationUpdated, bankingInformation, bankAnswers, requiresTan} = syncResponse;
     let ok = true;
     if (!success) {
@@ -70,7 +70,7 @@ export default class FinTS {
     return pinWrong ? FinTS.statusWrongPIN : FinTS.statusOK;
   }
 
-  logResponse(response) {
+  logSynchronizeResponse(response) {
     const {success, bankingInformationUpdated, bankingInformation, bankAnswers} = response;
     if (!success) {
       console.log(`FinTS call failed with success: ${success}`);
@@ -99,6 +99,35 @@ export default class FinTS {
     }
   }
 
+  checkDownloadResponse(downloadResponse) {
+    this.logDownloadResponse(downloadResponse);
+    const {success, bankingInformationUpdated, bankingInformation, bankAnswers, requiresTan} = downloadResponse;
+    let ok = true;
+    if (!success) {
+      return FinTS.statusError;
+    }
+
+    if (requiresTan) {
+      // don't do further checks if tan is required
+      return FinTS.statusOK; // return ok here - statusRequiresTAN will be returned in dialog code
+    }
+
+    // If bank answers don't contain 9910, then the PIN is ok
+    const pinWrong = bankAnswers.some(a => a.code === 9910);
+    return pinWrong ? FinTS.statusWrongPIN : FinTS.statusOK;
+  }
+
+  logDownloadResponse(response) {
+    const {success, bankingInformationUpdated, bankingInformation, bankAnswers} = response;
+    if (!success) {
+      console.log(`FinTS call failed with success: ${success}`);
+    }
+    for (let j = 0; j < bankAnswers.length; j++) {
+      console.log(`Bank answers: ${bankAnswers[j].code} ${bankAnswers[j].text}`);
+    }
+    console.log(`bankingInformationUpdated: ${bankingInformationUpdated}`);
+  }
+
   logBankAccounts(bankAccounts) {
     bankAccounts.forEach(bankAccount => {
       console.log(`Bank account: ${bankAccount.accountNumber} (${bankAccount.holder1}) (${bankAccount.accountType})`);
@@ -114,6 +143,41 @@ export default class FinTS {
   static statusNoBankingInformation = 6;
   static statusNoBankingInformationUpdated = 7;
   static statusNoTanMethods = 8;
+  static statusNoAccountStatements = 9;
+
+  static #isClientDifferent = (clientData) => {
+    return JSON.stringify(clientData) !== FinTS.#fintsInstanceDataAsJson;
+  }
+
+  #ensureFintsClient() {
+    if (!this.#fintsConfig) {
+      this.#fintsConfig = FinTSConfig.forFirstTimeUse(this.#productId, this.#productVersion, this.#bankUrl, this.#bankId, this.#userId, this.#pin);
+      this.#fintsConfig.debugEnabled = this.#debugEnabled;
+      this.#fintsClient = new FinTSClient(this.#fintsConfig);
+    }
+  }
+
+  static from(productId, productVersion, debugEnabled = false, bankUrl, bankId, userId, pin, tanReference, tan) {
+    if (!FinTS.#fintsInstance || FinTS.#isClientDifferent({
+      productId,
+      productVersion,
+      debugEnabled,
+      bankUrl,
+      bankId,
+      userId,
+      pin,
+    })) {
+      return new FinTS(productId, productVersion, debugEnabled = false, bankUrl, bankId, userId, pin, tanReference, tan);
+    } else {
+      FinTS.#fintsInstance.setTanAndReference(tanReference, tan);
+      return FinTS.#fintsInstance;
+    }
+  }
+
+  setTanAndReference(tanReference, tan) {
+    this.#tanReference = tanReference;
+    this.#tan = tan;
+  }
 
   /**
    * Performs a FinTS synchronization dialog with the bank, handling TAN (transaction authentication number) requirements and retries.
@@ -185,7 +249,8 @@ export default class FinTS {
           return {status, bankAccounts};
         case FinTS.statusRequiresTAN:
           const {requiresTan, tanChallenge, tanReference, tanMediaName, bankingInformation} = syncRes;
-          return {status,
+          return {
+            status,
             tanInfo: {
               requiresTan,
               tanChallenge,
@@ -205,136 +270,116 @@ export default class FinTS {
     }
   }
 
-  static #isClientDifferent = (clientData) => {
-    return JSON.stringify(clientData) !== FinTS.#fintsInstanceDataAsJson;
-  }
+  async dialogForStatements(accountNumber, from, to) {
+    let fintsRetries = 0;
+    let statementDownloadRes = {status: false};
+    let statements, balance;
+    let status = FinTS.statusOK;
+    let statementsAreAccountStatements = false;
 
-  #ensureFintsClient() {
-    if (!this.#fintsConfig) {
-      this.#fintsConfig = FinTSConfig.forFirstTimeUse(this.#productId, this.#productVersion, this.#bankUrl, this.#bankId, this.#userId, this.#pin);
-      this.#fintsConfig.debugEnabled = this.#debugEnabled;
-      this.#fintsClient = new FinTSClient(this.#fintsConfig);
-    }
-  }
+    try {
+      const fromAlways = from ? from : DateTime.now().minus({days: 14}).toJSDate();
+      const toAlways = to ? to : DateTime.now().toJSDate();
 
-  static from(productId, productVersion, debugEnabled = false, bankUrl, bankId, userId, pin, tanReference, tan) {
-    if (!FinTS.#fintsInstance || FinTS.#isClientDifferent({
-      productId,
-      productVersion,
-      debugEnabled,
-      bankUrl,
-      bankId,
-      userId,
-      pin,
-    })) {
-      return new FinTS(productId, productVersion, debugEnabled = false, bankUrl, bankId, userId, pin, tanReference, tan);
-    } else {
-      FinTS.#fintsInstance.setTanAndReference(tanReference, tan);
-      return FinTS.#fintsInstance;
-    }
-  }
+      do {
+        this.#ensureFintsClient();
 
-  setTanAndReference(tanReference, tan) {
-    this.#tanReference = tanReference;
-    this.#tan = tan;
-  }
-
-  async synchronize() {
-    this.#ensureFintsClient();
-    let synchronizeResponse = await this.#fintsClient.synchronize();
-    let success = synchronizeResponse.success;
-    let bankingInformationUpdated = synchronizeResponse.bankingInformationUpdated;
-    console.log('bankingInformationUpdated', bankingInformationUpdated);
-    let bankAnswers = synchronizeResponse.bankAnswers;
-    let bankingInformation;
-    let bankMessages = [];
-    let tanInfo = {};
-    if (success) {
-      tanInfo = {
-        requiresTan: synchronizeResponse.requiresTan,
-        tanChallenge: synchronizeResponse.tanChallenge,
-        tanReference: synchronizeResponse.tanReference,
-        tanMediaName: synchronizeResponse.tanMediaName,
-      }
-      bankingInformation = synchronizeResponse.bankingInformation;
-      if (bankingInformation) {
-        bankMessages = bankingInformation.bankMessages;
-        let bpd = bankingInformation.bpd;
-        let availableTanMethodIds = bpd.availableTanMethodIds;
-        console.log('Available TAN methods: ', availableTanMethodIds);
-        this.#fintsClient.selectTanMethod(availableTanMethodIds[0]); // todo: get from config
-      } else {
-        console.log('No bankingInformation returned for second synchronize');
-      }
-      if (tanInfo.requiresTan) {
-        console.log('Tan required');
-      }
-    }
-    if (!success || tanInfo.requiresTan) {
-      return {success, tanInfo, bankAnswers, bankMessages, bankingInformation};
-    }
-
-    // sync again to get accounts
-    synchronizeResponse = await this.#fintsClient.synchronize();
-    success = synchronizeResponse.success;
-    bankingInformationUpdated = synchronizeResponse.bankingInformationUpdated;
-    console.log('bankingInformationUpdated', bankingInformationUpdated);
-    bankAnswers = synchronizeResponse.bankAnswers;
-    bankMessages = [];
-    if (success) {
-      tanInfo = {
-        requiresTan: synchronizeResponse.requiresTan,
-        tanChallenge: synchronizeResponse.tanChallenge,
-        tanReference: synchronizeResponse.tanReference,
-        tanMediaName: synchronizeResponse.tanMediaName,
-      }
-      bankingInformation = synchronizeResponse.bankingInformation;
-      if (bankingInformation) {
-        bankMessages = bankingInformation.bankMessages;
-      } else {
-        console.log('No bankingInformation returned for second synchronize');
-      }
-    }
-
-    return {success, tanInfo, bankAnswers, bankMessages, bankingInformation};
-  }
-
-  async synchronizeWithTanReference(tanReference, tan) {
-    this.#ensureFintsClient();
-    let synchronizeResponse = await this.#fintsClient.synchronizeWithTan(tanReference, tan);
-    let success = synchronizeResponse.success;
-    let bankingInformationUpdated = synchronizeResponse.bankingInformationUpdated;
-    console.log('synchronizeWithTanReference: bankingInformationUpdated', bankingInformationUpdated);
-    let bankAnswers = synchronizeResponse.bankAnswers;
-    let tanInfo = {
-      requiresTan: synchronizeResponse.requiresTan,
-      tanChallenge: synchronizeResponse.tanChallenge,
-      tanReference: synchronizeResponse.tanReference,
-      tanMediaName: synchronizeResponse.tanMediaName,
-    }
-    let bankingInformation;
-    let bankMessages = [];
-    if (success) {
-      if (tanInfo.requiresTan) {
-        console.log('synchronizeWithTanReference: Tan required');
-      } else {
-        bankingInformation = synchronizeResponse.bankingInformation;
-        if (bankingInformation) {
-          bankMessages = bankingInformation.bankMessages;
+        if (this.#fintsClient.canGetAccountStatements(accountNumber)) {
+          statementsAreAccountStatements = true;
+          if (this.#tanReference) {
+            statementDownloadRes = await this.#fintsClient.getAccountStatementsWithTan(this.#tanReference, this.#tan);
+          } else {
+            statementDownloadRes = await this.#fintsClient.getAccountStatements(accountNumber, fromAlways, toAlways);
+          }
+        } else if (this.#fintsClient.canGetCreditCardStatements(accountNumber)) {
+          statementsAreAccountStatements = false;
+          if (this.#tanReference) {
+            statementDownloadRes = await this.#fintsClient.getCreditCardStatementsWithTan(this.#tanReference, this.#tan);
+          } else {
+            statementDownloadRes = await this.#fintsClient.getCreditCardStatements(accountNumber, fromAlways, toAlways);
+          }
         } else {
-          console.log('synchronizeWithTanReference: No bankingInformation returned for second synchronize');
+          status = FinTS.statusError;
+          console.log(`Account ${accountNumber} does not allow getting statements or credit card statements`);
+          break;
         }
+
+        status = this.checkDownloadResponse(statementDownloadRes);
+        if (status !== FinTS.statusOK) {
+          break;
+        }
+
+        if (statementDownloadRes.requiresTan) {
+          status = FinTS.statusRequiresTAN;
+          break;
+        }
+
+        // no TAN required => continue
+        // get statements from sync
+        if (statementDownloadRes.statements) {
+          // map statements to include isAccountStatement flag
+          statements = [];
+          if (statementsAreAccountStatements) {
+            statementDownloadRes.statements.forEach((s) => {
+              if (s.closingBalance) {
+                balance = {
+                  balanceDate: s.closingBalance.date,
+                  balance: s.closingBalance.value,
+                  currency: s.closingBalance.currency,
+                  type: 'bankAccountBalance',
+                };
+              }
+              s.transactions.forEach((t) => {
+                t.isAccountStatement = statementsAreAccountStatements;
+                statements.push(t);
+              });
+            });
+          } else {
+            statementDownloadRes.statements.forEach((s) => {
+              s.isAccountStatement = statementsAreAccountStatements;
+              statements.push(s);
+            });
+            balance = {
+              balanceDate: statementDownloadRes.balance.date,
+              balance: statementDownloadRes.balance.balance,
+              currency: statementDownloadRes.balance.currency,
+              type: 'creditCardBalance',
+            };
+          }
+          status = FinTS.statusOK;
+        } else {
+          console.log(`No statements found in response from bank (${fintsRetries} retries)`);
+          status = FinTS.statusNoAccountStatements;
+          break;
+        }
+
+        fintsRetries += 1;
+      } while (fintsRetries < this.#maxFinTsRetrys && status !== FinTS.statusOK);
+
+      switch (status) {
+        case FinTS.statusOK:
+          return {status, statements, balance};
+        case FinTS.statusRequiresTAN:
+          const {requiresTan, tanChallenge, tanReference, tanMediaName, bankingInformation} = statementDownloadRes;
+          return {
+            status,
+            tanInfo: {
+              requiresTan,
+              tanChallenge,
+              tanReference,
+              tanMediaName,
+              availableTanMethodIds: bankingInformation?.bpd?.availableTanMethodIds ? bankingInformation.bpd.availableTanMethodIds : []
+            }
+          };
+        case FinTS.statusWrongPIN:
+          return {status, message: statementDownloadRes.bankAnswers.find(a => a.code === 9910).text};
+        default:
+          return {status};
       }
+    } catch (e) {
+      console.log('Error during dialogForStatements: ', e);
+      return {status: FinTS.statusError};
     }
-    return {success, tanInfo, bankAnswers, bankMessages, bankingInformation};
-  }
-
-  getBankAnswers() {
-    return this.#fintsConfig.bankAnswers;
-  }
-
-  getAccounts() {
-    return this.#fintsConfig.bankingInformation.upd.bankAccounts;
   }
 
   async getStatements(accountNumber, from, to) {
@@ -353,7 +398,6 @@ export default class FinTS {
       if (statementResponse.statements) {
         for (let i = 0; i < statementResponse.statements.length; i++) {
           const statement = statementResponse.statements[i];
-          // console.log(statementResponse.statements[i]);
           for (let j = 0; j < statement.transactions.length; j++) {
             const t = statement.transactions[j];
             const st = {
