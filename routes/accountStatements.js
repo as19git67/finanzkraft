@@ -22,12 +22,6 @@ rc.post(async function (req, res, next) {
 
 async function handleRequest(req, res, tanReference, tan) {
   try {
-    const {fintsProductId, fintsProductVersion} = config;
-    if (!fintsProductId || !fintsProductVersion) {
-      console.log(`Missing fintsProductId or fintsProductVersion in config`);
-      res.sendStatus(500);
-      return;
-    }
     const idAccount = parseInt(req.params.idAccount);
     if (idAccount === undefined) {
       console.log(`idAccount parameter missing`);
@@ -52,137 +46,23 @@ async function handleRequest(req, res, tanReference, tan) {
     }
 
     try {
-      const transactions = await db.getTransactions(20, undefined, [idAccount]);
-      let fromDate = DateTime.now().minus({days: 82});
-      for (let i = 0; i < transactions.length; i++) {
-        const t = transactions[i];
-        const tDate = DateTime.fromISO(t.t_value_date);
-        if (tDate > fromDate) {
-          fromDate = tDate;
-        }
+      const result = await db.downloadTransactionsFromBank(bankcontact, account, tanReference, tan);
+      if (result.status === FinTS.statusError) {
+        console.log(result.message);
+        res.sendStatus(500);
+        return;
       }
-      fromDate = fromDate.minus({days: 7}).toJSDate();
-
-      const fints = FinTS.from(fintsProductId, fintsProductVersion, false, bankcontact.fintsUrl, bankcontact.fintsBankId, bankcontact.fintsUserId, bankcontact.fintsPassword, tanReference, tan);
-
-      const result = await fints.dialogForStatements(account.fintsAccountNumber, fromDate);
-      switch (result.status) {
-        case FinTS.statusOK:
-          await db.setFintsStatusOnAccountsOfBankcontact(idBankcontact, {fintsError: null, fintsAuthRequired: false});
-          break;
-        case FinTS.statusWrongPIN:
-          console.log(`PIN WRONG for bankcontact ${idBankcontact} (${bankcontact.name}) - resetting to empty password`);
-          await db.updateBankcontact(idBankcontact, {fintsPassword: null});
-          await db.setFintsStatusOnAccountsOfBankcontact(idBankcontact, {
-            fintsError: result.message, fintsAuthRequired: false, fintsActivated: false,
-          });
-          res.json({status: result.status, message: result.message});
-          return;
-        case FinTS.statusRequiresTAN:
-          await db.setFintsStatusOnAccountsOfBankcontact(idBankcontact, {fintsError: result.message, fintsAuthRequired: true,});
-          res.json({status: result.status, tanInfo: result.tanInfo});
-          return;
-        case FinTS.statusAccountNumberUnknownAtBank:
-          console.log(`Account ${accountNumber} not found in bank accounts of bank contact ${idBankcontact}`);
-          return;
-        default:
-          const error = `Failed to download account statements with bank contact ${idBankcontact} (${bankcontact.name}) for account ${account.name}`;
-          console.log(error);
-          await db.setFintsStatusOnAccountsOfBankcontact(idBankcontact, {fintsError: error});
-          res.sendStatus(500);
-          return;
-      }
-
-      const downloadedTransactions = mapStatements(result.statements, idAccount);
-      const balance = {
-        idAccount,
-        ...(result.balance),
-      };
-
-      const transactionsToSave = [];
-      for (let i = 0; i < downloadedTransactions.length && transactionsToSave.length < 50; i++) {
-        const tra = downloadedTransactions[i];
-        if (!(await db.transactionExists(tra))) {
-          transactionsToSave.push(tra);
-        }
-      }
-      if (transactionsToSave.length > 0) {
-        const storedTransactions = await db.addTransactions(transactionsToSave, {balance, unconfirmed: true});
-        console.log(`${storedTransactions.length} new transactions stored for account ID ${idAccount}`);
-      }
-      await db.updateAccount(idAccount, {fintsError: null});
-      res.json({status: result.status, savedTransactions: transactionsToSave.length, balance: balance});
+      res.json(result);
     } catch (ex) {
       console.log(ex);
-      await db.updateAccount(idAccount, {fintsError: ex.message?.substring(0, 250)});
+      await this.updateAccount(idAccount, {fintsError: ex.message?.substring(0, 250)});
       res.sendStatus(500);
     }
+
   } catch (ex) {
     console.log(ex);
     res.sendStatus(500);
   }
-}
-
-function mapStatements(statements, idAccount) {
-  const mappedStatements = [];
-  for (let i = 0; i < statements.length; i++) {
-    const statement = statements[i];
-    let st;
-    if (statement.isAccountStatement) {
-      st = {
-        idAccount,
-        bookingDate: statement.entryDate,
-        valueDate: statement.valueDate,
-        amount: statement.amount,
-        entryText: statement.bookingText ? statement.bookingText.trim() : '',
-        text: statement.purpose ? statement.purpose.trim() : '',
-        EREF: null,
-        CRED: null,
-        MREF: null,
-        ABWA: null,
-        ABWE: null,
-        IBAN: null,
-        BIC: null,
-        REF: statement.customerReference ? statement.customerReference.trim() : null,
-        notes: null,
-        payee: statement.remoteName ? statement.remoteName.trim() : null,
-        payeePayerAcctNo: statement.remoteAccountNumber,
-        payeeBankId: statement.remoteBankId,
-        gvCode: statement.transactionType,
-        primaNotaNo: statement.primeNotesNr,
-        originalCurrency: null,
-        originalAmount: null,
-        exchangeRate: null,
-      };
-    } else {
-      st = {
-        idAccount,
-        bookingDate: statement.transactionDate,
-        valueDate: statement.valueDate,
-        amount: statement.amount,
-        entryText: null,
-        text: statement.purpose ? statement.purpose.trim() : '',
-        EREF: null,
-        CRED: null,
-        MREF: null,
-        ABWA: null,
-        ABWE: null,
-        IBAN: null,
-        BIC: null,
-        REF: null,
-        notes: null,
-        payee: null,
-        payeePayerAcctNo: null,
-        gvCode: null,
-        primaNotaNo: null,
-        originalCurrency: statement.originalCurrency,
-        originalAmount: statement.originalAmount,
-        exchangeRate: statement.exchangeRate,
-      };
-    }
-    mappedStatements.push(st);
-  }
-  return mappedStatements;
 }
 
 export default rc;

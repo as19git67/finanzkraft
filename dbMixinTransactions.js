@@ -1,6 +1,8 @@
 import _ from 'lodash';
 import NumberParser from './NumberParser.js';
 import {DateTime} from 'luxon';
+import FinTS from "./fints.js";
+import config from "./config.js";
 
 const DbMixinTransactions = {
   _maxTextToken: 20,
@@ -10,63 +12,63 @@ const DbMixinTransactions = {
   },
 
 
-_isEqual: function(tr, key, sTr) {
-  if (tr[key]) {
-    return tr[key] === sTr['t_' + key];
-  } else {
-    return true;
-  }
-},
+  _isEqual: function (tr, key, sTr) {
+    if (tr[key]) {
+      return tr[key] === sTr['t_' + key];
+    } else {
+      return true;
+    }
+  },
 
-transactionExists: async function(tra) {
-  const fixedTr = this._fixTransactionData(tra);
-  const from = tra.valueDate instanceof Date ? DateTime.fromJSDate(tra.valueDate).minus({days: 5}).toISO() : DateTime.fromISO(tra.valueDate).minus({days: 5}).toISO();
-  const to = tra.valueDate instanceof Date ? DateTime.fromJSDate(tra.valueDate).plus({days: 2}).toISO() : DateTime.fromISO(tra.valueDate).plus({days: 2}).toISO();
-  const savedTr = await this.getTransactions(50, fixedTr.text, [tra.idAccount], from, to);
-  // search transaction in saved transactions and add the new transaction only if it was not found
-  const filteredTransactions = savedTr.filter((sTr) => {
-    if (fixedTr.text && fixedTr.text.trim()) {
-      if (fixedTr.text.trim() !== sTr.t_text?.trim()) {
-        return false;
+  transactionExists: async function (tra) {
+    const fixedTr = this._fixTransactionData(tra);
+    const from = tra.valueDate instanceof Date ? DateTime.fromJSDate(tra.valueDate).minus({days: 5}).toISO() : DateTime.fromISO(tra.valueDate).minus({days: 5}).toISO();
+    const to = tra.valueDate instanceof Date ? DateTime.fromJSDate(tra.valueDate).plus({days: 2}).toISO() : DateTime.fromISO(tra.valueDate).plus({days: 2}).toISO();
+    const savedTr = await this.getTransactions(50, fixedTr.text, [tra.idAccount], from, to);
+    // search transaction in saved transactions and add the new transaction only if it was not found
+    const filteredTransactions = savedTr.filter((sTr) => {
+      if (fixedTr.text && fixedTr.text.trim()) {
+        if (fixedTr.text.trim() !== sTr.t_text?.trim()) {
+          return false;
+        }
       }
-    }
-    if (!this._isEqual(fixedTr, 'REF', sTr)) return false;
-    if (!this._isEqual(fixedTr, 'EREF', sTr)) return false;
-    if (!this._isEqual(fixedTr, 'CRED', sTr)) return false;
-    if (!this._isEqual(fixedTr, 'MREF', sTr)) return false;
-    if (!this._isEqual(fixedTr, 'ABWA', sTr)) return false;
-    if (!this._isEqual(fixedTr, 'ABWE', sTr)) return false;
-    if (!this._isEqual(fixedTr, 'IBAN', sTr)) return false;
-    if (!this._isEqual(fixedTr, 'BIC', sTr)) return false;
+      if (!this._isEqual(fixedTr, 'REF', sTr)) return false;
+      if (!this._isEqual(fixedTr, 'EREF', sTr)) return false;
+      if (!this._isEqual(fixedTr, 'CRED', sTr)) return false;
+      if (!this._isEqual(fixedTr, 'MREF', sTr)) return false;
+      if (!this._isEqual(fixedTr, 'ABWA', sTr)) return false;
+      if (!this._isEqual(fixedTr, 'ABWE', sTr)) return false;
+      if (!this._isEqual(fixedTr, 'IBAN', sTr)) return false;
+      if (!this._isEqual(fixedTr, 'BIC', sTr)) return false;
 
-    if (fixedTr.entryText && fixedTr.entryText.trim()) {
-      if (fixedTr.entryText.trim() !== sTr.t_entry_text?.trim()) {
-        return false;
+      if (fixedTr.entryText && fixedTr.entryText.trim()) {
+        if (fixedTr.entryText.trim() !== sTr.t_entry_text?.trim()) {
+          return false;
+        }
       }
-    }
-    if (fixedTr.payeePayerAcctNo && fixedTr.payeePayerAcctNo.trim()) {
-      if (fixedTr.payeePayerAcctNo.trim() !== sTr.t_payeePayerAcctNo?.trim()) {
-        return false;
+      if (fixedTr.payeePayerAcctNo && fixedTr.payeePayerAcctNo.trim()) {
+        if (fixedTr.payeePayerAcctNo.trim() !== sTr.t_payeePayerAcctNo?.trim()) {
+          return false;
+        }
       }
-    }
-    if (fixedTr.gvCode && fixedTr.gvCode.trim()) {
-      if (fixedTr.gvCode.trim() !== sTr.t_gvCode?.trim()) {
-        return false;
+      if (fixedTr.gvCode && fixedTr.gvCode.trim()) {
+        if (fixedTr.gvCode.trim() !== sTr.t_gvCode?.trim()) {
+          return false;
+        }
       }
-    }
-    if (fixedTr.primaNotaNo && sTr.t_primaNotaNo) {
-      const trPN = parseInt(fixedTr.primaNotaNo);
-      const sTrPN = parseInt(sTr.t_primaNotaNo);
-      if (trPN !== undefined && sTrPN !== undefined && trPN !== sTrPN) {
-        return false;
+      if (fixedTr.primaNotaNo && sTr.t_primaNotaNo) {
+        const trPN = parseInt(fixedTr.primaNotaNo);
+        const sTrPN = parseInt(sTr.t_primaNotaNo);
+        if (trPN !== undefined && sTrPN !== undefined && trPN !== sTrPN) {
+          return false;
+        }
       }
-    }
-    return fixedTr.amount === sTr.t_amount;
-  });
-  return filteredTransactions.length > 0;
-},
+      return fixedTr.amount === sTr.t_amount;
+    });
+    return filteredTransactions.length > 0;
+  },
 
-_selectTransactions: function (idTransaction, maxItems, searchTerm, accountsWhereIn, dateFilterFrom, dateFilterTo, idUser, amountMin, amountMax, textToken, mRefToken) {
+  _selectTransactions: function (idTransaction, maxItems, searchTerm, accountsWhereIn, dateFilterFrom, dateFilterTo, idUser, amountMin, amountMax, textToken, mRefToken) {
     const np = new NumberParser();
     const amountMinParsed = np.parse(amountMin);
     const amountMaxParsed = np.parse(amountMax);
@@ -96,102 +98,102 @@ _selectTransactions: function (idTransaction, maxItems, searchTerm, accountsWher
       columnsToSelect.push('Fk_TransactionStatus.unseen as unseen');
     }
     const builder = this.knex.table('Fk_Transaction')
-    .join('Fk_Account', function () {
-      this.on('Fk_Transaction.idAccount', '=', 'Fk_Account.id');
-      if (accountsWhereIn && _.isArray(accountsWhereIn) && accountsWhereIn.length > 0) {
-        this.andOnIn('Fk_Account.id', accountsWhereIn);
-      }
-    })
-    .join('Fk_Currency', function () {
-      this.on('Fk_Account.idCurrency', '=', 'Fk_Currency.id');
-    })
-    .leftJoin('Fk_Category', function () {
-      this.on('Fk_Transaction.idCategory', '=', 'Fk_Category.id');
-    })
-    .leftJoin('Fk_RuleSet', function () {
-      this.on('Fk_Transaction.idRuleSet', '=', 'Fk_RuleSet.id');
-    })
-    .leftJoin(this.knex.raw("(SELECT Fk_TagTransaction.idTransaction, STRING_AGG(Fk_Tag.id, ',') as tagIds, STRING_AGG(Fk_Tag.tag, ',') as tags FROM Fk_TagTransaction JOIN Fk_Tag ON Fk_TagTransaction.idTag = Fk_Tag.id GROUP BY Fk_TagTransaction.idTransaction) AS Fk_Tag_agg ON Fk_Transaction.id = Fk_Tag_agg.idTransaction"))
-    .where((builder) => {
-      if (idTransaction !== undefined) {
-        builder.where({'Fk_Transaction.id': idTransaction});
-      }
-    })
-    .andWhere((builder) => {
-      if (_.isArray(textToken)) {
-        _.take(textToken, this._maxTextToken).forEach(tt => {
-          if (this.supportsILike()) {
-            builder.whereILike('Fk_Transaction.text', `%${tt}%`);
-          } else {
-            builder.whereLike('Fk_Transaction.text', `%${tt}%`);
-          }
-        });
-      }
-      if (_.isString(mRefToken) && mRefToken) {
-        if (this.supportsILike()) {
-          builder.whereILike('Fk_Transaction.MREF', `%${mRefToken}%`);
-        } else {
-          builder.whereLike('Fk_Transaction.MREF', `%${mRefToken}%`);
+      .join('Fk_Account', function () {
+        this.on('Fk_Transaction.idAccount', '=', 'Fk_Account.id');
+        if (accountsWhereIn && _.isArray(accountsWhereIn) && accountsWhereIn.length > 0) {
+          this.andOnIn('Fk_Account.id', accountsWhereIn);
         }
-      }
-      if (searchTerm) {
-        if (_.isString(searchTerm)) {
-          const trimmedSearchTerm = searchTerm.trim();
+      })
+      .join('Fk_Currency', function () {
+        this.on('Fk_Account.idCurrency', '=', 'Fk_Currency.id');
+      })
+      .leftJoin('Fk_Category', function () {
+        this.on('Fk_Transaction.idCategory', '=', 'Fk_Category.id');
+      })
+      .leftJoin('Fk_RuleSet', function () {
+        this.on('Fk_Transaction.idRuleSet', '=', 'Fk_RuleSet.id');
+      })
+      .leftJoin(this.knex.raw("(SELECT Fk_TagTransaction.idTransaction, STRING_AGG(Fk_Tag.id, ',') as tagIds, STRING_AGG(Fk_Tag.tag, ',') as tags FROM Fk_TagTransaction JOIN Fk_Tag ON Fk_TagTransaction.idTag = Fk_Tag.id GROUP BY Fk_TagTransaction.idTransaction) AS Fk_Tag_agg ON Fk_Transaction.id = Fk_Tag_agg.idTransaction"))
+      .where((builder) => {
+        if (idTransaction !== undefined) {
+          builder.where({'Fk_Transaction.id': idTransaction});
+        }
+      })
+      .andWhere((builder) => {
+        if (_.isArray(textToken)) {
+          _.take(textToken, this._maxTextToken).forEach(tt => {
+            if (this.supportsILike()) {
+              builder.whereILike('Fk_Transaction.text', `%${tt}%`);
+            } else {
+              builder.whereLike('Fk_Transaction.text', `%${tt}%`);
+            }
+          });
+        }
+        if (_.isString(mRefToken) && mRefToken) {
           if (this.supportsILike()) {
-            builder.whereILike('Fk_Transaction.text', `%${trimmedSearchTerm}%`);
-            builder.orWhereILike('Fk_Transaction.notes', `%${trimmedSearchTerm}%`);
-            builder.orWhereILike('Fk_Transaction.EREF', `%${trimmedSearchTerm}%`);
-            builder.orWhereILike('Fk_Transaction.CRED', `%${trimmedSearchTerm}%`);
-            builder.orWhereILike('Fk_Transaction.MREF', `%${trimmedSearchTerm}%`);
-            builder.orWhereILike('Fk_Transaction.ABWA', `%${trimmedSearchTerm}%`);
-            builder.orWhereILike('Fk_Transaction.ABWE', `%${trimmedSearchTerm}%`);
-            builder.orWhereILike('Fk_Transaction.IBAN', `%${trimmedSearchTerm}%`);
-            builder.orWhereILike('Fk_Transaction.BIC', `%${trimmedSearchTerm}%`);
-            builder.orWhereILike('Fk_Transaction.REF', `%${trimmedSearchTerm}%`);
-            builder.orWhereILike('Fk_Transaction.payee', `%${trimmedSearchTerm}%`);
-            builder.orWhereILike('Fk_Category.fullName', `%${trimmedSearchTerm}%`);
-            builder.orWhereILike('tags', `%${trimmedSearchTerm}%`);
+            builder.whereILike('Fk_Transaction.MREF', `%${mRefToken}%`);
           } else {
-            builder.whereLike('Fk_Transaction.text', `%${trimmedSearchTerm}%`);
-            builder.orWhereLike('Fk_Transaction.EREF', `%${trimmedSearchTerm}%`);
-            builder.orWhereLike('Fk_Transaction.CRED', `%${trimmedSearchTerm}%`);
-            builder.orWhereLike('Fk_Transaction.MREF', `%${trimmedSearchTerm}%`);
-            builder.orWhereLike('Fk_Transaction.ABWA', `%${trimmedSearchTerm}%`);
-            builder.orWhereLike('Fk_Transaction.ABWE', `%${trimmedSearchTerm}%`);
-            builder.orWhereLike('Fk_Transaction.IBAN', `%${trimmedSearchTerm}%`);
-            builder.orWhereLike('Fk_Transaction.BIC', `%${trimmedSearchTerm}%`);
-            builder.orWhereLike('Fk_Transaction.REF', `%${trimmedSearchTerm}%`);
-            builder.orWhereLike('Fk_Transaction.notes', `%${trimmedSearchTerm}%`);
-            builder.orWhereLike('Fk_Transaction.payee', `%${trimmedSearchTerm}%`);
-            builder.orWhereLike('Fk_Category.fullName', `%${trimmedSearchTerm}%`);
-            builder.orWhereLike('tags', `%${trimmedSearchTerm}%`);
+            builder.whereLike('Fk_Transaction.MREF', `%${mRefToken}%`);
           }
         }
-        const amount = parseFloat(searchTerm);
-        if (amount) {
-          builder.orWhere('Fk_Transaction.amount', amount);
-          builder.orWhere('Fk_Transaction.amount', amount * -1);
+        if (searchTerm) {
+          if (_.isString(searchTerm)) {
+            const trimmedSearchTerm = searchTerm.trim();
+            if (this.supportsILike()) {
+              builder.whereILike('Fk_Transaction.text', `%${trimmedSearchTerm}%`);
+              builder.orWhereILike('Fk_Transaction.notes', `%${trimmedSearchTerm}%`);
+              builder.orWhereILike('Fk_Transaction.EREF', `%${trimmedSearchTerm}%`);
+              builder.orWhereILike('Fk_Transaction.CRED', `%${trimmedSearchTerm}%`);
+              builder.orWhereILike('Fk_Transaction.MREF', `%${trimmedSearchTerm}%`);
+              builder.orWhereILike('Fk_Transaction.ABWA', `%${trimmedSearchTerm}%`);
+              builder.orWhereILike('Fk_Transaction.ABWE', `%${trimmedSearchTerm}%`);
+              builder.orWhereILike('Fk_Transaction.IBAN', `%${trimmedSearchTerm}%`);
+              builder.orWhereILike('Fk_Transaction.BIC', `%${trimmedSearchTerm}%`);
+              builder.orWhereILike('Fk_Transaction.REF', `%${trimmedSearchTerm}%`);
+              builder.orWhereILike('Fk_Transaction.payee', `%${trimmedSearchTerm}%`);
+              builder.orWhereILike('Fk_Category.fullName', `%${trimmedSearchTerm}%`);
+              builder.orWhereILike('tags', `%${trimmedSearchTerm}%`);
+            } else {
+              builder.whereLike('Fk_Transaction.text', `%${trimmedSearchTerm}%`);
+              builder.orWhereLike('Fk_Transaction.EREF', `%${trimmedSearchTerm}%`);
+              builder.orWhereLike('Fk_Transaction.CRED', `%${trimmedSearchTerm}%`);
+              builder.orWhereLike('Fk_Transaction.MREF', `%${trimmedSearchTerm}%`);
+              builder.orWhereLike('Fk_Transaction.ABWA', `%${trimmedSearchTerm}%`);
+              builder.orWhereLike('Fk_Transaction.ABWE', `%${trimmedSearchTerm}%`);
+              builder.orWhereLike('Fk_Transaction.IBAN', `%${trimmedSearchTerm}%`);
+              builder.orWhereLike('Fk_Transaction.BIC', `%${trimmedSearchTerm}%`);
+              builder.orWhereLike('Fk_Transaction.REF', `%${trimmedSearchTerm}%`);
+              builder.orWhereLike('Fk_Transaction.notes', `%${trimmedSearchTerm}%`);
+              builder.orWhereLike('Fk_Transaction.payee', `%${trimmedSearchTerm}%`);
+              builder.orWhereLike('Fk_Category.fullName', `%${trimmedSearchTerm}%`);
+              builder.orWhereLike('tags', `%${trimmedSearchTerm}%`);
+            }
+          }
+          const amount = parseFloat(searchTerm);
+          if (amount) {
+            builder.orWhere('Fk_Transaction.amount', amount);
+            builder.orWhere('Fk_Transaction.amount', amount * -1);
+          }
         }
-      }
-    })
-    .andWhere((builder) => {
-      if (dateFilterFrom) {
-        builder.andWhere('valueDate', '>=', dateFilterFrom);
-      }
-      if (dateFilterTo) {
-        builder.andWhere('valueDate', '<=', dateFilterTo);
-      }
-    })
-    .andWhere((builder) => {
-      if (NumberParser.isNumber(amountMinParsed)) {
-        builder.andWhere('amount', '>=', amountMinParsed);
-      }
-      if (NumberParser.isNumber(amountMaxParsed)) {
-        builder.andWhere('amount', '<=', amountMaxParsed);
-      }
-    })
-    .orderBy('Fk_Transaction.valueDate', 'desc')
-    .select(columnsToSelect);
+      })
+      .andWhere((builder) => {
+        if (dateFilterFrom) {
+          builder.andWhere('valueDate', '>=', dateFilterFrom);
+        }
+        if (dateFilterTo) {
+          builder.andWhere('valueDate', '<=', dateFilterTo);
+        }
+      })
+      .andWhere((builder) => {
+        if (NumberParser.isNumber(amountMinParsed)) {
+          builder.andWhere('amount', '>=', amountMinParsed);
+        }
+        if (NumberParser.isNumber(amountMaxParsed)) {
+          builder.andWhere('amount', '<=', amountMaxParsed);
+        }
+      })
+      .orderBy('Fk_Transaction.valueDate', 'desc')
+      .select(columnsToSelect);
     if (maxItems) {
       builder.limit(maxItems);
     }
@@ -250,7 +252,7 @@ _selectTransactions: function (idTransaction, maxItems, searchTerm, accountsWher
         }
         return t;
       });
-    } catch(ex) {
+    } catch (ex) {
       console.log(ex);
       throw ex;
     }
@@ -269,12 +271,12 @@ _selectTransactions: function (idTransaction, maxItems, searchTerm, accountsWher
   },
 
   _parseText: function (parsed, text, markers, key, mustHaveAlreadyParsedKeys = []) {
-    const currentKey = _.find(parsed, { key: key });
+    const currentKey = _.find(parsed, {key: key});
     if (currentKey) {
       return; // key found in parsed => skip this
     }
     for (const mustHaveAlreadyParsedKey of mustHaveAlreadyParsedKeys) {
-      const mustHave = _.find(parsed, { key: mustHaveAlreadyParsedKey });
+      const mustHave = _.find(parsed, {key: mustHaveAlreadyParsedKey});
       if (!mustHave) {
         return; // key not found => skip this
       }
@@ -311,7 +313,7 @@ _selectTransactions: function (idTransaction, maxItems, searchTerm, accountsWher
     }
   },
 
-  _fixDate: function(d) {
+  _fixDate: function (d) {
     if (d instanceof Date) {
       return DateTime.fromJSDate(d).toISO();
     } else {
@@ -361,7 +363,7 @@ _selectTransactions: function (idTransaction, maxItems, searchTerm, accountsWher
         this._parseText(parts, tRet.text, ['IBAN:', 'I BAN:', 'IB AN:', 'IBA N:', 'IBAN :'], 'IBAN');
         this._parseText(parts, tRet.text, ['IBAN '], 'IBAN', ['BIC']);
         this._parseText(parts, tRet.text, ['Ref.'], 'REF');
-        this._parseText(parts, tRet.text, ['GLÄUBIGER-ID:', 'CRED:', 'C RED:', 'CR ED:', 'CRE D:', 'CRED :', 'CRED' ], 'CRED');
+        this._parseText(parts, tRet.text, ['GLÄUBIGER-ID:', 'CRED:', 'C RED:', 'CR ED:', 'CRE D:', 'CRED :', 'CRED'], 'CRED');
         this._parseText(parts, tRet.text, ['CORE / MANDATSREF.:', 'COR1 / MANDATSREF.:', 'MREF:', 'M REF:', 'MR EF:', 'MRE F:', 'MREF :', 'MREF '], 'MREF');
         this._parseText(parts, tRet.text, ['SVWZ:', 'S VWZ:', 'SV WZ:', 'SVW Z:', 'SVWZ :'], 'SVWZ');
         this._parseText(parts, tRet.text, ['END-TO-END-REF.:', 'EREF:', 'E REF:', 'ER EF:', 'ERE F:', 'EREF :', ' EREF '], 'EREF');
@@ -540,16 +542,16 @@ _selectTransactions: function (idTransaction, maxItems, searchTerm, accountsWher
   _applyRulesInTrx: async function (trx, idRuleSet, includeProcessed, includeTransactionsWithRuleSet, minMatchRate) {
     const ruleSets = await trx.select(['Fk_RuleSet.id as idRuleSet', 'Fk_RuleSet.name as RuleSetName', 'idSetCategory',
       'set_note', 'is_MREF', 'is_amount_min', 'is_amount_max']).count({TextRuleCount: 'Fk_RuleText.idRuleSet'})
-    .table('Fk_RuleSet')
-    .leftJoin('Fk_RuleText', function() {
-      this.on('Fk_RuleSet.id', 'Fk_RuleText.idRuleSet');
-    })
-    .where(function() {
-      if (idRuleSet != null) {
-        this.where('Fk_RuleSet.id', idRuleSet);
-      }
-    })
-    .groupBy(['Fk_RuleText.idRuleSet', 'Fk_RuleSet.id', 'Fk_RuleSet.name', 'idSetCategory', 'set_note', 'is_MREF', 'is_amount_min', 'is_amount_max']);
+      .table('Fk_RuleSet')
+      .leftJoin('Fk_RuleText', function () {
+        this.on('Fk_RuleSet.id', 'Fk_RuleText.idRuleSet');
+      })
+      .where(function () {
+        if (idRuleSet != null) {
+          this.where('Fk_RuleSet.id', idRuleSet);
+        }
+      })
+      .groupBy(['Fk_RuleText.idRuleSet', 'Fk_RuleSet.id', 'Fk_RuleSet.name', 'idSetCategory', 'set_note', 'is_MREF', 'is_amount_min', 'is_amount_max']);
 
     const joinRaw = this.supportsILike() ? "JOIN Fk_RuleText RT ON Fk_Transaction.text LIKE '%' + RT.text + '%'" : "JOIN Fk_RuleText RT ON Fk_Transaction.text LIKE '%' || RT.text || '%'";
 
@@ -557,7 +559,7 @@ _selectTransactions: function (idTransaction, maxItems, searchTerm, accountsWher
     for (const ruleSet of ruleSets) {
       console.log(`Rule set ${ruleSet.idRuleSet}: '${ruleSet.RuleSetName}' (TextRuleCount: ${ruleSet.TextRuleCount})`);
       const queryBuilder = trx.table('Fk_Transaction')
-      .select(['Fk_Transaction.id as t_id', 'Fk_Transaction.text', 'Fk_Transaction.amount', 'Fk_Transaction.MREF', 'Fk_Transaction.notes', 'Fk_Transaction.idCategory', 'Fk_Transaction.processed', 'Fk_Transaction.idRuleSet']);
+        .select(['Fk_Transaction.id as t_id', 'Fk_Transaction.text', 'Fk_Transaction.amount', 'Fk_Transaction.MREF', 'Fk_Transaction.notes', 'Fk_Transaction.idCategory', 'Fk_Transaction.processed', 'Fk_Transaction.idRuleSet']);
       if (ruleSet.TextRuleCount > 0) {
         queryBuilder.count({TextRuleMatches: 'Fk_Transaction.id'});
         queryBuilder.joinRaw(joinRaw + ` and RT.idRuleSet = ${ruleSet.idRuleSet}`);
@@ -626,10 +628,10 @@ _selectTransactions: function (idTransaction, maxItems, searchTerm, accountsWher
           newTrx.commit();
           resolve();
         })
-        .catch(reason => {
-          newTrx.rollback();
-          reject(reason);
-        });
+          .catch(reason => {
+            newTrx.rollback();
+            reject(reason);
+          });
       });
     }
   },
@@ -713,17 +715,18 @@ _selectTransactions: function (idTransaction, maxItems, searchTerm, accountsWher
             balanceDate: this._fixDate(options.balance.balanceDate),
             balance: options.balance.balance,
           }
-          const result = await trx('Fk_AccountBalance').where({idAccount: balance.idAccount, balanceDate: balance.balanceDate});
+          const result = await trx('Fk_AccountBalance').where({
+            idAccount: balance.idAccount,
+            balanceDate: balance.balanceDate
+          });
           if (result.length > 0) {
             // update instead of insert
             // let balanceUpdates = await trx('Fk_AccountBalance').update(options.balance);
             // console.log(`Updated ${balanceUpdates.length} account balances`);
-            let balanceDeletions = await trx('Fk_AccountBalance').
-                where({
-                  idAccount: balance.idAccount,
-                  balanceDate: balance.balanceDate
-                }).
-                delete();
+            let balanceDeletions = await trx('Fk_AccountBalance').where({
+              idAccount: balance.idAccount,
+              balanceDate: balance.balanceDate
+            }).delete();
             console.log(`${balanceDeletions} balance deletions`);
           }
           let balanceInserts = await trx('Fk_AccountBalance').insert(balance);
@@ -756,9 +759,7 @@ _selectTransactions: function (idTransaction, maxItems, searchTerm, accountsWher
         });
         await trx.table('Fk_TagTransaction').where({idTransaction: idTransaction}).delete();
         if (tagsToInsert.length > 0) {
-          const result = await trx.table('Fk_TagTransaction').
-              insert(tagsToInsert).
-              returning('*');
+          const result = await trx.table('Fk_TagTransaction').insert(tagsToInsert).returning('*');
           console.log(`Inserted ${result.length} tags for transaction ${idTransaction}`);
         }
       }
@@ -846,6 +847,136 @@ _selectTransactions: function (idTransaction, maxItems, searchTerm, accountsWher
       await trx.table('Fk_Transaction').where('id', idTransaction).delete();
     });
   },
+
+  async downloadTransactionsFromBank(bankcontact, account, tanReference, tan) {
+
+    function mapStatements(statements, idAccount) {
+      const mappedStatements = [];
+      for (let i = 0; i < statements.length; i++) {
+        const statement = statements[i];
+        let st;
+        if (statement.isAccountStatement) {
+          st = {
+            idAccount,
+            bookingDate: statement.entryDate,
+            valueDate: statement.valueDate,
+            amount: statement.amount,
+            entryText: statement.bookingText ? statement.bookingText.trim() : '',
+            text: statement.purpose ? statement.purpose.trim() : '',
+            EREF: null,
+            CRED: null,
+            MREF: null,
+            ABWA: null,
+            ABWE: null,
+            IBAN: null,
+            BIC: null,
+            REF: statement.customerReference ? statement.customerReference.trim() : null,
+            notes: null,
+            payee: statement.remoteName ? statement.remoteName.trim() : null,
+            payeePayerAcctNo: statement.remoteAccountNumber,
+            payeeBankId: statement.remoteBankId,
+            gvCode: statement.transactionType,
+            primaNotaNo: statement.primeNotesNr,
+            originalCurrency: null,
+            originalAmount: null,
+            exchangeRate: null,
+          };
+        } else {
+          st = {
+            idAccount,
+            bookingDate: statement.transactionDate,
+            valueDate: statement.valueDate,
+            amount: statement.amount,
+            entryText: null,
+            text: statement.purpose ? statement.purpose.trim() : '',
+            EREF: null,
+            CRED: null,
+            MREF: null,
+            ABWA: null,
+            ABWE: null,
+            IBAN: null,
+            BIC: null,
+            REF: null,
+            notes: null,
+            payee: null,
+            payeePayerAcctNo: null,
+            gvCode: null,
+            primaNotaNo: null,
+            originalCurrency: statement.originalCurrency,
+            originalAmount: statement.originalAmount,
+            exchangeRate: statement.exchangeRate,
+          };
+        }
+        mappedStatements.push(st);
+      }
+      return mappedStatements;
+    }
+    const {fintsProductId, fintsProductVersion} = config;
+    if (!fintsProductId || !fintsProductVersion) {
+      return {status: FinTS.statusError, message: 'Missing fintsProductId or fintsProductVersion in config'};
+    }
+
+    const idAccount = account.id;
+    const idBankcontact = bankcontact.id;
+    const transactions = await this.getTransactions(20, undefined, [idAccount]);
+    let fromDate = DateTime.now().minus({days: 82});
+    for (let i = 0; i < transactions.length; i++) {
+      const t = transactions[i];
+      const tDate = DateTime.fromISO(t.t_value_date);
+      if (tDate > fromDate) {
+        fromDate = tDate;
+      }
+    }
+    fromDate = fromDate.minus({days: 7}).toJSDate();
+
+    const fints = FinTS.from(fintsProductId, fintsProductVersion, false, bankcontact.fintsUrl, bankcontact.fintsBankId, bankcontact.fintsUserId, bankcontact.fintsPassword, tanReference, tan);
+
+    const result = await fints.dialogForStatements(account.fintsAccountNumber, fromDate);
+    switch (result.status) {
+      case FinTS.statusOK:
+        await this.setFintsStatusOnAccountsOfBankcontact(idBankcontact, {fintsError: null, fintsAuthRequired: false});
+        break;
+      case FinTS.statusWrongPIN:
+        console.log(`PIN WRONG for bankcontact ${idBankcontact} (${bankcontact.name}) - resetting to empty password`);
+        await this.updateBankcontact(idBankcontact, {fintsPassword: null});
+        await this.setFintsStatusOnAccountsOfBankcontact(idBankcontact, {
+          fintsError: result.message, fintsAuthRequired: false, fintsActivated: false,
+        });
+        return {status: result.status, message: result.message}
+      case FinTS.statusRequiresTAN:
+        await this.setFintsStatusOnAccountsOfBankcontact(idBankcontact, {
+          fintsError: result.message,
+          fintsAuthRequired: true,
+        });
+        return {status: result.status, tanInfo: result.tanInfo}
+      case FinTS.statusAccountNumberUnknownAtBank:
+        console.log(`Account ${account.fintsAccountNumber} not found in bank accounts of bank contact ${idBankcontact}`);
+        return;
+      default:
+        const error = `Failed to download account statements with bank contact ${idBankcontact} (${bankcontact.name}) for account ${account.name}`;
+        await this.setFintsStatusOnAccountsOfBankcontact(idBankcontact, {fintsError: error});
+        return {status: FinTS.statusError, message: error};
+    }
+
+    const downloadedTransactions = mapStatements(result.statements, idAccount);
+    const balance = {
+      idAccount,
+      ...(result.balance),
+    };
+
+    const transactionsToSave = [];
+    for (let i = 0; i < downloadedTransactions.length && transactionsToSave.length < 50; i++) {
+      const tra = downloadedTransactions[i];
+      if (!(await this.transactionExists(tra))) {
+        transactionsToSave.push(tra);
+      }
+    }
+    if (transactionsToSave.length > 0) {
+      const storedTransactions = await db.addTransactions(transactionsToSave, {balance, unconfirmed: true});
+      console.log(`${storedTransactions.length} new transactions stored for account ID ${idAccount}`);
+    }
+    await this.updateAccount(idAccount, {fintsError: null});
+  }
 };
 
 export default DbMixinTransactions;
