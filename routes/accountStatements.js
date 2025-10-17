@@ -21,31 +21,6 @@ rc.post(async function (req, res, next) {
 });
 
 async function handleRequest(req, res, tanReference, tan) {
-  async function handleWrongPin(idBankcontact, bankcontact, result) {
-    const db = req.app.get('database');
-    console.log(`PIN WRONG for bankcontact ${idBankcontact} (${bankcontact.name}) - resetting to empty password`);
-    await db.updateBankcontact(idBankcontact, {fintsPassword: null});
-    await db.setFintsStatusOnAccountsOfBankcontact(idBankcontact, {
-      fintsError: result.message, fintsAuthRequired: false, fintsActivated: false,
-    });
-    res.json({status: result.status, message: result.message});
-  }
-
-  async function handleRequiresTan(idBankcontact, result) {
-    const db = req.app.get('database');
-    await db.setFintsStatusOnAccountsOfBankcontact(idBankcontact, {
-      fintsError: result.message, fintsAuthRequired: true,
-    });
-    res.json({status: result.status, tanInfo: result.tanInfo});
-  }
-
-  async function handleOtherError(idBankcontact, error) {
-    const db = req.app.get('database');
-    console.log(error);
-    await db.setFintsStatusOnAccountsOfBankcontact(idBankcontact, {fintsError: error});
-    res.sendStatus(500);
-  }
-
   try {
     const {fintsProductId, fintsProductVersion} = config;
     if (!fintsProductId || !fintsProductVersion) {
@@ -89,43 +64,32 @@ async function handleRequest(req, res, tanReference, tan) {
       fromDate = fromDate.minus({days: 7}).toJSDate();
 
       const fints = FinTS.from(fintsProductId, fintsProductVersion, false, bankcontact.fintsUrl, bankcontact.fintsBankId, bankcontact.fintsUserId, bankcontact.fintsPassword, tanReference, tan);
-      let result = await fints.dialogForSync();
-      switch (result.status) {
-        case FinTS.statusOK:
-          await db.setFintsStatusOnAccountsOfBankcontact(idBankcontact, {fintsError: null, fintsAuthRequired: false});
-          if (!result.bankAccounts.some(ba => ba.accountNumber === account.fintsAccountNumber)) {
-            console.log(`Account ${account.fintsAccountNumber} not found in bank accounts of bank contact ${idBankcontact} (${bankcontact.name})`);
-            res.sendStatus(404);
-            return;
-          }
-          break;
-        case FinTS.statusWrongPIN:
-          await handleWrongPin(idBankcontact, bankcontact, result);
-          return;
-        case FinTS.statusRequiresTAN:
-          await handleRequiresTan(idBankcontact, result);
-          return;
-        default:
-          const error = `Failed to synchronize bank contact ${idBankcontact} (${bankcontact.name})`;
-          await handleOtherError(idBankcontact, error);
-          return;
-      }
 
-      fints.setTanAndReference(undefined, undefined); // clear tan and reference, because they were used in sync already
-      result = await fints.dialogForStatements(account.fintsAccountNumber, fromDate);
+      const result = await fints.dialogForStatements(account.fintsAccountNumber, fromDate);
       switch (result.status) {
         case FinTS.statusOK:
           await db.setFintsStatusOnAccountsOfBankcontact(idBankcontact, {fintsError: null, fintsAuthRequired: false});
           break;
         case FinTS.statusWrongPIN:
-          await handleWrongPin(idBankcontact, bankcontact, result);
+          console.log(`PIN WRONG for bankcontact ${idBankcontact} (${bankcontact.name}) - resetting to empty password`);
+          await db.updateBankcontact(idBankcontact, {fintsPassword: null});
+          await db.setFintsStatusOnAccountsOfBankcontact(idBankcontact, {
+            fintsError: result.message, fintsAuthRequired: false, fintsActivated: false,
+          });
+          res.json({status: result.status, message: result.message});
           return;
         case FinTS.statusRequiresTAN:
-          await handleRequiresTan(idBankcontact, result);
+          await db.setFintsStatusOnAccountsOfBankcontact(idBankcontact, {fintsError: result.message, fintsAuthRequired: true,});
+          res.json({status: result.status, tanInfo: result.tanInfo});
+          return;
+        case FinTS.statusAccountNumberUnknownAtBank:
+          console.log(`Account ${accountNumber} not found in bank accounts of bank contact ${idBankcontact}`);
           return;
         default:
           const error = `Failed to download account statements with bank contact ${idBankcontact} (${bankcontact.name}) for account ${account.name}`;
-          await handleOtherError(idBankcontact, error);
+          console.log(error);
+          await db.setFintsStatusOnAccountsOfBankcontact(idBankcontact, {fintsError: error});
+          res.sendStatus(500);
           return;
       }
 
