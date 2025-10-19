@@ -157,6 +157,18 @@ const DbMixinOnlineBanking = {
     } catch(ex) {
       console.log(ex);
     }
+  },
+
+  async setFintsStatusOnAccount(idAccount, data) {
+    try {
+      const fintsData = _.pick(data, ['fintsError', 'fintsAuthRequired', 'fintsActivated']);
+      if (_.isEmpty(fintsData)) {
+        return; // no need to update if nothing changed
+      }
+      await this.updateAccount(idAccount, fintsData);
+    } catch(ex) {
+      console.log(ex);
+    }
   }
 
 };

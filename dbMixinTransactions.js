@@ -951,10 +951,11 @@ const DbMixinTransactions = {
         return {status: result.status, tanInfo: result.tanInfo}
       case FinTS.statusAccountNumberUnknownAtBank:
         console.log(`Account ${account.fintsAccountNumber} not found in bank accounts of bank contact ${idBankcontact}`);
+        await this.setFintsStatusOnAccount(idAccount, {fintsError: 'Wrong account number', fintsActivated: false});
         return;
       default:
         const error = `Failed to download account statements with bank contact ${idBankcontact} (${bankcontact.name}) for account ${account.name}`;
-        await this.setFintsStatusOnAccountsOfBankcontact(idBankcontact, {fintsError: error});
+        await this.setFintsStatusOnAccount(idAccount, {fintsError: error.substring(0, 250)});
         return {status: FinTS.statusError, message: error};
     }
 
