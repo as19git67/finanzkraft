@@ -16,6 +16,7 @@ export default class FinTS {
   #pin;
   #tanReference;
   #tan;
+  #isSynchronized;
 
   static #fintsInstance;
   static #fintsInstanceDataAsJson = '';
@@ -30,6 +31,7 @@ export default class FinTS {
     this.#pin = pin;
     this.#tanReference = tanReference;
     this.#tan = tan;
+    this.#isSynchronized = false;
     FinTS.#fintsInstance = this;
     FinTS.#fintsInstanceDataAsJson = JSON.stringify({
       productId,
@@ -84,7 +86,7 @@ export default class FinTS {
     for (let j = 0; j < bankAnswers.length; j++) {
       console.log(`Bank answers: ${bankAnswers[j].code} ${bankAnswers[j].text}`);
     }
-    console.log(`bankingInformationUpdated: ${bankingInformationUpdated}`);
+    // console.log(`bankingInformationUpdated: ${bankingInformationUpdated}`);
     if (bankingInformation) {
       if (bankingInformation.bankMessages) {
         for (let j = 0; j < bankingInformation.bankMessages.length; j++) {
@@ -227,6 +229,7 @@ export default class FinTS {
     if (bankingInformation.upd && _.isArray(bankingInformation.upd.bankAccounts)) {
       bankAccounts = bankingInformation.upd.bankAccounts;
       this.logBankAccounts(bankAccounts);
+      this.#isSynchronized = true;
       return {status: FinTS.statusOK, bankAccounts};
     } else {
       console.log(`No bank accounts found in banking information`);
@@ -295,13 +298,16 @@ export default class FinTS {
       this.#ensureFintsClient();
 
       do {
-        result = await this.#doSynchronize();
-        this.setTanAndReference(undefined, undefined); // clear tan and reference, because they were used in sync already
-        status = result.status;
-        if (status === FinTS.statusNoBankAccounts) continue;
-        if (status !== FinTS.statusOK) break;
-
-        const bankAccounts = result.bankAccounts;
+        if (this.#isSynchronized) {
+          console.log(`Using cached banking information for bank with id ${this.#bankId} - skip synchronizing bank contact`)
+        } else {
+          result = await this.#doSynchronize();
+          this.setTanAndReference(undefined, undefined); // clear tan and reference, because they were used in sync already
+          status = result.status;
+          if (status === FinTS.statusNoBankAccounts) continue;
+          if (status !== FinTS.statusOK) break;
+        }
+        const bankAccounts = this.#fintsConfig.bankingInformation.upd.bankAccounts;
         if (!bankAccounts.some(ba => ba.accountNumber === accountNumber)) {
           status = FinTS.statusAccountNumberUnknownAtBank;
           break;

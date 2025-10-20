@@ -46,6 +46,7 @@ async function handleRequest(req, res, tanReference, tan) {
     }
 
     try {
+      console.log(`DOWNLOADING transactions for account ${account.name} (${account.number ? account.number : account.iban}) with bank contact ${bankcontact.name}`);
       const result = await db.downloadTransactionsFromBank(bankcontact, account, tanReference, tan);
       if (result.status === FinTS.statusError) {
         console.log(result.message);
