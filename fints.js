@@ -183,10 +183,15 @@ export default class FinTS {
   async #doSynchronize() {
     let syncRes, status = FinTS.statusOK, bankAccounts = [];
 
-    if (this.#tanReference) {
-      syncRes = await this.#fintsClient.synchronizeWithTan(this.#tanReference, this.#tan);
-    } else {
-      syncRes = await this.#fintsClient.synchronize();
+    try {
+      if (this.#tanReference) {
+        syncRes = await this.#fintsClient.synchronizeWithTan(this.#tanReference, this.#tan);
+      } else {
+        syncRes = await this.#fintsClient.synchronize();
+      }
+    } catch (e) {
+      console.log('Error during synchronize: ', e);
+      return {status: FinTS.statusError};
     }
 
     status = this.checkSyncResponse(syncRes);

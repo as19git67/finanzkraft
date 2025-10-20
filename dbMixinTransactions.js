@@ -949,14 +949,17 @@ const DbMixinTransactions = {
           fintsAuthRequired: true,
         });
         return {status: result.status, tanInfo: result.tanInfo}
-      case FinTS.statusAccountNumberUnknownAtBank:
+      case FinTS.statusAccountNumberUnknownAtBank: {
         console.log(`Account ${account.fintsAccountNumber} not found in bank accounts of bank contact ${idBankcontact}`);
-        await this.setFintsStatusOnAccount(idAccount, {fintsError: 'Wrong account number', fintsActivated: false});
-        return;
-      default:
+        const error = 'Wrong account number';
+        await this.setFintsStatusOnAccount(idAccount, {fintsError: error, fintsActivated: false});
+        return {status: result.status, message: error};
+      }
+      default: {
         const error = `Failed to download account statements with bank contact ${idBankcontact} (${bankcontact.name}) for account ${account.name}`;
         await this.setFintsStatusOnAccount(idAccount, {fintsError: error.substring(0, 250)});
         return {status: FinTS.statusError, message: error};
+      }
     }
 
     const downloadedTransactions = mapStatements(result.statements, idAccount);
@@ -973,10 +976,11 @@ const DbMixinTransactions = {
       }
     }
     if (transactionsToSave.length > 0) {
-      const storedTransactions = await db.addTransactions(transactionsToSave, {balance, unconfirmed: true});
+      const storedTransactions = await this.addTransactions(transactionsToSave, {balance, unconfirmed: true});
       console.log(`${storedTransactions.length} new transactions stored for account ID ${idAccount}`);
     }
     await this.updateAccount(idAccount, {fintsError: null});
+    return {status: FinTS.statusOK, storedTransactions: transactionsToSave, balance: balance};
   }
 };
 

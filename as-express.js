@@ -144,7 +144,7 @@ export default class AsExpress {
     );
 
     this.#statementsDownloadJob = new CronJob(
-      '25 6,15 * * *', // cronTime
+      '8 6,9,15 * * *', // cronTime
       async () => {
         console.log('Regularly downloading statements from bank accounts');
         try {
