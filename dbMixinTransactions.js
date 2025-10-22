@@ -107,14 +107,6 @@ const DbMixinTransactions = {
       .join('Fk_Currency', function () {
         this.on('Fk_Account.idCurrency', '=', 'Fk_Currency.id');
       })
-      .leftJoin('Fk_Category', function () {
-        this.on('Fk_Transaction.idCategory', '=', 'Fk_Category.id');
-      })
-      .andWhere((builder) => {
-        if (categoriesWhereIn && _.isArray(categoriesWhereIn) && categoriesWhereIn.length > 0) {
-          builder.whereIn('Fk_Category.id', categoriesWhereIn);
-        }
-      })
       .leftJoin('Fk_RuleSet', function () {
         this.on('Fk_Transaction.idRuleSet', '=', 'Fk_RuleSet.id');
       })
@@ -146,6 +138,7 @@ const DbMixinTransactions = {
             const trimmedSearchTerm = searchTerm.trim();
             if (this.supportsILike()) {
               builder.whereILike('Fk_Transaction.text', `%${trimmedSearchTerm}%`);
+              builder.orWhereILike('Fk_Transaction.entryText', `%${trimmedSearchTerm}%`);
               builder.orWhereILike('Fk_Transaction.notes', `%${trimmedSearchTerm}%`);
               builder.orWhereILike('Fk_Transaction.EREF', `%${trimmedSearchTerm}%`);
               builder.orWhereILike('Fk_Transaction.CRED', `%${trimmedSearchTerm}%`);
@@ -160,6 +153,8 @@ const DbMixinTransactions = {
               builder.orWhereILike('tags', `%${trimmedSearchTerm}%`);
             } else {
               builder.whereLike('Fk_Transaction.text', `%${trimmedSearchTerm}%`);
+              builder.orWhereLike('Fk_Transaction.entryText', `%${trimmedSearchTerm}%`);
+              builder.orWhereLike('Fk_Transaction.notes', `%${trimmedSearchTerm}%`);
               builder.orWhereLike('Fk_Transaction.EREF', `%${trimmedSearchTerm}%`);
               builder.orWhereLike('Fk_Transaction.CRED', `%${trimmedSearchTerm}%`);
               builder.orWhereLike('Fk_Transaction.MREF', `%${trimmedSearchTerm}%`);
@@ -168,7 +163,6 @@ const DbMixinTransactions = {
               builder.orWhereLike('Fk_Transaction.IBAN', `%${trimmedSearchTerm}%`);
               builder.orWhereLike('Fk_Transaction.BIC', `%${trimmedSearchTerm}%`);
               builder.orWhereLike('Fk_Transaction.REF', `%${trimmedSearchTerm}%`);
-              builder.orWhereLike('Fk_Transaction.notes', `%${trimmedSearchTerm}%`);
               builder.orWhereLike('Fk_Transaction.payee', `%${trimmedSearchTerm}%`);
               builder.orWhereLike('Fk_Category.fullName', `%${trimmedSearchTerm}%`);
               builder.orWhereLike('tags', `%${trimmedSearchTerm}%`);
@@ -199,6 +193,17 @@ const DbMixinTransactions = {
       })
       .orderBy('Fk_Transaction.valueDate', 'desc')
       .select(columnsToSelect);
+    if (categoriesWhereIn && _.isArray(categoriesWhereIn) && categoriesWhereIn.length > 0) {
+      builder.join('Fk_Category', function () {
+        this.on('Fk_Transaction.idCategory', '=', 'Fk_Category.id');
+        this.andOnIn('Fk_Category.id', categoriesWhereIn);
+      });
+    } else {
+      builder.leftJoin('Fk_Category', function () {
+        this.on('Fk_Transaction.idCategory', '=', 'Fk_Category.id');
+      });
+    }
+
     if (maxItems) {
       builder.limit(maxItems);
     }
@@ -267,7 +272,7 @@ const DbMixinTransactions = {
     if (!idTransaction) {
       throw new Error('Undefined idTransaction', {cause: 'unknown'});
     }
-    const results = await this._selectTransactions(idTransaction, undefined, undefined, undefined, undefined, undefined, idUser);
+    const results = await this._selectTransactions(idTransaction, undefined, undefined, undefined, undefined, undefined, undefined, idUser);
     if (results.length > 0) {
       return results[0];
     } else {
