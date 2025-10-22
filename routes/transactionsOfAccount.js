@@ -8,10 +8,11 @@ rc.get(function (req, res, next) {
   const maxItems = req.query.limit;
   const searchTerm = undefined;
   const accountsWhereIn = [req.params.id];
+  const categoriesWhereIn = undefined;
   const dateFilterFrom = undefined;
   const dateFilterTo = undefined;
   const idUser = req.user.id;
-  db.getTransactions(maxItems, searchTerm, accountsWhereIn, dateFilterFrom, dateFilterTo, idUser).then((transactions) => {
+  db.getTransactions(maxItems, searchTerm, accountsWhereIn, categoriesWhereIn, dateFilterFrom, dateFilterTo, idUser).then((transactions) => {
     res.json(transactions);
   }).catch((reason) => {
     console.log(reason);
@@ -70,7 +71,7 @@ rc.post(async function (req, res, next) {
     const fixedTr = db._fixTransactionData(tra);
     const from = DateTime.fromISO(tra.valueDate).minus({days: 5}).toISO();
     const to = DateTime.fromISO(tra.valueDate).plus({days: 2}).toISO();
-    const savedTr = await db.getTransactions(50, fixedTr.text, [tra.idAccount], from, to);
+    const savedTr = await db.getTransactions(50, fixedTr.text, [tra.idAccount], undefined, from, to);
     // search transaction in saved transactions and add the new transaction only if it was not found
     const filteredTransactions = savedTr.filter((sTr) => {
       if (fixedTr.text && fixedTr.text.trim()) {

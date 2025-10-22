@@ -24,7 +24,7 @@ const DbMixinTransactions = {
     const fixedTr = this._fixTransactionData(tra);
     const from = tra.valueDate instanceof Date ? DateTime.fromJSDate(tra.valueDate).minus({days: 5}).toISO() : DateTime.fromISO(tra.valueDate).minus({days: 5}).toISO();
     const to = tra.valueDate instanceof Date ? DateTime.fromJSDate(tra.valueDate).plus({days: 2}).toISO() : DateTime.fromISO(tra.valueDate).plus({days: 2}).toISO();
-    const savedTr = await this.getTransactions(50, fixedTr.text, [tra.idAccount], from, to);
+    const savedTr = await this.getTransactions(50, fixedTr.text, [tra.idAccount], undefined, from, to);
     // search transaction in saved transactions and add the new transaction only if it was not found
     const filteredTransactions = savedTr.filter((sTr) => {
       if (fixedTr.text && fixedTr.text.trim()) {
@@ -68,7 +68,7 @@ const DbMixinTransactions = {
     return filteredTransactions.length > 0;
   },
 
-  _selectTransactions: function (idTransaction, maxItems, searchTerm, accountsWhereIn, dateFilterFrom, dateFilterTo, idUser, amountMin, amountMax, textToken, mRefToken) {
+  _selectTransactions: function (idTransaction, maxItems, searchTerm, accountsWhereIn, categoriesWhereIn, dateFilterFrom, dateFilterTo, idUser, amountMin, amountMax, textToken, mRefToken) {
     const np = new NumberParser();
     const amountMinParsed = np.parse(amountMin);
     const amountMaxParsed = np.parse(amountMax);
@@ -109,6 +109,11 @@ const DbMixinTransactions = {
       })
       .leftJoin('Fk_Category', function () {
         this.on('Fk_Transaction.idCategory', '=', 'Fk_Category.id');
+      })
+      .andWhere((builder) => {
+        if (categoriesWhereIn && _.isArray(categoriesWhereIn) && categoriesWhereIn.length > 0) {
+          builder.whereIn('Fk_Category.id', categoriesWhereIn);
+        }
       })
       .leftJoin('Fk_RuleSet', function () {
         this.on('Fk_Transaction.idRuleSet', '=', 'Fk_RuleSet.id');
@@ -206,8 +211,8 @@ const DbMixinTransactions = {
     return builder;
   },
 
-  async getTransactions(maxItems, searchTerm, accountsWhereIn, dateFilterFrom, dateFilterTo, idUser, amountMin, amountMax, textToken, mRefToken) {
-    return this._selectTransactions(undefined, maxItems, searchTerm, accountsWhereIn, dateFilterFrom, dateFilterTo, idUser, amountMin, amountMax, textToken, mRefToken);
+  async getTransactions(maxItems, searchTerm, accountsWhereIn, categoriesWhereIn, dateFilterFrom, dateFilterTo, idUser, amountMin, amountMax, textToken, mRefToken) {
+    return this._selectTransactions(undefined, maxItems, searchTerm, accountsWhereIn, categoriesWhereIn, dateFilterFrom, dateFilterTo, idUser, amountMin, amountMax, textToken, mRefToken);
   },
 
   async getTransactionsForExport() {

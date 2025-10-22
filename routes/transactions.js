@@ -11,6 +11,10 @@ rc.get(function (req, res, next) {
   if (accountsWhereIn) {
     accountsWhereIn = accountsWhereIn.split(',');
   }
+  let categoriesWhereIn = req.query.categoriesWhereIn;
+  if (categoriesWhereIn) {
+    categoriesWhereIn = categoriesWhereIn.split(',');
+  }
   const dateFilterFrom = req.query.dateFilterFrom;
   const dateFilterTo = req.query.dateFilterTo;
   const idUser = req.user.id;
@@ -19,7 +23,7 @@ rc.get(function (req, res, next) {
   const textToken = req.query.textToken;
   const mRefToken = req.query.mRefToken;
 
-  db.getTransactions(maxItems, searchTerm, accountsWhereIn, dateFilterFrom, dateFilterTo, idUser, amountMin, amountMax, textToken, mRefToken).then((transactions) => {
+  db.getTransactions(maxItems, searchTerm, accountsWhereIn, categoriesWhereIn, dateFilterFrom, dateFilterTo, idUser, amountMin, amountMax, textToken, mRefToken).then((transactions) => {
     console.log(`Returning ${transactions.length} transactions in response`);
     res.json(transactions);
   }).catch((reason) => {
