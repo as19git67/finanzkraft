@@ -311,8 +311,33 @@ const UserDatabaseMixin = {
   },
 
   async getUser() {
-    const result = await this.knex.select().table('Users');
-    return _.map(result, (r) => this._extractSaveUserData(r));
+    const result = await this.knex.select(['Users.*', 'Roles.id as idRole', 'Roles.Name as RoleName']).table('Users')
+      .join('UserRoles', function () {
+        this.on('Users.id', '=', 'UserRoles.idUser');
+      })
+      .leftJoin('Roles', function () {
+        this.on('UserRoles.idRole', '=', 'Roles.id');
+      });
+    const users = new Map();
+    result.forEach((userWithRole) => {
+      let user;
+      if (users.has(userWithRole.id)) {
+        user = users.get(userWithRole.id);
+      } else {
+        user = {
+        ...this._extractSaveUserData(userWithRole),
+          Roles: [],
+        };
+        users.set(userWithRole.id, user);
+      }
+      if (userWithRole.idRole) {
+        user.Roles.push({
+          id: userWithRole.idRole,
+          Name: userWithRole.RoleName,
+        });
+      }
+    });
+    return Array.from(users.values());
   },
 
   async getUserForBackup() {

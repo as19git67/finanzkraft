@@ -7,8 +7,8 @@ const rc = new UserRegistrationRouteConfig('/');
 /* PUT create new user */
 rc.put((req, res, next) => {
   const db = req.app.get('database');
-  const { email } = req.body;
-  const { password } = req.body;
+  const {email} = req.body;
+  const {password} = req.body;
   db.createUser(email, password).then(() => {
     res.send();
   }).catch((error) => {
@@ -26,11 +26,14 @@ rc.put((req, res, next) => {
         res.sendStatus(500);
     }
   });
-}, { bypassAuth: true });
+}, {bypassAuth: true});
 
 rc.get((req, res, next) => {
   const db = req.app.get('database');
   db.getUser().then((result) => {
+    result.forEach(user => {
+      delete user.PasswordSalt;
+    });
     res.send(result);
   }).catch((error) => {
     console.error(error);
