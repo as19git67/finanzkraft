@@ -1,5 +1,5 @@
 const schema = {
-  version: 33,
+  version: 34,
   name: 'finanzkraft',
   tables: [
     {
@@ -259,6 +259,50 @@ const schema = {
           name: 'IDX_UserAccessTokens_ExpiredAfter',
           columns: ['AccessTokenExpiredAfter'],
           unique: false,
+        },
+      ],
+      foreign_keys: [
+        {
+          name: 'FK_idUser__Users_id',
+          columns: ['idUser'],
+          foreign_table: 'Users',
+          foreign_columns: ['id'],
+        },
+      ],
+    },
+    {
+      tableName: 'UserCredentials',
+      columns: [
+        {
+          name: 'id',
+          type: 'autoincrement',
+          primary_key: true,
+        },
+        {
+          name: 'idUser',
+          type: 'integer',
+          nullable: false,
+        },
+        {
+          name: 'idCredential',
+          type: 'string',
+          nullable: false,
+          unique: true,
+        },
+        {
+          name: 'publicKey',
+          type: 'text',
+          nullable: false,
+        },
+        {
+          name: 'counter',
+          type: 'integer',
+          nullable: false,
+        },
+        {
+          name: 'transports',
+          type: 'string',
+          nullable: false,
         },
       ],
       foreign_keys: [

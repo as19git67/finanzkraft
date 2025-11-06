@@ -2,15 +2,20 @@ import { DateTime } from 'luxon';
 import { Strategy as LocalStrategy } from 'passport-local';
 import { Strategy as BearerStrategy } from 'passport-http-bearer';
 import { BasicStrategy } from 'passport-http';
+import { Strategy as WebAuthnStrategy, SessionChallengeStore} from 'passport-fido2-webauthn';
 
 export default class AsPassport {
   #passport;
-
   #database;
+  #store;
 
   constructor(passport, database) {
     this.#passport = passport;
     this.#database = database;
+  }
+
+  get sessionChallengeStore() {
+    return this.#store;
   }
 
   async #serializeUser(user) {
@@ -27,6 +32,34 @@ export default class AsPassport {
     return this.#database.getUserById(userId);
   }
 
+  // https://github.com/divrhino/divrhino-passkeys-express/blob/main/config/routes.js
+  useWebauthnStrategy() {
+    return new WebAuthnStrategy(
+      { store: this.#store },
+      this.verify, // needs to be fleshed out
+      this.register // needs to be fleshed out
+    );
+  }
+
+  async verify(id, userHandle, done) {
+    console.log("Verifying WebAuthn user");
+    const user = await this.#database.getUserByWebAuthCredential(id);
+    if (!user) {
+      return done(null, false, { message: 'Invalid key.' });
+    }
+    return done(null, user.UserCredential_id, user.UserCredential_publicKey)
+  }
+
+  async register(user, id, publicKey, done) {
+    console.log(`Registering WebAuthn user id: ${id}, publicKey: ${publicKey}`);
+    try {
+      //await this.#database.storeWebAuthCredential(user.id, id, publicKey);
+      return done(null, true);
+    } catch (error) {
+      return done(error);
+    }
+  }
+
   async init() {
     // Passport session setup.
     //   To support persistent login sessions, Passport needs to be able to
@@ -34,21 +67,9 @@ export default class AsPassport {
     //   this will be as simple as storing the user ID when serializing, and finding
     //   the user by ID when deserializing.
 
-    // this.#passport.serializeUser((user, done) => {
-    //   this.#serializeUser(user).then((userId) => {
-    //     done(null, userId);
-    //   }).catch((error) => {
-    //     done(error, user);
-    //   });
-    // });
-
-    // this.#passport.deserializeUser((userId, done) => {
-    //   this.#deserializeUser(userId).then((user) => {
-    //     done(null, user);
-    //   }).catch((error) => {
-    //     done(error, userId);
-    //   });
-    // });
+    // passkey support
+    this.#store = new SessionChallengeStore();
+    this.#passport.use(this.useWebauthnStrategy());
 
     this.#passport.use('bearer', new BearerStrategy((accessToken, done) => {
       //console.log('BEARER Strategy');

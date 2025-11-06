@@ -9,6 +9,8 @@ import debug from 'debug';
 import CORS from 'cors';
 import passport from 'passport';
 import express from 'express';
+import session from 'express-session';
+import cookieParser from 'cookie-parser';
 import {fileURLToPath} from 'url';
 import {DateTime} from 'luxon';
 import {CronJob} from 'cron';
@@ -22,10 +24,13 @@ import userByIdRouteConfig from './routes/userById.js';
 import roleRouteConfig from './routes/role.js';
 import rolesRouteConfig from './routes/roles.js';
 import permissionProfilesRouteConfig from './routes/permissionProfiles.js';
-import rolePermissionProfilesRouteConfig
-  from './routes/rolePermissionProfiles.js';
+import rolePermissionProfilesRouteConfig from './routes/rolePermissionProfiles.js';
 import authRouteConfig from './routes/auth.js';
-import userrolesRouteConfig from './routes/userroles.js';
+import userRolesRouteConfig from './routes/userroles.js';
+import passkeyRegisterStart from "./routes/passkeyRegisterStart.js";
+import passkeyRegisterFinish from "./routes/passkeyRegisterFinish.js";
+import passkeyLoginStart from "./routes/passkeyLoginStart.js";
+import passkeyLoginFinish from "./routes/passkeyLoginFinish.js";
 import FinTS from './fints.js';
 
 class HttpError {
@@ -117,6 +122,18 @@ export default class AsExpress {
       await this.#importData(dbImporter,
           path.resolve(dataDirectory, importDatafile));
     }
+
+    this.app.use(cookieParser());
+    // Note: session is not needed, if passport.session() below is not called
+    this.app.use(session({
+      secret: config['express-session-secret'],
+      resave: false,
+      saveUninitialized: false,
+      cookie: {
+        maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
+      },
+    }));
+
     await this.#ensurePrivatePublicKeyPairInSystemPreferences();
     await this.#exportData(dbExporter, path.resolve(dataDirectory, exportDatafile));
     this.#initApiRouter();
@@ -344,16 +361,12 @@ export default class AsExpress {
   }
 
   async #initPassport() {
-    // Note: session is not needed, if passport.session() below is not called
-    // this.app.use(session({
-    //   secret: config['express-session-secret'],
-    //   resave: true,
-    //   saveUninitialized: true,
-    // }));
     this.app.use(passport.initialize());
+    this.app.use(passport.authenticate('session'));
     //    this.app.use(passport.session()); // don't use persistent login sessions
     const asPassport = new AsPassport(passport, this.#database);
     await asPassport.init();
+    this.app.set('sessionChallengeStore', asPassport.sessionChallengeStore);
   }
 
   async #downloadStatements() {
@@ -410,7 +423,11 @@ export default class AsExpress {
     this.addRouter('/api/permissionprofile', permissionProfilesRouteConfig);
     this.addRouter('/api/user', userRouteConfig);
     this.addRouter('/api/user', userByIdRouteConfig);
-    this.addRouter('/api/user', userrolesRouteConfig);
+    this.addRouter('/api/user', userRolesRouteConfig);
+    this.addRouter('/api/passkeyRegisterStart', passkeyRegisterStart);
+    this.addRouter('/api/passkeyRegisterFinish', passkeyRegisterFinish);
+    this.addRouter('/api/passkeyLoginStart', passkeyLoginStart);
+    this.addRouter('/api/passkeyLoginFinish', passkeyLoginFinish);
   }
 
   async #startHttpServer() {

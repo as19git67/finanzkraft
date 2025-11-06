@@ -484,6 +484,46 @@ const UserDatabaseMixin = {
     return undefined;
   },
 
+  async getUserByWebAuthCredential(external_id) {
+    if (!external_id) {
+      throw new Error("Can't get user by undefined external id.");
+    }
+    if (!_.isString(external_id)) {
+      throw new Error("Can't get user by non-string access token.");
+    }
+
+    try {
+      const queryResult = await this.knex
+        .select(
+          'Users.id',
+          'Users.Email',
+          'Users.EmailConfirmed',
+          'Users.Initials',
+          'Users.LoginProvider',
+          'Users.PasswordSalt',
+          'Users.ExpiredAfter',
+          'UserCredentials.id as UserCredential_id',
+          'UserCredentials.UserCredential_idCredential',
+          'UserCredentials.publicKey as UserCredential_publicKey',
+          'UserCredentials.counter as UserCredential_counter',
+          'UserCredentials.transports as UserCredential_transports',
+        ).from('UserCredentials')
+        .join('Users', function () {
+          this.on('Users.id', '=', 'UserCredentials.idUser');
+          this.andOn('UserCredentials.idCredential', '=', external_id);
+        });
+      if (_.isArray(queryResult) && queryResult.length > 0) {
+        console.log(`User for external id ${external_id} does not exist.`);
+        return queryResult[0];
+      }
+      return undefined;
+    } catch (ex) {
+      console.log('Exception while selecting user by external id:');
+      console.log(ex);
+      throw ex;
+    }
+  },
+
   isExpired(user) {
     const expiredAfter = DateTime.fromISO(user.ExpiredAfter);
     if (!DateTime.isDateTime(expiredAfter)) {
