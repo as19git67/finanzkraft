@@ -1,14 +1,16 @@
 import AsRouteConfig from '../as-router.js';
-import base64url from 'base64url';
+import base64url from "base64url";
 
 const rc = new AsRouteConfig('/');
 
 rc.post(async (req, res, next) => {
   try {
+    // todo: fail if user already exists
     const db = req.app.get('database');
     const {email} = req.body;
     const {password} = req.body;
     const userId = await db.createUser(email, password);
+    console.log(`Created user ${email} with id ${userId}`);
     const user = {id: userId.toString(), name: email, displayName: email};
 
     const store = req.app.get('sessionChallengeStore');
@@ -16,7 +18,7 @@ rc.post(async (req, res, next) => {
       if (err) {
         return next(err);
       }
-      res.json({user: user, challenge: challenge.toString('base64')});
+      res.json({user: user, challenge: base64url.encode(challenge)});
     });
 
   } catch (error) {

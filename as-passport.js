@@ -22,23 +22,14 @@ export default class AsPassport {
     if (!user || !user.id) {
       throw new Error('User not specified', { cause: 'nouser' });
     }
-    return user.id; // id will be stored in the session
+    return user; // id will be stored in the session
   }
 
-  async #deserializeUser(userId) {
-    if (!userId) {
-      throw new Error('userId not specified', { cause: 'nouserid' });
+  async #deserializeUser(user) {
+    if (!user || !user.id) {
+      throw new Error('User not specified', { cause: 'nouser' });
     }
-    return this.#database.getUserById(userId);
-  }
-
-  // https://github.com/divrhino/divrhino-passkeys-express/blob/main/config/routes.js
-  useWebauthnStrategy() {
-    return new WebAuthnStrategy(
-      { store: this.#store },
-      this.verify, // needs to be fleshed out
-      this.register // needs to be fleshed out
-    );
+    return this.#database.getUserById(user.id);
   }
 
   async verify(id, userHandle, done) {
@@ -52,9 +43,13 @@ export default class AsPassport {
 
   async register(user, id, publicKey, done) {
     console.log(`Registering WebAuthn user id: ${id}, publicKey: ${publicKey}`);
+
+    // convert Uint8Array back to string
+    const userId = new TextDecoder().decode(user.id);
+
     try {
-      //await this.#database.storeWebAuthCredential(user.id, id, publicKey);
-      return done(null, true);
+      const user = await this.#database.storeWebAuthCredential(userId, id, publicKey);
+      return done(null, user);
     } catch (error) {
       return done(error);
     }
@@ -67,9 +62,36 @@ export default class AsPassport {
     //   this will be as simple as storing the user ID when serializing, and finding
     //   the user by ID when deserializing.
 
+    this.#passport.serializeUser((user, done) => {
+      try {
+        this.#serializeUser(user);
+        done(null, user);
+      } catch (error) {
+        return done(error);
+      }
+    });
+
+    this.#passport.deserializeUser((user, done) => {
+      try {
+        this.#deserializeUser(user);
+        done(null, user);
+      } catch (error) {
+        return done(error);
+      }
+    });
+
     // passkey support
     this.#store = new SessionChallengeStore();
-    this.#passport.use(this.useWebauthnStrategy());
+
+    // https://github.com/divrhino/divrhino-passkeys-express/blob/main/config/routes.js
+    this.#passport.use(new WebAuthnStrategy({ store: this.#store },
+      (id, userHandle, done) => {
+        this.verify(id, userHandle, done);
+      },
+      (user, id, publicKey, done) => {
+        this.register(user, id, publicKey, done);
+      }
+    ));
 
     this.#passport.use('bearer', new BearerStrategy((accessToken, done) => {
       //console.log('BEARER Strategy');

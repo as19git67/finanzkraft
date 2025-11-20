@@ -1,5 +1,5 @@
 const schema = {
-  version: 34,
+  version: 36,
   name: 'finanzkraft',
   tables: [
     {
@@ -271,11 +271,11 @@ const schema = {
       ],
     },
     {
-      tableName: 'UserCredentials',
+      tableName: 'WebAuthnUserCredentials',
       columns: [
         {
           name: 'id',
-          type: 'autoincrement',
+          type: 'string',
           primary_key: true,
         },
         {
@@ -284,25 +284,16 @@ const schema = {
           nullable: false,
         },
         {
-          name: 'idCredential',
-          type: 'string',
-          nullable: false,
-          unique: true,
-        },
-        {
           name: 'publicKey',
           type: 'text',
           nullable: false,
+          unique: true,
         },
+      ],
+      indexes: [
         {
-          name: 'counter',
-          type: 'integer',
-          nullable: false,
-        },
-        {
-          name: 'transports',
-          type: 'string',
-          nullable: false,
+          name: 'IDX_WebAuthnUserCredentialsUserId',
+          columns: ['idUser'],
         },
       ],
       foreign_keys: [

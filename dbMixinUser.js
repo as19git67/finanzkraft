@@ -4,8 +4,8 @@ import hat from 'hat';
 import crypto from 'crypto';
 import config from './config.js';
 
-const UserDatabaseMixin = {
-  getMixinName() { return 'UserDatabaseMixin'; },
+const DbMixinUser = {
+  getMixinName() { return 'DbMixinUser'; },
 
   UserTypes: {interactive: 'interactive', api: 'api'},
 
@@ -341,7 +341,9 @@ const UserDatabaseMixin = {
   },
 
   async getUserForBackup() {
-    const result = await this.knex.select().table('Users');
+    const result = await this.knex.select(['Users.*', 'WebAuthnUserCredentials.id as WebAuthnUserCredentials_id', 'WebAuthnUserCredentials.publicKey as WebAuthnUserCredentials_publicKey']).table('Users').leftJoin('WebAuthnUserCredentials', function () {
+      this.on('Users.id', '=', 'WebAuthnUserCredentials.idUser');
+    });
     return _.map(result, (r) => {
       return r;
     });
@@ -439,7 +441,17 @@ const UserDatabaseMixin = {
   },
 
   async deleteUsers(userIds) {
-    return this.knex.table('Users').whereIn('id', userIds).delete();
+    const trx = this.knex.transaction();
+    try {
+      // before deleting teh user, delete the associated webauthn credentials
+      await trx.table('WebAuthnUserCredentials').whereIn('idUser', userIds).delete();
+      const usersDeleted = await trx.table('Users').whereIn('id', userIds).delete();
+      trx.commit();
+      return usersDeleted;
+    } catch (error) {
+      trx.rollback();
+      throw error;
+    }
   },
 
   async getUserByAccessToken(accessToken) {
@@ -502,15 +514,12 @@ const UserDatabaseMixin = {
           'Users.LoginProvider',
           'Users.PasswordSalt',
           'Users.ExpiredAfter',
-          'UserCredentials.id as UserCredential_id',
-          'UserCredentials.UserCredential_idCredential',
-          'UserCredentials.publicKey as UserCredential_publicKey',
-          'UserCredentials.counter as UserCredential_counter',
-          'UserCredentials.transports as UserCredential_transports',
-        ).from('UserCredentials')
+          'WebAuthnUserCredentials.id as WebAuthnUserCredentials_id',
+          'WebAuthnUserCredentials.publicKey as WebAuthnUserCredentials_publicKey',
+        ).from('WebAuthnUserCredentials')
         .join('Users', function () {
-          this.on('Users.id', '=', 'UserCredentials.idUser');
-          this.andOn('UserCredentials.idCredential', '=', external_id);
+          this.on('Users.id', '=', 'WebAuthnUserCredentials.idUser');
+          this.andOn('WebAuthnUserCredentials.id', '=', external_id);
         });
       if (_.isArray(queryResult) && queryResult.length > 0) {
         console.log(`User for external id ${external_id} does not exist.`);
@@ -522,6 +531,16 @@ const UserDatabaseMixin = {
       console.log(ex);
       throw ex;
     }
+  },
+
+  async storeWebAuthCredential(userId, external_id, publicKey) {
+    const user = await this.getUserById(userId);
+    if (!user) {
+      throw new Error('User with given id does not exist.', {cause: 'unknown'});
+    }
+
+    await this.knex.table('WebAuthnUserCredentials').insert({idUser: userId, id: external_id, publicKey: publicKey});
+    return user;
   },
 
   isExpired(user) {
@@ -651,4 +670,4 @@ const UserDatabaseMixin = {
 
 };
 
-export default UserDatabaseMixin;
+export default DbMixinUser;

@@ -17,7 +17,7 @@ import {CronJob} from 'cron';
 import AsPassport from './as-passport.js';
 import config from './config.js';
 import DB from './database.js';
-import UserDatabaseMixin from './userDatabaseMixin.js';
+import DbMixinUser from './dbMixinUser.js';
 import basePermissions from './basePermissions.js';
 import userRouteConfig from './routes/user.js';
 import userByIdRouteConfig from './routes/userById.js';
@@ -27,10 +27,8 @@ import permissionProfilesRouteConfig from './routes/permissionProfiles.js';
 import rolePermissionProfilesRouteConfig from './routes/rolePermissionProfiles.js';
 import authRouteConfig from './routes/auth.js';
 import userRolesRouteConfig from './routes/userroles.js';
-import passkeyRegisterStart from "./routes/passkeyRegisterStart.js";
-import passkeyRegisterFinish from "./routes/passkeyRegisterFinish.js";
-import passkeyLoginStart from "./routes/passkeyLoginStart.js";
-import passkeyLoginFinish from "./routes/passkeyLoginFinish.js";
+import passkeyRegister from "./routes/passkeyRegister.js";
+import passkeyLogin from "./routes/passkeyLogin.js";
 import FinTS from './fints.js';
 
 class HttpError {
@@ -84,7 +82,7 @@ export default class AsExpress {
     if (options.dbSchemas && _.isArray(options.dbSchemas)) {
       dbSchemas = options.dbSchemas;
     }
-    const dbMixins = [UserDatabaseMixin];
+    const dbMixins = [DbMixinUser];
     if (options.dbMixins) {
       if (_.isArray(options.dbMixins)) {
         for (const dbMixin of options.dbMixins) {
@@ -424,10 +422,8 @@ export default class AsExpress {
     this.addRouter('/api/user', userRouteConfig);
     this.addRouter('/api/user', userByIdRouteConfig);
     this.addRouter('/api/user', userRolesRouteConfig);
-    this.addRouter('/api/passkeyRegisterStart', passkeyRegisterStart);
-    this.addRouter('/api/passkeyRegisterFinish', passkeyRegisterFinish);
-    this.addRouter('/api/passkeyLoginStart', passkeyLoginStart);
-    this.addRouter('/api/passkeyLoginFinish', passkeyLoginFinish);
+    this.addRouter('/api/passkeyRegister', passkeyRegister);
+    this.addRouter('/api/passkeyLogin', passkeyLogin);
   }
 
   async #startHttpServer() {
