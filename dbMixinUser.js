@@ -441,17 +441,23 @@ const DbMixinUser = {
   },
 
   async deleteUsers(userIds) {
-    const trx = this.knex.transaction();
-    try {
-      // before deleting teh user, delete the associated webauthn credentials
-      await trx.table('WebAuthnUserCredentials').whereIn('idUser', userIds).delete();
-      const usersDeleted = await trx.table('Users').whereIn('id', userIds).delete();
-      trx.commit();
-      return usersDeleted;
-    } catch (error) {
-      trx.rollback();
-      throw error;
-    }
+    return this.knex.transaction(async (trx) => {
+      try {
+        // before deleting teh user, delete the associated webauthn credentials
+        await trx.table('UserRoles').whereIn('idUser', userIds).delete();
+        await trx.table('Preferences').whereIn('idUser', userIds).delete();
+        await trx.table('Fk_AccountReader').whereIn('idUser', userIds).delete();
+        await trx.table('Fk_AccountWriter').whereIn('idUser', userIds).delete();
+        await trx.table('Fk_TransactionStatus').whereIn('idUser', userIds).delete();
+        await trx.table('UserAccessTokens').whereIn('idUser', userIds).delete();
+        await trx.table('WebAuthnUserCredentials').whereIn('idUser', userIds).delete();
+        const usersDeleted = await trx.table('Users').whereIn('id', userIds).delete();
+        return usersDeleted;
+      } catch (error) {
+        trx.rollback();
+        throw error;
+      }
+    });
   },
 
   async getUserByAccessToken(accessToken) {
@@ -539,7 +545,16 @@ const DbMixinUser = {
       throw new Error('User with given id does not exist.', {cause: 'unknown'});
     }
 
-    await this.knex.table('WebAuthnUserCredentials').insert({idUser: userId, id: external_id, publicKey: publicKey});
+    try {
+      await this.knex('WebAuthnUserCredentials').insert({idUser: userId, id: external_id, publicKey: publicKey});
+    } catch (error){
+      console.error(error);
+      if (user.EmailConfirmed === false) {
+        console.error(`Deleting unconfirmed user with id ${userId}`);
+        await this.deleteUsers(userId);
+      }
+      throw error;
+    }
     return user;
   },
 

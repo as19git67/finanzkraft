@@ -42,7 +42,7 @@ export default class AsPassport {
   }
 
   async register(user, id, publicKey, done) {
-    console.log(`Registering WebAuthn user id: ${id}, publicKey: ${publicKey}`);
+    console.log(`Registering WebAuthn user id: ${id}`);
 
     // convert Uint8Array back to string
     const userId = new TextDecoder().decode(user.id);

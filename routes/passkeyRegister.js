@@ -9,9 +9,20 @@ rc.post(async (req, res, next) => {
     const db = req.app.get('database');
     const {email} = req.body;
     const {password} = req.body;
-    const userId = await db.createUser(email, password);
-    console.log(`Created user ${email} with id ${userId}`);
-    const user = {id: userId.toString(), name: email, displayName: email};
+    if (!email || !email.trim()) {
+      console.log("Can't create user with empty email");
+      res.sendStatus(400);  // bad request
+      return;
+    }
+    if (!password || !password.trim()) {
+      console.log("Can't create user with empty password");
+      res.sendStatus(400);  // bad request
+      return;
+    }
+    const emailTrimmed = email.trim();
+    const userId = await db.createUser(emailTrimmed, password);
+    console.log(`Created user ${emailTrimmed} with id ${userId}`);
+    const user = {id: userId.toString(), name: emailTrimmed, displayName: emailTrimmed};
 
     const store = req.app.get('sessionChallengeStore');
     store.challenge(req, {user}, function (err, challenge) {
