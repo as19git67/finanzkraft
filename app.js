@@ -3,7 +3,7 @@ import helmet from 'helmet';
 import path from 'path';
 import logger from 'morgan';
 
-import AsExpress from "./as-express.js";
+import AsExpress from './as-express.js';
 import basePermissions from './basePermissions.js';
 import permissions from './permissions.js';
 import dbSchema from './dbSchema.js';
@@ -24,22 +24,23 @@ import timespanRouter from './routes/timespans.js';
 import currenciesRouter from './routes/currencies.js';
 import ruleRouter from './routes/rule.js';
 import rulesRouter from './routes/rules.js';
-import dbMixinAccounts from "./dbMixinAccounts.js";
-import dbMixinTransactions from "./dbMixinTransactions.js";
-import dbMixinPrefsNewTransactionPresets from "./dbMixinPrefsNewTransactionPresets.js";
-import dbMixinSystemPreferences from "./dbMixinSystemPreferences.js";
-import dbMixinCurrencies from "./dbMixinCurrencies.js";
-import dbMixinAccountTypes from "./dbMixinAccountTypes.js";
-import dbMixinCategories from "./dbMixinCategories.js";
-import dbMixinTags from "./dbMixinTags.js";
-import dbMixinTimespan from "./dbMixinTimespan.js";
-import dbMixinRules from "./dbMixinRules.js";
-import dbMixinOnlineBanking from "./dbMixinOnlineBanking.js";
-import di from './dataImport.js'
-import dataExporter from './dataExport.js'
+import dbMixinAccounts from './dbMixinAccounts.js';
+import dbMixinTransactions from './dbMixinTransactions.js';
+import dbMixinPrefsNewTransactionPresets from './dbMixinPrefsNewTransactionPresets.js';
+import dbMixinSystemPreferences from './dbMixinSystemPreferences.js';
+import dbMixinCurrencies from './dbMixinCurrencies.js';
+import dbMixinAccountTypes from './dbMixinAccountTypes.js';
+import dbMixinCategories from './dbMixinCategories.js';
+import dbMixinTags from './dbMixinTags.js';
+import dbMixinTimespan from './dbMixinTimespan.js';
+import dbMixinRules from './dbMixinRules.js';
+import dbMixinOnlineBanking from './dbMixinOnlineBanking.js';
+import di from './dataImport.js';
+import dataExporter from './dataExport.js';
+import Routes from './config/routes.js';
 
 // workaround for missing __dirname in ES6 modules
-import {URL} from 'url';
+import { URL } from 'url';
 
 const __dirname = new URL('.', import.meta.url).pathname;
 
@@ -48,17 +49,17 @@ app.use(helmet());
 
 app.use(helmet.contentSecurityPolicy({
   directives: {
-    defaultSrc: ["'self'"],
-    connectSrc: ["'self'", 'wss:'],
-    styleSrc: ["'self'", "'unsafe-inline'", 'fonts.googleapis.com', 'cdn.jsdelivr.net'],
-    imgSrc: ["'self'", 'data:', '*.tile.osm.org', 'fonts.googleapis.com', 'cdn.jsdelivr.net'],
-    fontSrc: ["'self'", 'fonts.googleapis.com', 'fonts.gstatic.com']
+    defaultSrc: ['\'self\''],
+    connectSrc: ['\'self\'', 'wss:'],
+    styleSrc: ['\'self\'', '\'unsafe-inline\'', 'fonts.googleapis.com', 'cdn.jsdelivr.net'],
+    imgSrc: ['\'self\'', 'data:', '*.tile.osm.org', 'fonts.googleapis.com', 'cdn.jsdelivr.net'],
+    fontSrc: ['\'self\'', 'fonts.googleapis.com', 'fonts.gstatic.com']
   }
 }));
 
 app.use(logger('dev'));
 app.use(express.json());
-app.use(express.urlencoded({extended: false}));
+app.use(express.urlencoded({ extended: false }));
 
 app.use(express.static(path.join(__dirname, 'dist')));  // serve vue client app
 
@@ -81,8 +82,10 @@ new Promise(async (resolve, reject) => {
     ],
     dbImporter: [di],
     dbExporter: [dataExporter],
-    permissions: {...basePermissions, ...permissions} ,
+    permissions: { ...basePermissions, ...permissions },
   });
+
+  app.use('/', new Routes(asExpress.database).router);
 
   app.use(function (req, res, next) {
     // disallow all php requests
@@ -127,28 +130,28 @@ new Promise(async (resolve, reject) => {
     } else {
       // request was via http, so redirect to https
       const secUrl = 'https://' + req.headers.host + req.url;
-      console.log("Redirecting " + req.protocol + '://' + req.get('host') + req.url + " to https: " + secUrl);
+      console.log('Redirecting ' + req.protocol + '://' + req.get('host') + req.url + ' to https: ' + secUrl);
       res.redirect(secUrl);
     }
   });
 
-  asExpress.addRouter("/api/accounts", transactionsOfAccountRouter);
-  asExpress.addRouter("/api/accounts", accountsRouter);
-  asExpress.addRouter("/api/accounts", accountRouter);
-  asExpress.addRouter("/api/accounts", accountStatementsRouter);
-  asExpress.addRouter("/api/bankcontacts", bankcontactsRouter);
-  asExpress.addRouter("/api/bankcontacts", bankcontactRouter);
-  asExpress.addRouter("/api/bankcontacts", fintsAccountsOfBankcontactsRouter);
-  asExpress.addRouter("/api/accounttypes", accountTypesRouter);
-  asExpress.addRouter("/api/transaction", transactionRouter);
-  asExpress.addRouter("/api/transaction", transactionsRouter);
-  asExpress.addRouter("/api/newtransactionpresets", newTransactionPresetsRouter);
-  asExpress.addRouter("/api/currencies", currenciesRouter);
-  asExpress.addRouter("/api/timespans", timespanRouter);
-  asExpress.addRouter("/api/tags", tagsRouter);
-  asExpress.addRouter("/api/category", categoriesRouter);
-  asExpress.addRouter("/api/rules", rulesRouter);
-  asExpress.addRouter("/api/rules", ruleRouter);
+  asExpress.addRouter('/api/accounts', transactionsOfAccountRouter);
+  asExpress.addRouter('/api/accounts', accountsRouter);
+  asExpress.addRouter('/api/accounts', accountRouter);
+  asExpress.addRouter('/api/accounts', accountStatementsRouter);
+  asExpress.addRouter('/api/bankcontacts', bankcontactsRouter);
+  asExpress.addRouter('/api/bankcontacts', bankcontactRouter);
+  asExpress.addRouter('/api/bankcontacts', fintsAccountsOfBankcontactsRouter);
+  asExpress.addRouter('/api/accounttypes', accountTypesRouter);
+  asExpress.addRouter('/api/transaction', transactionRouter);
+  asExpress.addRouter('/api/transaction', transactionsRouter);
+  asExpress.addRouter('/api/newtransactionpresets', newTransactionPresetsRouter);
+  asExpress.addRouter('/api/currencies', currenciesRouter);
+  asExpress.addRouter('/api/timespans', timespanRouter);
+  asExpress.addRouter('/api/tags', tagsRouter);
+  asExpress.addRouter('/api/category', categoriesRouter);
+  asExpress.addRouter('/api/rules', rulesRouter);
+  asExpress.addRouter('/api/rules', ruleRouter);
 
   // const router = express.Router();
   // const corsOptions = {
@@ -202,7 +205,7 @@ new Promise(async (resolve, reject) => {
   });
 
 }).then(() => {
-  console.log(`${app.name} started.`)
+  console.log(`${app.name} started.`);
 }).catch((reason) => {
   console.error(reason);
 });

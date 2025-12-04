@@ -613,7 +613,7 @@ const DbMixinUser = {
     const accessToken = hat().toString('base64');
     const refreshToken = hat().toString('base64');
     const tokenData = {
-      idUser: userId,
+      id: userId,
       AccessToken: accessToken,
       RefreshToken: refreshToken,
       AccessTokenExpiredAfter: DateTime.now().plus({ minutes: tokenLifetimeInMinutes }).toISO(),

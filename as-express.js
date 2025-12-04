@@ -14,7 +14,6 @@ import cookieParser from 'cookie-parser';
 import {fileURLToPath} from 'url';
 import {DateTime} from 'luxon';
 import {CronJob} from 'cron';
-import AsPassport from './as-passport.js';
 import config from './config.js';
 import DB from './database.js';
 import DbMixinUser from './dbMixinUser.js';
@@ -27,8 +26,9 @@ import permissionProfilesRouteConfig from './routes/permissionProfiles.js';
 import rolePermissionProfilesRouteConfig from './routes/rolePermissionProfiles.js';
 import authRouteConfig from './routes/auth.js';
 import userRolesRouteConfig from './routes/userroles.js';
-import passkeyRegister from "./routes/passkeyRegister.js";
-import passkeyLogin from "./routes/passkeyLogin.js";
+// import passkeyRegister from "./routes/passkeyRegister.js";
+// import passkeyLoginChallenge from "./routes/passkeyLoginChallenge.js";
+// import passkeyLogin from "./routes/passkeyLogin.js";
 import FinTS from './fints.js';
 
 class HttpError {
@@ -173,6 +173,10 @@ export default class AsExpress {
       true, // start
       'Europe/Berlin' // timeZone
     );
+  }
+
+  get database() {
+    return this.#database;
   }
 
   async #ensurePrivatePublicKeyPairInSystemPreferences() {
@@ -362,9 +366,6 @@ export default class AsExpress {
     this.app.use(passport.initialize());
     this.app.use(passport.authenticate('session'));
     //    this.app.use(passport.session()); // don't use persistent login sessions
-    const asPassport = new AsPassport(passport, this.#database);
-    await asPassport.init();
-    this.app.set('sessionChallengeStore', asPassport.sessionChallengeStore);
   }
 
   async #downloadStatements() {
@@ -422,8 +423,9 @@ export default class AsExpress {
     this.addRouter('/api/user', userRouteConfig);
     this.addRouter('/api/user', userByIdRouteConfig);
     this.addRouter('/api/user', userRolesRouteConfig);
-    this.addRouter('/api/passkeyRegister', passkeyRegister);
-    this.addRouter('/api/passkeyLogin', passkeyLogin);
+//    this.addRouter('/api/passkeyRegister', passkeyRegister);
+//    this.addRouter('/api/passkeyLogin', passkeyLogin);
+//    this.addRouter('/api/passkeyLoginChallenge', passkeyLoginChallenge);
   }
 
   async #startHttpServer() {
