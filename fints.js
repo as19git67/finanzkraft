@@ -207,10 +207,13 @@ export default class FinTS {
     const {bankingInformation, requiresTan} = syncRes;
 
     if (requiresTan) {
-      const {requiresTan, tanChallenge, tanReference, tanMediaName, bankingInformation} = syncRes;
+      let mimeType = '';
+      let image;
+      const {requiresTan, tanChallenge, tanPhoto, tanReference, tanMediaName, bankingInformation} = syncRes;
       return {status: FinTS.statusRequiresTAN, tanInfo: {
         requiresTan,
           tanChallenge,
+          tanPhoto,
           tanReference,
           tanMediaName,
           availableTanMethodIds: bankingInformation?.bpd?.availableTanMethodIds ? bankingInformation.bpd.availableTanMethodIds : []

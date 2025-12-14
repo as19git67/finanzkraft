@@ -53,6 +53,11 @@ async function handleRequest(req, res, tanReference, tan) {
           await db.setFintsStatusOnAccountsOfBankcontact(idBankcontact, {
             fintsError: result.message, fintsAuthRequired: true,
           });
+          if (result.tanInfo.tanPhoto) {
+            if (result.tanInfo.tanPhoto.image) {
+              result.tanInfo.tanPhoto.image = Buffer.from(result.tanInfo.tanPhoto.image).toString('base64');
+            }
+          }
           res.json({status: result.status, tanInfo: result.tanInfo});
           break;
         default:
