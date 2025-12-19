@@ -1,15 +1,15 @@
 import _ from 'lodash';
-import {DateTime} from 'luxon';
+import { DateTime } from 'luxon';
 import hat from 'hat';
 import crypto from 'crypto';
 import config from './config.js';
 
 const DbMixinUser = {
-  getMixinName() { return 'DbMixinUser'; },
+  getMixinName () { return 'DbMixinUser'; },
 
-  UserTypes: {interactive: 'interactive', api: 'api'},
+  UserTypes: { interactive: 'interactive', api: 'api' },
 
-  async addUser(email, passwordSalt, passwordHash) {
+  async addUser (email, passwordSalt, passwordHash) {
     const user = {
       Email: email,
       EmailConfirmed: false,
@@ -24,7 +24,7 @@ const DbMixinUser = {
     return result[0].id;
   },
 
-  addUserFromBackup(users) {
+  addUserFromBackup (users) {
     const usersToImport = users.map((user) => {
       return {
         Email: user.Email,
@@ -41,13 +41,13 @@ const DbMixinUser = {
     return this.knex('Users').insert(usersToImport).returning('*');
   },
 
-  _createPasswordHash(password, salt) {
+  _createPasswordHash (password, salt) {
     // Hashing user's salt and password with 1000 iterations, 64 length and sha512 digest
     const passwordHash = crypto.pbkdf2Sync(password, salt, 1000, 64, 'sha512').toString('hex');
     return passwordHash;
   },
 
-  async createUser(email, password) {
+  async createUser (email, password) {
     if (email === 'undefined' || !email) {
       throw new Error('email undefined');
     }
@@ -74,7 +74,7 @@ const DbMixinUser = {
     return this.addUser(email, salt, passwordHash);
   },
 
-  async createRoleEmpty(name) {
+  async createRoleEmpty (name) {
     if (!name) {
       throw new Error('Role name must be specified', { cause: 'undefined' });
     }
@@ -86,7 +86,7 @@ const DbMixinUser = {
     return result[0].id;
   },
 
-  async updateRoleNameById(roleId, roleName) {
+  async updateRoleNameById (roleId, roleName) {
     const result = await this.knex.select().table('Roles').where({ id: roleId });
     if (result.length !== 1) {
       throw new Error(`Role with id ${roleId} does not exist`, { cause: 'unknown' });
@@ -94,7 +94,7 @@ const DbMixinUser = {
     return this.knex.table('Roles').where('id', roleId).update({ Name: roleName });
   },
 
-  async deleteRole(roleId) {
+  async deleteRole (roleId) {
     let result = await this.knex('Roles').where({ id: roleId });
     if (result.length === 0) {
       throw new Error(`Role with id ${roleId} does not exist and therefore can't be deleted`, { cause: 'unknown' });
@@ -114,7 +114,7 @@ const DbMixinUser = {
     console.log(`Deleted role with roleId: ${roleId}`);
   },
 
-  async setPermissionProfiles(permissions) {
+  async setPermissionProfiles (permissions) {
     if (!_.isObject(permissions)) {
       throw new Error('basePermissions must be an object', { cause: 'invalid' });
     }
@@ -167,7 +167,7 @@ const DbMixinUser = {
     });
   },
 
-  async setPermissionProfileAssignmentsForRole(role, permissionProfileIds) {
+  async setPermissionProfileAssignmentsForRole (role, permissionProfileIds) {
     if (!role) {
       throw new Error('Role must be specified (name or id)', { cause: 'undefined' });
     }
@@ -206,21 +206,21 @@ const DbMixinUser = {
     });
   },
 
-  async assignRoleToUser(roleId, userId) {
+  async assignRoleToUser (roleId, userId) {
     const result = await this.knex('UserRoles').insert({ idUser: userId, idRole: roleId }).returning('id');
     console.log(`Inserted ${result.length} UserRoles for userId: ${userId}, roleId: ${roleId}`);
   },
 
-  async unassignRoleFromUser(roleId, userId) {
+  async unassignRoleFromUser (roleId, userId) {
     const result = await this.knex('UserRoles').where({ idUser: userId, idRole: roleId }).delete();
     console.log(`Deleted ${result.length} UserRoles for userId: ${userId}, roleId: ${roleId}`);
   },
 
-  async getRolesOfUser(userId) {
+  async getRolesOfUser (userId) {
     return this.knex('UserRoles').where({ idUser: userId });
   },
 
-  async setRoleAssignmentsForUser(userId, roleIds) {
+  async setRoleAssignmentsForUser (userId, roleIds) {
     return this.knex.transaction(async (trx) => {
       await trx('UserRoles').where({ idUser: userId }).delete();
 
@@ -235,7 +235,7 @@ const DbMixinUser = {
     });
   },
 
-  async checkUserIsAllowed(userId, resource, method) {
+  async checkUserIsAllowed (userId, resource, method) {
     const now = DateTime.now();
 
     const queryResult = await this.knex.select(
@@ -269,7 +269,7 @@ const DbMixinUser = {
     return queryResult.length > 0;
   },
 
-  async getUsersPermissions(userId) {
+  async getUsersPermissions (userId) {
     const now = DateTime.now();
     const queryResult = await this.knex
       .select(
@@ -294,23 +294,23 @@ const DbMixinUser = {
     return queryResult;
   },
 
-  async getRoles() {
+  async getRoles () {
     const result = await this.knex.select().table('Roles');
     return _.map(result, (r) => this._extractSaveRoleData(r));
   },
 
-  async getPermissionProfilesForRole(idRole) {
+  async getPermissionProfilesForRole (idRole) {
     if (!idRole) {
       throw new Error('Undefined idRole');
     }
     return this.knex.select().table('RolePermissionProfiles').where({ idRole });
   },
 
-  async getPermissionProfiles() {
+  async getPermissionProfiles () {
     return this.knex.select().table('PermissionProfiles').orderBy('Description');
   },
 
-  async getUser() {
+  async getUser () {
     const result = await this.knex.select(['Users.*', 'Roles.id as idRole', 'Roles.Name as RoleName']).table('Users')
       .join('UserRoles', function () {
         this.on('Users.id', '=', 'UserRoles.idUser');
@@ -325,7 +325,7 @@ const DbMixinUser = {
         user = users.get(userWithRole.id);
       } else {
         user = {
-        ...this._extractSaveUserData(userWithRole),
+          ...this._extractSaveUserData(userWithRole),
           Roles: [],
         };
         users.set(userWithRole.id, user);
@@ -340,7 +340,7 @@ const DbMixinUser = {
     return Array.from(users.values());
   },
 
-  async getUserForBackup() {
+  async getUserForBackup () {
     const result = await this.knex.select(['Users.*', 'WebAuthnUserCredentials.id as WebAuthnUserCredentials_id', 'WebAuthnUserCredentials.publicKey as WebAuthnUserCredentials_publicKey']).table('Users').leftJoin('WebAuthnUserCredentials', function () {
       this.on('Users.id', '=', 'WebAuthnUserCredentials.idUser');
     });
@@ -349,7 +349,7 @@ const DbMixinUser = {
     });
   },
 
-  async getUserById(id) {
+  async getUserById (id) {
     if (id === undefined) {
       throw new Error('Undefined user id');
     }
@@ -360,12 +360,12 @@ const DbMixinUser = {
     throw new Error(`User with id ${id} does not exist`);
   },
 
-  async existsUserById(id) {
+  async existsUserById (id) {
     const result = await this.knex.select().table('Users').where({ id });
     return result.length === 1;
   },
 
-  async getUserByEmail(email) {
+  async getUserByEmail (email) {
     const result = await this.knex.select().table('Users').where({ Email: email });
     if (result.length === 1) {
       return this._extractSaveUserData(result[0]);
@@ -373,7 +373,7 @@ const DbMixinUser = {
     throw new Error(`User with email ${email} does not exist`);
   },
 
-  _updateUser(existingUserData, data) {
+  _updateUser (existingUserData, data) {
     const updateData = data;
     if (data.ExpiredAfter) {
       if (!DateTime.isDateTime(data.ExpiredAfter)) {
@@ -395,7 +395,7 @@ const DbMixinUser = {
     return this.knex.table('Users').where('id', existingUserData.id).update(updateData);
   },
 
-  async updateUserById(userId, data) {
+  async updateUserById (userId, data) {
     const result = await this.knex.select().table('Users').where({ id: userId });
     if (result.length !== 1) {
       throw new Error(`User with id ${userId} does not exist`);
@@ -419,7 +419,7 @@ const DbMixinUser = {
     return this._updateUser(result[0], updateData);
   },
 
-  async updateUserByEmail(email, data) {
+  async updateUserByEmail (email, data) {
     const result = await this.knex.select().table('Users').where({ Email: email });
     if (result.length !== 1) {
       throw new Error(`User with email ${email} does not exist`);
@@ -440,7 +440,7 @@ const DbMixinUser = {
     return this._updateUser(result[0], updateData);
   },
 
-  async deleteUsers(userIds) {
+  async deleteUsers (userIds) {
     return this.knex.transaction(async (trx) => {
       try {
         // before deleting teh user, delete the associated webauthn credentials
@@ -460,12 +460,12 @@ const DbMixinUser = {
     });
   },
 
-  async getUserByAccessToken(accessToken) {
+  async getUserByAccessToken (accessToken) {
     if (!accessToken) {
-      throw new Error("Can't get user by undefined access token.");
+      throw new Error('Can\'t get user by undefined access token.');
     }
     if (!_.isString(accessToken)) {
-      throw new Error("Can't get user by non-string access token.");
+      throw new Error('Can\'t get user by non-string access token.');
     }
 
     try {
@@ -502,18 +502,17 @@ const DbMixinUser = {
     return undefined;
   },
 
-  async getUserByWebAuthCredential(external_id) {
+  async getUserByWebAuthCredential (external_id) {
     if (!external_id) {
-      throw new Error("Can't get user by undefined external id.");
+      throw new Error('Can\'t get user by undefined external id.');
     }
     if (!_.isString(external_id)) {
-      throw new Error("Can't get user by non-string access token.");
+      throw new Error('Can\'t get user by non-string access token.');
     }
 
     try {
       const queryResult = await this.knex
-        .select(
-          'Users.id',
+        .select('Users.id',
           'Users.Email',
           'Users.EmailConfirmed',
           'Users.Initials',
@@ -522,15 +521,15 @@ const DbMixinUser = {
           'Users.ExpiredAfter',
           'WebAuthnUserCredentials.id as WebAuthnUserCredentials_id',
           'WebAuthnUserCredentials.publicKey as WebAuthnUserCredentials_publicKey',
-        ).from('WebAuthnUserCredentials')
-        .join('Users', function () {
-          this.on('Users.id', '=', 'WebAuthnUserCredentials.idUser');
-          this.andOn('WebAuthnUserCredentials.id', '=', external_id);
-        });
+        )
+        .from('WebAuthnUserCredentials')
+        .join('Users', 'Users.id', '=', 'WebAuthnUserCredentials.idUser')
+        .where('WebAuthnUserCredentials.id', external_id);
+
       if (_.isArray(queryResult) && queryResult.length > 0) {
-        console.log(`User for external id ${external_id} does not exist.`);
         return queryResult[0];
       }
+      console.log(`User for external id ${external_id} does not exist.`);
       return undefined;
     } catch (ex) {
       console.log('Exception while selecting user by external id:');
@@ -539,15 +538,15 @@ const DbMixinUser = {
     }
   },
 
-  async storeWebAuthCredential(userId, external_id, publicKey) {
+  async storeWebAuthCredential (userId, external_id, publicKey) {
     const user = await this.getUserById(userId);
     if (!user) {
-      throw new Error('User with given id does not exist.', {cause: 'unknown'});
+      throw new Error('User with given id does not exist.', { cause: 'unknown' });
     }
 
     try {
-      await this.knex('WebAuthnUserCredentials').insert({idUser: userId, id: external_id, publicKey: publicKey});
-    } catch (error){
+      await this.knex('WebAuthnUserCredentials').insert({ idUser: userId, id: external_id, publicKey: publicKey });
+    } catch (error) {
       console.error(error);
       if (user.EmailConfirmed === false) {
         console.error(`Deleting unconfirmed user with id ${userId}`);
@@ -558,7 +557,7 @@ const DbMixinUser = {
     return user;
   },
 
-  isExpired(user) {
+  isExpired (user) {
     const expiredAfter = DateTime.fromISO(user.ExpiredAfter);
     if (!DateTime.isDateTime(expiredAfter)) {
       throw new Error('must be DateTime', { cause: 'type' });
@@ -569,7 +568,7 @@ const DbMixinUser = {
     return false;
   },
 
-  async validateUser(email, password) {
+  async validateUser (email, password) {
     const result = await this.knex.select()
       .table('Users')
       .where({ Email: email });
@@ -590,7 +589,7 @@ const DbMixinUser = {
     throw new Error(`Wrong password for user ${email}`, { cause: 'invalid' });
   },
 
-  async createAccessTokenForUser(userId) {
+  async createAccessTokenForUser (userId) {
     let user;
 
     // check if user with given id exists
@@ -613,7 +612,7 @@ const DbMixinUser = {
     const accessToken = hat().toString('base64');
     const refreshToken = hat().toString('base64');
     const tokenData = {
-      id: userId,
+      idUser: userId,
       AccessToken: accessToken,
       RefreshToken: refreshToken,
       AccessTokenExpiredAfter: DateTime.now().plus({ minutes: tokenLifetimeInMinutes }).toISO(),
@@ -624,7 +623,7 @@ const DbMixinUser = {
     return tokenData;
   },
 
-  async deleteAccessTokensForUser(userId) {
+  async deleteAccessTokensForUser (userId) {
     let user;
 
     // check if user with given id exists
@@ -639,14 +638,14 @@ const DbMixinUser = {
     return result;
   },
 
-  async deleteAccessToken(accessToken) {
+  async deleteAccessToken (accessToken) {
     const result = this.knex.table('UserAccessTokens').where({ AccessToken: accessToken }).delete();
     return result;
   },
 
-  async refreshAccessToken(accessToken, refreshToken) {
+  async refreshAccessToken (accessToken, refreshToken) {
     if (!accessToken || !refreshToken) {
-      throw new Error("accessToken can't be undefined", { cause: 'undefined' });
+      throw new Error('accessToken can\'t be undefined', { cause: 'undefined' });
     }
     let result = this.knex.table('UserAccessTokens').where({
       AccessToken: accessToken,
@@ -672,14 +671,14 @@ const DbMixinUser = {
     return result;
   },
 
-  _extractSaveUserData(user) {
+  _extractSaveUserData (user) {
     const data = _.pick(user, ['id', 'Email', 'EmailConfirmed', 'Initials', 'LoginProvider', 'PasswordSalt', 'Type']);
     data.ExpiredAfter = DateTime.fromISO(user.ExpiredAfter);
     data.EmailConfirmed = user.EmailConfirmed === 1 || user.EmailConfirmed === true;
     return data;
   },
 
-  _extractSaveRoleData(user) {
+  _extractSaveRoleData (user) {
     return _.pick(user, ['id', 'Name']);
   },
 

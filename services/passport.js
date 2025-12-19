@@ -4,8 +4,9 @@ import { Strategy as BearerStrategy } from 'passport-http-bearer';
 import { BasicStrategy } from 'passport-http';
 import { Strategy as WebAuthnStrategy, SessionChallengeStore } from 'passport-fido2-webauthn';
 import passport from 'passport';
+import base64url from "base64url";
 
-class PassportService {
+class Passport {
   #db;
 
   constructor (database) {
@@ -13,11 +14,20 @@ class PassportService {
   }
 
   init (store) {
-    // 1. configure passport to use WebAuthn Strategy
-    passport.use(this.useWebauthnStrategy(store));
-    // 2. passport serialise user
+    passport.authenticate('session');
+
+    // configure passport to use WebAuthn Strategy
+    passport.use(new WebAuthnStrategy({ store: store },
+      (id, userHandle, cb) => {
+        return this.verify(id, userHandle, cb);
+      }, (user, id, publicKey, cb) => {
+        return this.register(user, id, publicKey, cb);
+      })
+    );
+
+    // passport serialise user
     passport.serializeUser(this.serialiseUserFn);
-    // 3. passport deserialise user
+    // passport deserialise user
     passport.deserializeUser(this.deserialiseUserFn);
 
     passport.use('local', this.useLocalStrategy());
@@ -25,11 +35,7 @@ class PassportService {
     passport.use('bearer', this.useBearerStrategy());
   }
 
-  useWebauthnStrategy (store) {
-    return new WebAuthnStrategy({ store: store }, this.verify, (user, id, publicKey, done) => { this.register(user, id, publicKey, done); });
-  }
-
-  useLocalStrategy() {
+  useLocalStrategy () {
     return new LocalStrategy((email, password, done) => {
       console.log('LOCAL STRATEGY', email);
 
@@ -43,7 +49,7 @@ class PassportService {
     });
   }
 
-  useBasicStrategy() {
+  useBasicStrategy () {
     return new BasicStrategy((email, password, done) => {
       console.log('BASIC STRATEGY', email);
 
@@ -57,7 +63,7 @@ class PassportService {
     });
   }
 
-  useBearerStrategy() {
+  useBearerStrategy () {
     return new BearerStrategy((accessToken, done) => {
       //console.log('BEARER Strategy');
       this.#db.getUserByAccessToken(accessToken).then((user) => {
@@ -106,46 +112,34 @@ class PassportService {
   }
 
   // Verify callback
-  async verify (id, userHandle, done) {
-    const transaction = await this.#db.transaction();
+  async verify (id, userHandle, cb) {
     try {
-      const currentCredentials = await models.PublicKeyCredentials.findOne({
-        where: { external_id: id },
-      }, { transaction });
+      const currentUser = await this.#db.getUserByWebAuthCredential(id);
 
-      if (currentCredentials === null) {
-        return done(null, false, { message: 'Invalid key. ' });
+      if (!currentUser) {
+        return cb(null, false, { message: 'Invalid passkey' });
       }
 
-      const currentUser = await models.User.findOne({
-        where: { id: currentCredentials.user_id },
-      }, { transaction });
-
-      if (currentUser === null) {
-        return done(null, false, { message: 'No such user. ' });
+      const idBuffer = Buffer.from(currentUser.id.toString(), 'ascii');
+      if (Buffer.compare(idBuffer, userHandle) !== 0) {
+        return cb(null, false, { message: 'Handles do not match. ' });
       }
 
-      if (Buffer.compare(currentUser.handle, userHandle) != 0) {
-        return done(null, false, { message: 'Handles do not match. ' });
-      }
-
-      await transaction.commit();
-
-      return done(null, currentCredentials, currentCredentials.public_key);
+      return cb(null, currentUser, currentUser.WebAuthnUserCredentials_publicKey);
     } catch (error) {
-      await transaction.rollback();
-      throw error;
+      console.log(error);
+      return cb(null, false);
     }
   }
 
   // Register callback
   async register (user, id, publicKey, done) {
     try {
-      console.log(`Registering WebAuthn user id: ${id}`);
+      console.log(`Registering WebAuthn user id: ${user.id}`);
 
       // convert Uint8Array back to string
-      const userId = new TextDecoder().decode(user.id);
-
+      const userIdBase64 = new TextDecoder().decode(user.id);
+      const userId = base64url.decode(userIdBase64);
       const savedUser = await this.#db.storeWebAuthCredential(userId, id, publicKey);
       return done(null, savedUser);
     } catch (error) {
@@ -154,4 +148,4 @@ class PassportService {
   }
 }
 
-export default PassportService;
+export default Passport;

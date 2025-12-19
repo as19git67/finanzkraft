@@ -15,9 +15,7 @@ class AuthController {
 
   denyUser (err, req, res, next) {
     const cxx = Math.floor(err.status / 100);
-
     if (cxx != 4) return next(err);
-
     res.json({ ok: false, destination: '/login' });
   }
 
@@ -67,6 +65,7 @@ class AuthController {
         const userId = await db.createUser(emailTrimmed, password);
         console.log(`Created user ${emailTrimmed} with id ${userId}`);
         const user = { id: userId.toString(), name: emailTrimmed, displayName: emailTrimmed };
+        user.id = base64url.encode(user.id);
 
         store.challenge(req, { user }, function (err, challenge) {
           if (err) {
@@ -75,7 +74,6 @@ class AuthController {
           }
           res.json({ user: user, challenge: base64url.encode(challenge) });
         });
-
       } catch (error) {
         console.log('createChallengeFrom failed with exception:', error);
         next(error);

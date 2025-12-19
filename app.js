@@ -2,11 +2,26 @@ import express from 'express';
 import helmet from 'helmet';
 import path from 'path';
 import logger from 'morgan';
+import session from 'express-session';
+import cookieParser from 'cookie-parser';
+import passport from 'passport';
+import CORS from 'cors';
 
 import AsExpress from './as-express.js';
 import basePermissions from './basePermissions.js';
 import permissions from './permissions.js';
 import dbSchema from './dbSchema.js';
+import userRouteConfig from './routes/user.js';
+import userByIdRouteConfig from './routes/userById.js';
+import roleRouteConfig from './routes/role.js';
+import rolesRouteConfig from './routes/roles.js';
+import permissionProfilesRouteConfig from './routes/permissionProfiles.js';
+import rolePermissionProfilesRouteConfig from './routes/rolePermissionProfiles.js';
+import authRouteConfig from './routes/auth.js';
+import userRolesRouteConfig from './routes/userroles.js';
+// import passkeyRegister from "./routes/passkeyRegister.js";
+// import passkeyLoginChallenge from "./routes/passkeyLoginChallenge.js";
+// import passkeyLogin from "./routes/passkeyLogin.js";
 import accountRouter from './routes/account.js';
 import accountsRouter from './routes/accounts.js';
 import accountStatementsRouter from './routes/accountStatements.js';
@@ -38,6 +53,8 @@ import dbMixinOnlineBanking from './dbMixinOnlineBanking.js';
 import di from './dataImport.js';
 import dataExporter from './dataExport.js';
 import Routes from './config/routes.js';
+import config from './config.js';
+
 
 // workaround for missing __dirname in ES6 modules
 import { URL } from 'url';
@@ -84,6 +101,39 @@ new Promise(async (resolve, reject) => {
     dbExporter: [dataExporter],
     permissions: { ...basePermissions, ...permissions },
   });
+
+  app.use(cookieParser());
+  // Note: session is not needed, if passport.session() below is not called
+  app.use(session({
+    secret: config['express-session-secret'],
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
+    },
+  }));
+
+  let corsOptions;
+  if (process.env.NODE_ENV === 'development') {
+    corsOptions = {
+      origin: ['http://localhost:5173', 'https://localhost:5173'],
+      methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+      // allowedHeaders: ['Content-Type', 'Authorization', 'Location'],
+      preflightContinue: false,
+      optionsSuccessStatus: 204,
+      credentials: true,
+    };
+    app.use(CORS(corsOptions));
+  } else {
+    corsOptions = {
+      origin: config.CORS_origin,
+      methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    };
+  }
+
+  //app.use(passport.initialize());
+  app.use(passport.authenticate('session'));
+  //    this.app.use(passport.session()); // don't use persistent login sessions
 
   app.use('/', new Routes(asExpress.database).router);
 
@@ -135,6 +185,17 @@ new Promise(async (resolve, reject) => {
     }
   });
 
+  asExpress.addRouter('/api/auth', authRouteConfig);
+  asExpress.addRouter('/api/role', roleRouteConfig);
+  asExpress.addRouter('/api/role', rolesRouteConfig);
+  asExpress.addRouter('/api/role', rolePermissionProfilesRouteConfig);
+  asExpress.addRouter('/api/permissionprofile', permissionProfilesRouteConfig);
+  asExpress.addRouter('/api/user', userRouteConfig);
+  asExpress.addRouter('/api/user', userByIdRouteConfig);
+  asExpress.addRouter('/api/user', userRolesRouteConfig);
+//    asExpress.addRouter('/api/passkeyRegister', passkeyRegister);
+//    asExpress.addRouter('/api/passkeyLogin', passkeyLogin);
+//    asExpress.addRouter('/api/passkeyLoginChallenge', passkeyLoginChallenge);
   asExpress.addRouter('/api/accounts', transactionsOfAccountRouter);
   asExpress.addRouter('/api/accounts', accountsRouter);
   asExpress.addRouter('/api/accounts', accountRouter);
@@ -204,6 +265,7 @@ new Promise(async (resolve, reject) => {
     // res.render('error');
   });
 
+  await asExpress.startHttpServer();
 }).then(() => {
   console.log(`${app.name} started.`);
 }).catch((reason) => {

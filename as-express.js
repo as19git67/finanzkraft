@@ -9,8 +9,6 @@ import debug from 'debug';
 import CORS from 'cors';
 import passport from 'passport';
 import express from 'express';
-import session from 'express-session';
-import cookieParser from 'cookie-parser';
 import {fileURLToPath} from 'url';
 import {DateTime} from 'luxon';
 import {CronJob} from 'cron';
@@ -18,17 +16,6 @@ import config from './config.js';
 import DB from './database.js';
 import DbMixinUser from './dbMixinUser.js';
 import basePermissions from './basePermissions.js';
-import userRouteConfig from './routes/user.js';
-import userByIdRouteConfig from './routes/userById.js';
-import roleRouteConfig from './routes/role.js';
-import rolesRouteConfig from './routes/roles.js';
-import permissionProfilesRouteConfig from './routes/permissionProfiles.js';
-import rolePermissionProfilesRouteConfig from './routes/rolePermissionProfiles.js';
-import authRouteConfig from './routes/auth.js';
-import userRolesRouteConfig from './routes/userroles.js';
-// import passkeyRegister from "./routes/passkeyRegister.js";
-// import passkeyLoginChallenge from "./routes/passkeyLoginChallenge.js";
-// import passkeyLogin from "./routes/passkeyLogin.js";
 import FinTS from './fints.js';
 
 class HttpError {
@@ -121,22 +108,8 @@ export default class AsExpress {
           path.resolve(dataDirectory, importDatafile));
     }
 
-    this.app.use(cookieParser());
-    // Note: session is not needed, if passport.session() below is not called
-    this.app.use(session({
-      secret: config['express-session-secret'],
-      resave: false,
-      saveUninitialized: false,
-      cookie: {
-        maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
-      },
-    }));
-
     await this.#ensurePrivatePublicKeyPairInSystemPreferences();
     await this.#exportData(dbExporter, path.resolve(dataDirectory, exportDatafile));
-    this.#initApiRouter();
-    await this.#initPassport();
-    await this.#startHttpServer();
 
     this.#backupJob = new CronJob(
       '0 5 * * *', // cronTime
@@ -362,12 +335,6 @@ export default class AsExpress {
     await Promise.all(promises);
   }
 
-  async #initPassport() {
-    this.app.use(passport.initialize());
-    this.app.use(passport.authenticate('session'));
-    //    this.app.use(passport.session()); // don't use persistent login sessions
-  }
-
   async #downloadStatements() {
     const {fintsProductId, fintsProductVersion} = config;
     if (!fintsProductId || !fintsProductVersion) {
@@ -414,21 +381,7 @@ export default class AsExpress {
     return resultsByAccountId;
   }
 
-  #initApiRouter() {
-    this.addRouter('/api/auth', authRouteConfig);
-    this.addRouter('/api/role', roleRouteConfig);
-    this.addRouter('/api/role', rolesRouteConfig);
-    this.addRouter('/api/role', rolePermissionProfilesRouteConfig);
-    this.addRouter('/api/permissionprofile', permissionProfilesRouteConfig);
-    this.addRouter('/api/user', userRouteConfig);
-    this.addRouter('/api/user', userByIdRouteConfig);
-    this.addRouter('/api/user', userRolesRouteConfig);
-//    this.addRouter('/api/passkeyRegister', passkeyRegister);
-//    this.addRouter('/api/passkeyLogin', passkeyLogin);
-//    this.addRouter('/api/passkeyLoginChallenge', passkeyLoginChallenge);
-  }
-
-  async #startHttpServer() {
+  async startHttpServer() {
     this.#haveHttpServer = false;
     const {httpPort} = config;
     const {httpsPort} = config;
