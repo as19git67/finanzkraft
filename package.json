@@ -34,9 +34,11 @@
     "mssql": "^11.0.1",
     "p-wait-for": "^5.0.2",
     "passport": "^0.7.0",
+    "passport-fido2-webauthn": "^0.1.0",
     "passport-http": "^0.3.0",
     "passport-http-bearer": "^1.0.1",
     "passport-local": "^1.0.0",
+    "passport-strategy": "^1.0.0",
     "speakeasy": "^2.0.0",
     "sqlite3": "^5.1.7",
     "winston": "^3.19.0"
