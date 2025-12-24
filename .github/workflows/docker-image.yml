@@ -36,6 +36,8 @@ jobs:
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
+        with:
+          version: 10
 
       - run: npm ci
       - run: npm install github:as19git67/finanzkraftui
