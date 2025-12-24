@@ -33,6 +33,10 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: 24
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
       - run: npm ci
       - run: npm install github:as19git67/finanzkraftui
       - run: npm run build --if-present
