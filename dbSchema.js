@@ -287,7 +287,6 @@ const schema = {
           name: 'publicKey',
           type: 'text',
           nullable: false,
-          unique: true,
         },
       ],
       indexes: [
