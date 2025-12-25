@@ -167,8 +167,10 @@ export default async function importData(db, importFilename) {
       const presets = [];
       for (const preset of validPresets) {
         const p = {...preset};
-        p.categoryId = await db.getOrCreateCategory(preset.category);
-        delete p.category;
+        if (preset.category) {
+          p.categoryId = await db.getOrCreateCategory(preset.category);
+          delete p.category;
+        }
         presets.push(p);
       }
       const res = await db.addNewTransactionPresets(user.id, presets);
