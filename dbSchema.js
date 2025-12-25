@@ -298,7 +298,7 @@ const schema = {
       ],
       foreign_keys: [
         {
-          name: 'FK_idUser__Users_id',
+          name: 'FK_WebAuthnUserCredentials_idUser__Users_id',
           columns: ['idUser'],
           foreign_table: 'Users',
           foreign_columns: ['id'],
